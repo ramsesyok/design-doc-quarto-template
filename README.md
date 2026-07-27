@@ -47,19 +47,39 @@ design-doc-quarto-template/
     ├── postprocess-html.mjs  … HTML の図表番号を「章.節-連番」に振り直す後処理
     ├── mermaid-config.json   … mermaid 設定（htmlLabels:false 必須）
     ├── package.json          … mermaid-cli（mermaid を使う場合のみ npm ci）
+    ├── setup.sh / setup.bat  … 執筆環境の初期化（lib.typ/css 配置 + mermaid 用ブラウザ設定）
     ├── build-qmd.sh          … book → PDF
     ├── build-html.sh         … book → 静的 HTML（章ごと分割）
     └── render-diagrams.sh    … diagrams/*.mmd → SVG（静的図を更新したときだけ）
 ```
 
+**配布・持ち出しの単位**: 執筆者は `template/`（オフライン運用なら `node_modules`
+ごと）と執筆フォルダをコピーし、`setup` を一度実行すれば PDF/HTML を出力できる環境が
+整います。
+
 執筆者が触るのは基本的に `docs/chapters/**.qmd` と、章を増減するときの
 `docs/_quarto.yml` の `chapters:` だけです。様式の調整は `template/lib.typ` 冒頭の
 「【1】調整パラメータ」に集約しています。仕組みの詳細は `template/PIPELINE.md` を参照してください。
 
-## ビルド
+## セットアップ（最初に一度だけ）
 
 前提: [Quarto](https://quarto.org/) が導入済みであること（Typst バックエンドは同梱）。
-**ビルドはリポジトリのルートから**実行します。
+**コマンドはすべてリポジトリのルートから**実行します。
+
+```bash
+./template/setup.sh docs          # Windows の cmd なら  template\setup.bat docs
+```
+
+`setup` は (1) `template/lib.typ` と `design-doc.css` を執筆フォルダへ配置し、
+(2) mermaid 図の SVG 化に使う Chrome/Edge を検出して `template/puppeteer.json` に
+記録します（Chromium はダウンロードしません）。どちらも `.gitignore` 済みです。
+これを一度やっておけば、下記のビルドスクリプトでも **VSCode の Quarto 拡張**
+（quarto preview / render）でも、mermaid を含めて PDF/HTML を出力できます。
+
+> `template/lib.typ` や `design-doc.css` を改修したら `setup` を再実行してください（冪等・上書き）。
+> ビルドスクリプトは内部で `setup` を呼ぶので、スクリプト経由なら再実行は自動です。
+
+## ビルド
 
 ```bash
 # PDF（納品物）
@@ -70,6 +90,7 @@ design-doc-quarto-template/
 ```
 
 - 末尾の `docs` は執筆フォルダ名（省略時 `docs`）。フォルダを改名したらその名前を渡します。
+- ビルドスクリプトは先頭で `setup` を呼ぶので、単体で実行すれば初期化も済みます。
 - PDF と HTML は執筆フォルダの `_book/` を共有し、後から走ったほうが前の出力を消します。
   そのため `build-qmd.sh` は PDF を `docs/design-doc.pdf` に取り出します。両方残すときは
   PDF → HTML の順で実行してください。
@@ -91,19 +112,27 @@ git mv docs 設計書              # 例: docs → 設計書
 ### mermaid を使う場合
 
 `docs/chapters/**.qmd` の ` ```mermaid ` フェンスはビルド時に mermaid-cli で SVG 化されます。
-この機能を使うときだけ、追加の準備が要ります。
+この機能を使うときだけ、mermaid-cli の依存が要ります。
 
 ```bash
 cd template
-PUPPETEER_SKIP_DOWNLOAD=true npm ci        # 依存は template/ に入れる
+PUPPETEER_SKIP_DOWNLOAD=true npm ci        # 依存は template/ に入れる（Chromium は落とさない）
 cd ..
-export EXECUTABLE_BROWSER="/path/to/edge-or-chrome"   # 既存の Edge/Chromium を指す
-./template/build-qmd.sh docs
+./template/setup.sh docs                    # Chrome/Edge を検出して記録
 ```
 
-`EXECUTABLE_BROWSER` は Chromium の追加ダウンロードを避けるため、手元の Edge/Chrome の
-実行ファイルを指します。SVG は `docs/diagrams/` に内容ハッシュ名でキャッシュされ、同じ図は
-再変換されません。
+SVG 化には **Chrome か Edge**（Chromium 系ブラウザ）が1つあれば十分です。Chromium 自体は
+ダウンロードしません（npm とは別の Google 配信のため、閉域では失敗しやすい）。`setup` が
+手元の Chrome/Edge を自動検出して `template/puppeteer.json` に記録し、`design-doc.lua` が
+それを参照します。**自動検出できないときだけ**、パスを明示して再実行します:
+
+```bash
+EXECUTABLE_BROWSER="/path/to/chrome-or-msedge" ./template/setup.sh docs
+```
+
+Chrome/Edge がまったく無い環境や、`--no-sandbox` 等の追加オプションが要る場合は
+`template/puppeteer.json` を直接編集できます。SVG は `docs/diagrams/` に内容ハッシュ名で
+キャッシュされ、同じ図は再変換されません（＝図を新規に書かなければ Chrome/Edge は不要）。
 
 `diagrams/order-flow.svg` のように qmd から直接参照している静的図を更新したいときは、
 `docs/diagrams/*.mmd` を編集して `./template/render-diagrams.sh docs` を実行します。

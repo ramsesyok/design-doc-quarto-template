@@ -16,14 +16,19 @@ CONTENT_ROOT="$(cd "$CONTENT_DIR" && pwd)"
 MMDC="$TEMPLATE_ROOT/node_modules/@mermaid-js/mermaid-cli/src/cli.js"
 MMDC_CONF="$TEMPLATE_ROOT/mermaid-config.json"
 
+# ブラウザ設定: EXECUTABLE_BROWSER があれば優先、無ければ setup 生成の
+# template/puppeteer.json を使う（Chrome/Edge。Chromium はダウンロードしない）。
 BROWSER="${EXECUTABLE_BROWSER:-}"
-PUPPETEER_JSON="$(mktemp)"
 if [ -n "$BROWSER" ]; then
+  PUPPETEER_JSON="$(mktemp)"
   printf '{"executablePath": "%s"}' "$BROWSER" | sed 's/\\/\\\\/g' > "$PUPPETEER_JSON"
+  trap 'rm -f "$PUPPETEER_JSON"' EXIT
+elif [ -f "$TEMPLATE_ROOT/puppeteer.json" ]; then
+  PUPPETEER_JSON="$TEMPLATE_ROOT/puppeteer.json"
 else
-  echo '{}' > "$PUPPETEER_JSON"
+  PUPPETEER_JSON="$(mktemp)"; echo '{}' > "$PUPPETEER_JSON"
+  trap 'rm -f "$PUPPETEER_JSON"' EXIT
 fi
-trap 'rm -f "$PUPPETEER_JSON"' EXIT
 
 cd "$CONTENT_ROOT"
 for mmd in diagrams/*.mmd; do

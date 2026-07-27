@@ -6,8 +6,8 @@
 #
 # 出力: <執筆フォルダ>/_book/ （章ごとの HTML + 共通アセット site_libs/ +
 #       全文検索 search.json）。_book/index.html をブラウザで開くだけでレビューでき、
-#       共有は _book/ を zip すればよい。単一ファイルにしないのは、400〜1000ページ級
-#       では図の base64 内包で数十 MB に膨れ、閲覧も配布も破綻するため。
+#       共有は _book/ を zip すればよい。design-doc.css は _book/ に取り込まれるので
+#       _book/ 単体で自己完結する。
 #
 # 納品物は PDF（./template/build-qmd.sh）。HTML では紙の様式（外枠・資料番号欄・
 # 社名・ページ番号）は出さず、指摘箇所の特定に使う章番号・図表番号・相互参照を残す。
@@ -24,16 +24,8 @@ if [ ! -f "$CONTENT_DIR/_quarto.yml" ]; then
 fi
 CONTENT_ROOT="$(cd "$CONTENT_DIR" && pwd)"
 
-export EXECUTABLE_BROWSER="${EXECUTABLE_BROWSER:-}"
-export TEMPLATE_ROOT
-export DOC_ROOT="$CONTENT_ROOT"
-
-# design-doc.css を執筆フォルダ直下へ一時コピーしてから render する。こうすると
-# Quarto がローカル css として _book/ に取り込み、_book/ 単体で配信・zip できる
-# （out-of-tree の css: ../template/... は _book に取り込まれず、配布時に壊れる）。
-# .gitignore 済み。ビルド終了時（成功・失敗どちらでも）に必ず消す。
-cp "$TEMPLATE_ROOT/design-doc.css" "$CONTENT_ROOT/design-doc.css"
-trap 'rm -f "$CONTENT_ROOT/design-doc.css"' EXIT
+# 執筆環境を整える（冪等）: lib.typ / design-doc.css の配置 + mermaid 用ブラウザ設定。
+"$TEMPLATE_ROOT/setup.sh" "$CONTENT_DIR"
 
 cd "$CONTENT_ROOT"
 quarto render --to html

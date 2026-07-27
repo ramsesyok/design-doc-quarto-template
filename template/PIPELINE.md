@@ -22,11 +22,17 @@
 - 執筆フォルダ名は自由（`docs` 以外でもよい）。ビルドは**リポジトリのルートから**
   `./template/build-qmd.sh <執筆フォルダ名>` で呼ぶ（省略時 `docs`）。
 - `template/` と執筆フォルダは**兄弟**である前提。`_quarto.yml` は partial・filter を
-  `../template/...` で参照し、Lua フィルタには `TEMPLATE_ROOT`（template の絶対パス）と
-  `DOC_ROOT`（執筆フォルダの絶対パス）をビルドスクリプトが渡す。
-- **staging（重要）**: `lib.typ`（typst の import 制約）と `design-doc.css`（`_book/` の
-  自己完結化）だけは、ビルド時に執筆フォルダ直下へ一時コピーしてから render する。
-  どちらも `.gitignore` 済みで、ビルド終了時に `trap` で必ず消す。
+  `../template/...` で参照する。`design-doc.lua` は**環境変数に依存せず**、
+  `quarto.project.directory`（Quarto がフィルタに渡す）から執筆フォルダを、その隣の
+  `../template` から template を自力で特定する。→ **ビルドスクプリトでも VSCode の
+  Quarto 拡張（quarto preview / render）でも同じに動く**（§5 参照）。
+- **setup（重要）**: 環境変数で渡せない2つだけは `setup.sh`/`setup.bat` が執筆フォルダへ
+  **永続コピー**しておく（`trap` 削除ではなく置きっぱなし。どちらも `.gitignore` 済み）:
+  - `lib.typ` … typst の import が「プロジェクト外を読めない」制約に掛かるため（PDF）。
+  - `design-doc.css` … Quarto がローカル css として `_book/` に取り込み、単体で配信・
+    zip できるようにするため（HTML）。
+  併せて setup は mermaid 用の Chrome/Edge を検出し `template/puppeteer.json` に記録する。
+  ビルドスクリプトは先頭で setup を呼ぶので、拡張派・スクリプト派どちらも同じ状態になる。
 
 ---
 
@@ -62,6 +68,7 @@
 
 ```
 # リポジトリのルートから実行する（末尾は執筆フォルダ名。省略すると docs）
+./template/setup.sh docs         # 初回のみ（配置 + ブラウザ検出）。ビルドも内部で呼ぶ
 ./template/build-qmd.sh docs     # → docs/design-doc.pdf（納品物）
 ./template/build-html.sh docs    # → docs/_book/index.html（社内レビュー用）
 ```
@@ -69,6 +76,9 @@
 どちらも執筆フォルダの `_book/` を出力先に使い、**後から走ったほうが前の出力を
 消す**。そのため `build-qmd.sh` は PDF を `<執筆フォルダ>/design-doc.pdf` に取り出す。
 両方を残したいときは PDF → HTML の順に実行する。
+
+VSCode の Quarto 拡張から `quarto preview`/`render` を直接使う場合は、先に一度
+`setup` を実行しておけば同じように出力できる（拡張はビルドスクリプトを経由しないため）。
 
 ---
 
@@ -85,11 +95,13 @@
 | `design-doc.lua` | tpl | mermaid / `.landscape` / `.ipo` / セル結合 / 表幅 | 両方 |
 | `typst-show.typ` | tpl | フロントマター → `design-doc()` の引数 | PDF |
 | `typst-template.typ` | tpl | Quarto 既定テンプレートの差し替え口（`lib.typ` を import） | PDF |
-| `lib.typ` | tpl | **様式の単一ソース**（枠・採番・IPO・横向き）。ビルド時に docs へ一時コピー | PDF |
-| `design-doc.css` | tpl | レビュー HTML の見た目。ビルド時に docs へ一時コピー | HTML |
+| `lib.typ` | tpl | **様式の単一ソース**（枠・採番・IPO・横向き）。setup が docs へ永続コピー | PDF |
+| `design-doc.css` | tpl | レビュー HTML の見た目。setup が docs へ永続コピー | HTML |
 | `postprocess-html.mjs` | tpl | 図表番号を「章.節-連番」に振り直す | HTML |
 | `mermaid-config.json` | tpl | mermaid のテーマ・`htmlLabels: false` | 両方 |
-| `build-qmd.sh` / `build-html.sh` | tpl | ビルド入口（引数 = 執筆フォルダ名） | — |
+| `setup.sh` / `setup.bat` | tpl | 初期化: lib.typ/css の配置 + Chrome/Edge 検出→`puppeteer.json` | — |
+| `puppeteer.json` | tpl | setup 生成の machine ローカル設定（ブラウザパス）。`.gitignore` 済み | mermaid |
+| `build-qmd.sh` / `build-html.sh` | tpl | ビルド入口（引数 = 執筆フォルダ名。先頭で setup を呼ぶ） | — |
 
 ---
 
@@ -157,14 +169,11 @@ title / subtitle / author / doc-number / company / toc …
 **必ず再ビルドして PDF を目視確認する。** ページ単位で見るなら（ルートから）:
 
 ```
-export TEMPLATE_ROOT="$(pwd)/template"
+./template/setup.sh docs      # lib.typ を配置（未実施なら。実施済みなら省略可）
 cd docs
-export DOC_ROOT="$(pwd)"
-cp "$TEMPLATE_ROOT/lib.typ" lib.typ            # typst の import 制約ぶんを一時コピー
 # _quarto.yml の typst: に keep-typ: true を一時的に足してから
 quarto render --to typst
 typst compile index.typ "chk-{n}.png" --format png --font-path "C:/Windows/Fonts" --ppi 70
-rm -f lib.typ
 ```
 
 見た目を変えないリファクタのときは、**変更前後の PNG を `cmp` で比較**すると
@@ -250,13 +259,18 @@ HTML では div 構造として組み立て直している。
 ### book 特有の注意（パスまわり）
 
 - **実行時の CWD が「いま処理している章ファイルのディレクトリ」になる**
-  （章の階層ごとに変わる）。そのため相対パスは使えない。ビルドスクリプトが2つの
-  絶対パスを渡し、フィルタはこれを基準にする:
-  - `DOC_ROOT` … 執筆フォルダ（プロジェクトルート）。図の出力先 `diagrams/` の親。
-  - `TEMPLATE_ROOT` … `template/`。mermaid-cli（`node_modules`）と `mermaid-config.json`。
-  **`quarto render` を直接叩くときは両方を自分で export すること**
-  （未設定時 `TEMPLATE_ROOT` は `DOC_ROOT` にフォールバックする）。
-- mermaid の SVG は `DOC_ROOT/diagrams` に内容ハッシュで置くが、AST に載せる
+  （章の階層ごとに変わる）。そのため相対パスは使えず、執筆フォルダの絶対パスが要る。
+  フィルタは**環境変数に依存せず**次の順で自己解決する（→ 拡張・素の `quarto render`
+  でもそのまま動く）:
+  - `ROOT`（執筆フォルダ）= `DOC_ROOT` env → `quarto.project.directory` →
+    `QUARTO_PROJECT_DIR` env → `'.'`。図の出力先 `diagrams/` の親。
+  - `TMPL`（`template/`）= `TEMPLATE_ROOT` env → `ROOT/../template`。
+    mermaid-cli（`node_modules`）・`mermaid-config.json`・`puppeteer.json` の場所。
+  env は「明示的に上書きしたいとき」だけ使う。通常は何も export しなくてよい。
+- **mermaid のブラウザ**は env に頼らない。`EXECUTABLE_BROWSER` があればそれを、
+  無ければ setup が書いた `TMPL/puppeteer.json`（Chrome/Edge のパス）を使う。
+  どちらも無ければ `{}`（mmdc 同梱 Chromium を試す）。
+- mermaid の SVG は `ROOT/diagrams` に内容ハッシュで置くが、AST に載せる
   パスは章ファイルからの相対でなければ Quarto が解決できない（`diag_rel()`）。
 - **画像はプロジェクトルート基準の `/diagrams/...` で書く。** `../` を使うと
   Windows で `chapters\01-overview/../../` とバックスラッシュ結合され、
