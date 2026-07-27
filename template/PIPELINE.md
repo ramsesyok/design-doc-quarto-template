@@ -1,21 +1,40 @@
 # Quarto 版のしくみ（PDF / 静的HTML の出力と様式調整）
 
-`typst/` が **1つの qmd 一式から PDF と静的 HTML の両方**を出す仕組みと、
-どこを触れば何が変わるかをまとめる。テンプレートを改修するとき最初に読む。
+**1つの qmd 一式から PDF と静的 HTML の両方**を出す仕組みと、どこを触れば何が
+変わるかをまとめる。テンプレートを改修するとき最初に読む。
 
-- 対象読者は**テンプレートを保守する人**。執筆者向けの記法は `CLAUDE.md` の
-  「執筆者向けインターフェースの対応表」を参照。
+- 対象読者は**テンプレートを保守する人**（このファイルは `template/` に置く）。
+  執筆者向けの記法は `README.md` を参照。
 - 用語: 「様式」= 会社の紙のフォーマット（外枠・資料番号欄・社名・ページ番号）。
-  視覚仕様の正はリポジトリ直下の `portrait.pdf` / `landscape.pdf` /
-  `ipo-landscape.pdf`（原紙）。
+
+## 0. フォルダの分担
+
+```
+リポジトリ/
+├── template/     ← 様式・変換・ビルドの実体（このフォルダ。執筆者は触らない）
+│   ├── lib.typ, typst-*.typ, design-doc.lua, design-doc.css,
+│   ├── postprocess-html.mjs, mermaid-config.json, package.json,
+│   ├── build-qmd.sh, build-html.sh, render-diagrams.sh, PIPELINE.md
+└── docs/         ← 執筆フォルダ（既定名。執筆者が改名してよい）
+    ├── _quarto.yml, index.qmd, chapters/, diagrams/
+```
+
+- 執筆フォルダ名は自由（`docs` 以外でもよい）。ビルドは**リポジトリのルートから**
+  `./template/build-qmd.sh <執筆フォルダ名>` で呼ぶ（省略時 `docs`）。
+- `template/` と執筆フォルダは**兄弟**である前提。`_quarto.yml` は partial・filter を
+  `../template/...` で参照し、Lua フィルタには `TEMPLATE_ROOT`（template の絶対パス）と
+  `DOC_ROOT`（執筆フォルダの絶対パス）をビルドスクリプトが渡す。
+- **staging（重要）**: `lib.typ`（typst の import 制約）と `design-doc.css`（`_book/` の
+  自己完結化）だけは、ビルド時に執筆フォルダ直下へ一時コピーしてから render する。
+  どちらも `.gitignore` 済みで、ビルド終了時に `trap` で必ず消す。
 
 ---
 
 ## 1. 全体像
 
 ```
-                    typst/chapters/**.qmd        ← 執筆者が書くのはここだけ
-                    typst/_quarto.yml            ← 章の並び・出力設定
+                    docs/chapters/**.qmd         ← 執筆者が書くのはここだけ
+                    docs/_quarto.yml             ← 章の並び・出力設定
                               │
                               │  quarto render
                               ▼
@@ -42,31 +61,35 @@
 ### ビルドコマンド
 
 ```
-cd typst
-./build-qmd.sh     # → design-doc.pdf（納品物）
-./build-html.sh    # → _book/index.html（社内レビュー用）
+# リポジトリのルートから実行する（末尾は執筆フォルダ名。省略すると docs）
+./template/build-qmd.sh docs     # → docs/design-doc.pdf（納品物）
+./template/build-html.sh docs    # → docs/_book/index.html（社内レビュー用）
 ```
 
-どちらも `_book/` を出力先に使い、**後から走ったほうが前の出力を消す**。
-そのため `build-qmd.sh` は PDF を `typst/design-doc.pdf` に取り出している。
+どちらも執筆フォルダの `_book/` を出力先に使い、**後から走ったほうが前の出力を
+消す**。そのため `build-qmd.sh` は PDF を `<執筆フォルダ>/design-doc.pdf` に取り出す。
 両方を残したいときは PDF → HTML の順に実行する。
 
 ---
 
 ## 2. ファイルの役割
 
-| ファイル | 役割 | 影響する出力 |
-|---|---|---|
-| `_quarto.yml` | 章の並び、出力形式、画面幅（`grid:`）、資料番号 | 両方 |
-| `index.qmd` | 前付け（採番なし）。HTML のトップページ | 両方 |
-| `chapters/**.qmd` | 本文 | 両方 |
-| `design-doc.lua` | mermaid / `.landscape` / `.ipo` / セル結合 / 表幅 | 両方 |
-| `typst-show.typ` | フロントマター → `design-doc()` の引数 | PDF |
-| `typst-template.typ` | Quarto 既定テンプレートの差し替え口 | PDF |
-| `lib.typ` | **様式の単一ソース**（枠・採番・IPO・横向き） | PDF |
-| `design-doc.css` | レビュー HTML の見た目 | HTML |
-| `postprocess-html.mjs` | 図表番号を「章.節-連番」に振り直す | HTML |
-| `mermaid-config.json` | mermaid のテーマ・`htmlLabels: false` | 両方 |
+場所欄: **docs** = 執筆フォルダ / **tpl** = `template/`。
+
+| ファイル | 場所 | 役割 | 影響する出力 |
+|---|---|---|---|
+| `_quarto.yml` | docs | 章の並び、出力形式、画面幅（`grid:`）、資料番号 | 両方 |
+| `index.qmd` | docs | 前付け（採番なし）。HTML のトップページ | 両方 |
+| `chapters/**.qmd` | docs | 本文 | 両方 |
+| `diagrams/` | docs | qmd が直接貼る静的図 + mermaid 生成 SVG の置き場 | 両方 |
+| `design-doc.lua` | tpl | mermaid / `.landscape` / `.ipo` / セル結合 / 表幅 | 両方 |
+| `typst-show.typ` | tpl | フロントマター → `design-doc()` の引数 | PDF |
+| `typst-template.typ` | tpl | Quarto 既定テンプレートの差し替え口（`lib.typ` を import） | PDF |
+| `lib.typ` | tpl | **様式の単一ソース**（枠・採番・IPO・横向き）。ビルド時に docs へ一時コピー | PDF |
+| `design-doc.css` | tpl | レビュー HTML の見た目。ビルド時に docs へ一時コピー | HTML |
+| `postprocess-html.mjs` | tpl | 図表番号を「章.節-連番」に振り直す | HTML |
+| `mermaid-config.json` | tpl | mermaid のテーマ・`htmlLabels: false` | 両方 |
+| `build-qmd.sh` / `build-html.sh` | tpl | ビルド入口（引数 = 執筆フォルダ名） | — |
 
 ---
 
@@ -131,14 +154,17 @@ title / subtitle / author / doc-number / company / toc …
 
 ### 3.4 変更したら
 
-**必ず再ビルドして PDF を目視確認する。** ページ単位で見るなら:
+**必ず再ビルドして PDF を目視確認する。** ページ単位で見るなら（ルートから）:
 
 ```
-cd typst
+export TEMPLATE_ROOT="$(pwd)/template"
+cd docs
 export DOC_ROOT="$(pwd)"
+cp "$TEMPLATE_ROOT/lib.typ" lib.typ            # typst の import 制約ぶんを一時コピー
 # _quarto.yml の typst: に keep-typ: true を一時的に足してから
 quarto render --to typst
 typst compile index.typ "chk-{n}.png" --format png --font-path "C:/Windows/Fonts" --ppi 70
+rm -f lib.typ
 ```
 
 見た目を変えないリファクタのときは、**変更前後の PNG を `cmp` で比較**すると
@@ -197,7 +223,7 @@ Quarto 既定は 250 + 800 + 250 ≒ 1280px。左ペインの 300px は
 ナビゲートしても古い内容を返し続ける）。HTTP で配信すること:
 
 ```
-cd typst/_book && python -m http.server 8899   # → http://localhost:8899/
+cd docs/_book && python -m http.server 8899   # → http://localhost:8899/
 ```
 
 - **再ビルドの前にサーバーを止める。** `_book/` を掴んだままだと
@@ -224,9 +250,12 @@ HTML では div 構造として組み立て直している。
 ### book 特有の注意（パスまわり）
 
 - **実行時の CWD が「いま処理している章ファイルのディレクトリ」になる**
-  （章の階層ごとに変わる）。そのため相対パスは使えない。ビルドスクリプトが
-  `DOC_ROOT` にプロジェクトルートの絶対パスを渡し、フィルタはそれを基準にする。
-  **`quarto render` を直接叩くときは `DOC_ROOT` を自分で export すること。**
+  （章の階層ごとに変わる）。そのため相対パスは使えない。ビルドスクリプトが2つの
+  絶対パスを渡し、フィルタはこれを基準にする:
+  - `DOC_ROOT` … 執筆フォルダ（プロジェクトルート）。図の出力先 `diagrams/` の親。
+  - `TEMPLATE_ROOT` … `template/`。mermaid-cli（`node_modules`）と `mermaid-config.json`。
+  **`quarto render` を直接叩くときは両方を自分で export すること**
+  （未設定時 `TEMPLATE_ROOT` は `DOC_ROOT` にフォールバックする）。
 - mermaid の SVG は `DOC_ROOT/diagrams` に内容ハッシュで置くが、AST に載せる
   パスは章ファイルからの相対でなければ Quarto が解決できない（`diag_rel()`）。
 - **画像はプロジェクトルート基準の `/diagrams/...` で書く。** `../` を使うと
@@ -242,7 +271,7 @@ HTML では div 構造として組み立て直している。
 - [ ] IPO の列比を変えたなら、`lib.typ` の `IPO-COLS` と
       `design-doc.css` の `.ipo-frame` の**両方**を直したか
 - [ ] 採番規則を変えたなら、`lib.typ` と `postprocess-html.mjs` の**両方**か
-- [ ] mermaid 設定を変えたなら、`typst/` と `vivliostyle/` の
-      `mermaid-config.json` **両方**か（2つのツールチェーンは独立している）
-- [ ] 執筆者に見える記法を増やしていないか（増やすなら CLAUDE.md の
-      対応表も更新し、Vivliostyle 版の TODO を明示する）
+- [ ] 機構ファイルを増減したなら、それが `template/` にあり、執筆フォルダ直下へ
+      staging が要るもの（typst import / `_book` 自己完結）なら `.gitignore` と
+      ビルドスクリプトの `cp`/`trap` も更新したか
+- [ ] 執筆者に見える記法を増やしていないか（増やすなら `README.md` の説明も更新する）

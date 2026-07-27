@@ -6,7 +6,11 @@
 #  （単一 HTML は図の base64 内包で数十 MB になり実用に耐えないため）。
 #  PDF は従来どおり1ファイルで、章番号・図表番号・相互参照は章をまたいで連続する。
 #
-#  注意（book 特有の落とし穴。詳細は PIPELINE.md）:
+#  様式・変換・ビルドの実体はリポジトリ直下の ../template/ にある（執筆者は触らない）。
+#  このフォルダ（既定名 docs）は執筆者が自由に改名してよい。ビルドはルートから
+#  `./template/build-qmd.sh <このフォルダ名>` で呼ぶ（詳細は ../template/PIPELINE.md）。
+#
+#  注意（book 特有の落とし穴。詳細は ../template/PIPELINE.md）:
 #   - include のパスは「その章ファイルのあるディレクトリ」基準（入れ子でも同じ）
 #   - chapters に並べたファイルの先頭見出しは h1（章）に昇格される。
 #     長い章を分割するときは章ファイルを1つ立て、そこから include すること。
@@ -38,13 +42,20 @@ toc-depth: 3
 
 format:
   typst:
+    # partials / filter は ../template/ を直接参照できる（Quarto が render 時に
+    # 取り込む）。ただし lib.typ だけは typst のコンパイル時 import で
+    # 「プロジェクト外は読めない」制約に掛かるため、ビルドスクリプトが
+    # このフォルダ直下へ一時コピー（lib.typ）してから render する。
     template-partials:
-      - typst-template.typ
-      - typst-show.typ
+      - ../template/typst-template.typ
+      - ../template/typst-show.typ
   # 社内レビュー用 HTML。章ごとに別ページ・共通アセットは site_libs/ に1回だけ。
   # 全文検索（search.json）も自動で付く。
   html:
     number-sections: true
+    # css はローカル参照にしておく（Quarto が _book/ に取り込み、単体で配信・zip
+    # できるようにするため）。実体は ../template/design-doc.css で、ビルドが
+    # このフォルダ直下へ一時コピーしてから render する。
     css: design-doc.css
     embed-resources: false
     # 画面幅の基準を 1920px にする（Quarto 既定は sidebar 250 + body 800 +
@@ -56,4 +67,4 @@ format:
       margin-width: 240px
 
 filters:
-  - design-doc.lua
+  - ../template/design-doc.lua

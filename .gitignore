@@ -1,28 +1,38 @@
 # 注意: .gitignore ではインライン（行末）コメント不可。コメントは必ず行頭に置く。
+# 執筆フォルダ（既定 docs）は改名可能なので、パターンはフォルダ名に依存させず
+# 「名前」でマッチさせる。実体が template/ にある機構ファイルは末尾で除外解除する。
 
-# ==== ビルド生成物（PDF） ====
-docs/_book/
-docs/design-doc.pdf
-
-# ==== 中間生成物 ====
+# ==== ビルド生成物 ====
+_book/
+design-doc.pdf
 # Quarto の keep-typ 中間ファイル（通常は自動削除）
-docs/index.typ
+index.typ
+
+# ==== ビルド時に執筆フォルダへ一時コピーされる機構ファイル ====
+# 実体は template/ にあり、ビルドスクリプトがコピー→削除する。git には残さない。
+lib.typ
+design-doc.css
+!/template/lib.typ
+!/template/design-doc.css
 
 # ==== ツールの作業/キャッシュディレクトリ ====
-# Quarto が typst パッケージ等をダウンロードするキャッシュ
 .quarto/
 **/*.quarto_ipynb
+# Quarto が執筆フォルダ直下に自動生成する .gitignore（中身は /.quarto/）。
+# 直下フォルダ（docs/ や改名後）のものだけ無視し、ルートの .gitignore は残す。
+/*/.gitignore
 
 # ==== 依存パッケージ ====
 node_modules/
 
 # ==== mermaid 変換キャッシュ（内容ハッシュ名 mmd-xxxx.*） ====
-# docs/diagrams/order-flow.* は同梱するため無視しない。
-docs/diagrams/mmd-*
-docs/diagrams/puppeteer.json
+# diagrams/order-flow.* は同梱するため無視しない。
+**/diagrams/mmd-*
+**/diagrams/puppeteer.json
 
 # ==== ページ目視確認用の一時画像（chk-*.png / page-*.png など） ====
-docs/*.png
+chk-*.png
+page-*.png
 
 # ==== 配布スナップショット（配布時に作り直す） ====
 *.zip

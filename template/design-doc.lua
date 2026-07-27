@@ -12,10 +12,14 @@
 
 -- book プロジェクトでは、フィルタ実行時の CWD が「いま処理している章ファイルの
 -- ディレクトリ」になる（章の階層ごとに変わる）。したがって相対パスは使えない。
--- ビルドスクリプトが DOC_ROOT にプロジェクトルートの絶対パスを渡す。
+-- ビルドスクリプトが2つの絶対パスを渡す:
+--   DOC_ROOT       … 執筆フォルダ（プロジェクトルート）。図の出力先 diagrams/ はここ。
+--   TEMPLATE_ROOT  … template/。mermaid-cli（node_modules）と設定はここにある。
+-- TEMPLATE_ROOT 未設定時は DOC_ROOT にフォールバック（旧・同一フォルダ構成でも動く）。
 local ROOT = (os.getenv('DOC_ROOT') or '.'):gsub('\\', '/'):gsub('/$', '')
-local MMDC = ROOT .. '/node_modules/@mermaid-js/mermaid-cli/src/cli.js'
-local MMDC_CONF = ROOT .. '/mermaid-config.json'
+local TMPL = (os.getenv('TEMPLATE_ROOT') or ROOT):gsub('\\', '/'):gsub('/$', '')
+local MMDC = TMPL .. '/node_modules/@mermaid-js/mermaid-cli/src/cli.js'
+local MMDC_CONF = TMPL .. '/mermaid-config.json'
 local DIAG = ROOT .. '/diagrams'
 
 -- SVG の実体は DIAG（絶対パス）に置くが、AST に載せるパスは章ファイルからの
