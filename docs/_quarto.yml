@@ -2,8 +2,9 @@
 #  設計書 book プロジェクト（Quarto → PDF / Typst）
 #
 #  1ファイル = 1章。章の中をさらに節・項に割るときは {{< include >}} を使う。
-#  400〜1000ページ級の設計書を想定する。PDF は1ファイルで、章番号・図表番号・
-#  相互参照はファイルを分割しても章をまたいで連続する。
+#  400〜1000ページ級の設計書を想定し、HTML は章ごとの別ページに分割して出す
+#  （単一 HTML は図の base64 内包で数十 MB になり実用に耐えないため）。
+#  PDF は従来どおり1ファイルで、章番号・図表番号・相互参照は章をまたいで連続する。
 #
 #  注意（book 特有の落とし穴。詳細は PIPELINE.md）:
 #   - include のパスは「その章ファイルのあるディレクトリ」基準（入れ子でも同じ）
@@ -11,9 +12,6 @@
 #     長い章を分割するときは章ファイルを1つ立て、そこから include すること。
 #   - 画像はプロジェクトルート基準の /diagrams/... で書く（../ は Windows で
 #     バックスラッシュ結合され typst 0.15 以降が拒否するため）
-#
-#  HTML（社内レビュー用・章ごとに分割）出力は将来追加する。design-doc.lua は
-#  既に FORMAT == 'html' の分岐を備えており、format.html を足せば有効になる。
 # ============================================================
 project:
   type: book
@@ -43,6 +41,19 @@ format:
     template-partials:
       - typst-template.typ
       - typst-show.typ
+  # 社内レビュー用 HTML。章ごとに別ページ・共通アセットは site_libs/ に1回だけ。
+  # 全文検索（search.json）も自動で付く。
+  html:
+    number-sections: true
+    css: design-doc.css
+    embed-resources: false
+    # 画面幅の基準を 1920px にする（Quarto 既定は sidebar 250 + body 800 +
+    # margin 250 ≒ 1280px）。左ペインは「章番号 + 見出し15文字」が折り返さずに
+    # 収まる幅。合計 300 + 1380 + 240 = 1920px。
+    grid:
+      sidebar-width: 300px
+      body-width: 1380px
+      margin-width: 240px
 
 filters:
   - design-doc.lua

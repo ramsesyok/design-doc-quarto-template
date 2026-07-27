@@ -1,0 +1,103 @@
+// ============================================================
+//  book の各章 HTML の図表番号を PDF と同じ「章.節-連番」に振り直す。
+//
+//  なぜ後処理なのか:
+//    Quarto の図表採番（crossref）は **すべての Lua フィルタより後段**で走る。
+//    pre-quarto / post-quarto のどちらで見ても、この時点では表に id も
+//    キャプションも付いておらず、参照は未解決の Cite のままである。
+//    つまりフィルタでは上書きできないため、生成された HTML を直す。
+//
+//  book 固有の事情が2つある:
+//    1) 連番は文書全体で決まるので、まず全章を book の並び順に走査して番号を
+//       確定し（パス1）、そのあと全ファイルの参照を解決する（パス2）。
+//    2) 相互参照は他の章ファイルを指す（href="../02-architecture.html#fig-x"）。
+//       href の #フラグメントだけを見て全体マップを引けばよい。
+//
+//  Quarto が出す形は規則的で、次の2箇所だけ書き換えれば足りる:
+//    キャプション: <figcaption ... id="fig-arch-caption-XXX">図&nbsp;1.1: 説明</figcaption>
+//    相互参照    : <a href="...#fig-arch" class="quarto-xref">図&nbsp;<span>1.1</span></a>
+//
+//  節番号は Quarto が見出しに付ける data-number="3.3.2" から取る。
+//  なお NBSP は book 出力では実体参照 &nbsp;、単一 HTML 出力では生の U+00A0 と
+//  形が違う。どちらでも拾えるように SP で両対応にしてある。
+// ============================================================
+import fs from 'node:fs';
+import path from 'node:path';
+
+const root = process.argv[2] || '_book';
+
+// 章順は _quarto.yml の chapters をそのまま使う（並びを二重管理しない）。
+// chapters は「- パス.qmd」が1行1件で並ぶだけなので、簡易パースで足りる。
+const conf = fs.readFileSync('_quarto.yml', 'utf8');
+const block = conf.match(/^\s*chapters:\s*$([\s\S]*?)^\S/m)
+  || conf.match(/^\s*chapters:\s*$([\s\S]*)/m);
+const order = [...(block?.[1] ?? '').matchAll(/^\s*-\s*(\S+\.qmd)\s*$/gm)]
+  .map((m) => m[1].replace(/\.qmd$/, '.html'));
+if (order.length === 0) {
+  console.error('_quarto.yml の chapters を読めませんでした');
+  process.exit(1);
+}
+
+const SP = String.raw`(?:\s|&nbsp;)*`;
+const HEAD = /<h[1-6][^>]*\bdata-number="([\d.]+)"/g;
+const CAP = new RegExp(String.raw`<figcaption[^>]*\bid="((?:fig|tbl)-[^"]*?)-caption-[^"]*"[^>]*>${SP}(図|表)${SP}[\d.]+:${SP}`, 'g');
+const CAP_TAIL = new RegExp(String.raw`(図|表)${SP}[\d.]+:${SP}$`);
+
+const numberOf = new Map();   // floatId -> "図 3.3-1"
+const staged = new Map();     // file -> { html, repl }
+
+// --- パス1: 章順に走査して番号を確定する ---
+for (const rel of order) {
+  const file = path.join(root, rel);
+  const html = fs.readFileSync(file, 'utf8');
+  const scan = new RegExp(`${HEAD.source}|${CAP.source}`, 'g');
+  let chap = 0;
+  let sec = 0;
+  const seq = new Map();      // "図|3.3" -> 連番
+  const repl = [];            // [start, end, 置換文字列]
+
+  for (let m; (m = scan.exec(html)) !== null; ) {
+    if (m[1]) {                                 // 見出し
+      const parts = m[1].split('.').map(Number);
+      chap = parts[0] || 0;
+      sec = parts[1] || 0;
+      continue;
+    }
+    const [floatId, kind] = [m[2], m[3]];
+    const key = `${kind}|${chap}.${sec}`;
+    const n = (seq.get(key) || 0) + 1;
+    seq.set(key, n);
+    const label = `${kind} ${chap}.${sec}-${n}`;
+    numberOf.set(floatId, label);
+    // マッチした「図&nbsp;1.1: 」の部分だけを差し替える（キャプション本文は残す）
+    repl.push([m.index, m.index + m[0].length, m[0].replace(CAP_TAIL, `${label}　`)]);
+  }
+  staged.set(file, { html, repl });
+}
+
+// --- パス2: キャプションを差し替え、全ファイルの参照を確定した番号に揃える ---
+let refCount = 0;
+let missing = 0;
+for (const [file, { html, repl }] of staged) {
+  let out = html;
+  // 後ろから差し替えて位置ずれを避ける
+  for (let i = repl.length - 1; i >= 0; i -= 1) {
+    const [s, e, text] = repl[i];
+    out = out.slice(0, s) + text + out.slice(e);
+  }
+  out = out.replace(
+    /(<a href="[^"]*#((?:fig|tbl)-[^"]+)"[^>]*class="[^"]*quarto-xref[^"]*"[^>]*>)([\s\S]*?)(<\/a>)/g,
+    (whole, open, id, _text, close) => {
+      const label = numberOf.get(id);
+      if (!label) { missing += 1; return whole; }
+      refCount += 1;
+      return `${open}${label}${close}`;
+    });
+  fs.writeFileSync(file, out);
+}
+
+console.log(`OK -> ${root} (図表 ${numberOf.size} 件 / 参照 ${refCount} 件を章.節-連番に変換)`);
+if (missing > 0) {
+  console.error(`警告: 解決できない相互参照が ${missing} 件あります（id の綴りを確認）`);
+  process.exit(1);
+}
