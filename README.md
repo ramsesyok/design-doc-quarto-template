@@ -29,6 +29,7 @@ PDF 生成には Quarto と、その同梱の Typst バックエンドを使い�
 design-doc-quarto-template/
 ├── README.md                … このファイル
 ├── .gitignore
+├── .gitattributes           … 改行コードの固定（*.sh=LF / *.bat=CRLF）
 │
 ├── docs/                     … 執筆フォルダ（このフォルダ名は変更可。下記参照）
 │   ├── _quarto.yml           … book 設定（章の並び・出力形式・doc-number）

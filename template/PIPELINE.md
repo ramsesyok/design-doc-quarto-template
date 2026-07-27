@@ -12,11 +12,13 @@
 ```
 リポジトリ/
 ├── template/     ← 様式・変換・ビルドの実体（このフォルダ。執筆者は触らない）
-│   ├── lib.typ, typst-*.typ, design-doc.lua, design-doc.css,
+│   ├── lib.typ, typst-template.typ, typst-show.typ, design-doc.lua, design-doc.css,
 │   ├── postprocess-html.mjs, mermaid-config.json, package.json,
-│   ├── build-qmd.sh, build-html.sh, render-diagrams.sh, PIPELINE.md
+│   ├── setup.sh, setup.bat, build-qmd.sh, build-html.sh, render-diagrams.sh, PIPELINE.md
+│   └── (setup 実行後: puppeteer.json / node_modules … いずれも .gitignore)
 └── docs/         ← 執筆フォルダ（既定名。執筆者が改名してよい）
     ├── _quarto.yml, index.qmd, chapters/, diagrams/
+    └── (setup/ビルド後: lib.typ, design-doc.css, _book/ … いずれも .gitignore)
 ```
 
 - 執筆フォルダ名は自由（`docs` 以外でもよい）。ビルドは**リポジトリのルートから**
@@ -24,10 +26,10 @@
 - `template/` と執筆フォルダは**兄弟**である前提。`_quarto.yml` は partial・filter を
   `../template/...` で参照する。`design-doc.lua` は**環境変数に依存せず**、
   `quarto.project.directory`（Quarto がフィルタに渡す）から執筆フォルダを、その隣の
-  `../template` から template を自力で特定する。→ **ビルドスクプリトでも VSCode の
+  `../template` から template を自力で特定する。→ **ビルドスクリプトでも VSCode の
   Quarto 拡張（quarto preview / render）でも同じに動く**（§5 参照）。
 - **setup（重要）**: 環境変数で渡せない2つだけは `setup.sh`/`setup.bat` が執筆フォルダへ
-  **永続コピー**しておく（`trap` 削除ではなく置きっぱなし。どちらも `.gitignore` 済み）:
+  **永続コピー**しておく（ビルドごとに消さず置きっぱなし。どちらも `.gitignore` 済み）:
   - `lib.typ` … typst の import が「プロジェクト外を読めない」制約に掛かるため（PDF）。
   - `design-doc.css` … Quarto がローカル css として `_book/` に取り込み、単体で配信・
     zip できるようにするため（HTML）。
@@ -160,9 +162,10 @@ title / subtitle / author / doc-number / company / toc …
   - h1/h2 の show ルールで `reset-floats()` を呼び、連番を節ごとに 0 に戻す
   - `show ref` が **対象図表の location** でカウンタを読み直す
     （参照した位置で読むと節番号がずれる）
-  - リセット対象の kind は `image` / `table`（素の Typst 用）と
-    `quarto-float-fig` / `quarto-float-tbl`（qmd 用）の4つ。**qmd 経路だけを
-    直すと素の Typst 側がずれる**ので必ず4つとも扱う。
+  - リセット対象の kind は4つ: qmd の図表フローが出す `quarto-float-fig` /
+    `quarto-float-tbl` と、生の Typst で `#figure`（`image`/`table`）を直接書いた場合の
+    保険。qmd 経路（前者2つ）だけを直すと、typst 生ブロックに図表を置いたときに
+    連番がずれるので、**4つとも 0 に戻す**。
 
 ### 3.4 変更したら
 
@@ -285,7 +288,7 @@ HTML では div 構造として組み立て直している。
 - [ ] IPO の列比を変えたなら、`lib.typ` の `IPO-COLS` と
       `design-doc.css` の `.ipo-frame` の**両方**を直したか
 - [ ] 採番規則を変えたなら、`lib.typ` と `postprocess-html.mjs` の**両方**か
-- [ ] 機構ファイルを増減したなら、それが `template/` にあり、執筆フォルダ直下へ
-      staging が要るもの（typst import / `_book` 自己完結）なら `.gitignore` と
-      ビルドスクリプトの `cp`/`trap` も更新したか
+- [ ] 機構ファイルを増減したなら、それが `template/` にあるか。執筆フォルダ直下へ
+      配置が要るもの（typst import / `_book` 自己完結）なら、`setup.sh`/`setup.bat` の
+      コピー対象と `.gitignore` も更新したか
 - [ ] 執筆者に見える記法を増やしていないか（増やすなら `README.md` の説明も更新する）
