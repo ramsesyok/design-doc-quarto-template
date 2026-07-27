@@ -1,0 +1,8 @@
+# シェルスクリプトは必ず LF で保存する（CRLF だと shebang が壊れ Linux/Mac で動かない）。
+*.sh text eol=lf
+# バッチファイルは CRLF（Windows/cmd 前提）。
+*.bat text eol=crlf
+# ビルドに使うテキストも LF に統一しておく。
+*.mjs text eol=lf
+*.lua text eol=lf
+*.typ text eol=lf

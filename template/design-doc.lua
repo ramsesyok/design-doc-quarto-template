@@ -2,7 +2,8 @@
 --  設計書様式用 Quarto/Pandoc フィルタ（typst 出力用）
 --  執筆者が qmd で使える記法を lib.typ の様式機能に対応付ける:
 --   1) ```mermaid フェンス → mermaid-cli で SVG 化して画像に置換
---      （diagrams/ に内容ハッシュでキャッシュ。ブラウザは EXECUTABLE_BROWSER）
+--      （diagrams/ に内容ハッシュでキャッシュ。ブラウザは setup 生成の
+--       template/puppeteer.json、または EXECUTABLE_BROWSER で指定した Chrome/Edge）
 --   2) ::: {.landscape} div → #landscape[...]（横向きページ）
 --   3) ::: {.ipo} div → #ipo(...)（IPO図。最初の見出し = 機能名 / 処理名、
 --      入力/処理/出力（Input/Process/Output 可）の見出しで3列に分割）
@@ -11,11 +12,23 @@
 -- ============================================================
 
 -- book プロジェクトでは、フィルタ実行時の CWD が「いま処理している章ファイルの
--- ディレクトリ」になる（章の階層ごとに変わる）。したがって相対パスは使えない。
--- ビルドスクリプトが DOC_ROOT にプロジェクトルートの絶対パスを渡す。
-local ROOT = (os.getenv('DOC_ROOT') or '.'):gsub('\\', '/'):gsub('/$', '')
-local MMDC = ROOT .. '/node_modules/@mermaid-js/mermaid-cli/src/cli.js'
-local MMDC_CONF = ROOT .. '/mermaid-config.json'
+-- ディレクトリ」になる（章の階層ごとに変わる）。したがって相対パスは使えず、
+-- 執筆フォルダ（プロジェクトルート）の絶対パスが要る。環境変数に依存せず自力で
+-- 求めるので、VSCode の Quarto 拡張や素の `quarto render` でもそのまま動く。
+--   ROOT  … 執筆フォルダ（プロジェクトルート）。図の出力先 diagrams/ の親。
+--   TMPL  … template/。mermaid-cli（node_modules）・設定・ブラウザ設定の置き場。
+-- 解決の優先順位:
+--   ROOT: DOC_ROOT env → quarto.project.directory → QUARTO_PROJECT_DIR env → '.'
+--   TMPL: TEMPLATE_ROOT env → ROOT/../template
+local function _norm(p) return (p or ''):gsub('\\', '/'):gsub('/+$', '') end
+local ROOT = _norm(os.getenv('DOC_ROOT'))
+if ROOT == '' then ROOT = _norm(quarto and quarto.project and quarto.project.directory) end
+if ROOT == '' then ROOT = _norm(os.getenv('QUARTO_PROJECT_DIR')) end
+if ROOT == '' then ROOT = '.' end
+local TMPL = _norm(os.getenv('TEMPLATE_ROOT'))
+if TMPL == '' then TMPL = ROOT .. '/../template' end
+local MMDC = TMPL .. '/node_modules/@mermaid-js/mermaid-cli/src/cli.js'
+local MMDC_CONF = TMPL .. '/mermaid-config.json'
 local DIAG = ROOT .. '/diagrams'
 
 -- SVG の実体は DIAG（絶対パス）に置くが、AST に載せるパスは章ファイルからの
@@ -42,20 +55,31 @@ local function render_mermaid(code)
   pandoc.system.make_directory(DIAG, true)
   local mmd = DIAG .. '/mmd-' .. hash .. '.mmd'
   local f = assert(io.open(mmd, 'w')); f:write(code); f:close()
-  -- puppeteer 設定（既存 Edge/Chromium の流用）
-  local pp = DIAG .. '/puppeteer.json'
+  -- puppeteer 設定（既存 Edge/Chrome を流用。Chromium はダウンロードしない）。
+  -- 優先順位:
+  --   1) EXECUTABLE_BROWSER env があれば、その実行ファイルで一時設定を書く（明示指定）
+  --   2) setup が template/ に書いた puppeteer.json があればそれを使う（拡張・env なし）
+  --   3) どちらも無ければ {}（mmdc 同梱 Chromium を試す。無ければ下でエラー）
+  local pp
   local browser = os.getenv('EXECUTABLE_BROWSER') or ''
-  local pf = assert(io.open(pp, 'w'))
   if browser ~= '' then
+    pp = DIAG .. '/puppeteer.json'
+    local pf = assert(io.open(pp, 'w'))
     pf:write('{"executablePath": "' .. browser:gsub('\\', '/') .. '"}')
+    pf:close()
+  elseif file_exists(TMPL .. '/puppeteer.json') then
+    pp = TMPL .. '/puppeteer.json'
   else
-    pf:write('{}')
+    pp = DIAG .. '/puppeteer.json'
+    local pf = assert(io.open(pp, 'w')); pf:write('{}'); pf:close()
   end
-  pf:close()
   os.execute('node "' .. MMDC .. '" -i "' .. mmd .. '" -o "' .. svg ..
     '" -b transparent -c "' .. MMDC_CONF .. '" -p "' .. pp .. '"')
   if not file_exists(svg) then
-    error('mermaid の変換に失敗しました: ' .. mmd)
+    error('mermaid の変換に失敗しました: ' .. mmd ..
+      '\n  ブラウザ設定を確認してください（Chrome/Edge が必要）。' ..
+      '\n  ルートから `./template/setup.sh <執筆フォルダ>` を実行するか、' ..
+      '\n  EXECUTABLE_BROWSER=<chrome/msedge の実行ファイル> を指定してください。')
   end
   return rel
 end
