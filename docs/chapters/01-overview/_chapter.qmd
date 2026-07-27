@@ -1,0 +1,8 @@
+# システム概要
+
+本書は設計書テンプレートの体裁確認用サンプルである。章番号は自動採番され、
+図表番号と相互参照も自動で解決される。詳細は @fig-arch と @tbl-env を参照。
+
+{{< include 01-purpose/_section.qmd >}}
+
+{{< include 02-page-control.qmd >}}

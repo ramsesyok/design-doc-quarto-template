@@ -1,0 +1,48 @@
+# ============================================================
+#  設計書 book プロジェクト（Quarto → PDF / Typst）
+#
+#  1ファイル = 1章。章の中をさらに節・項に割るときは {{< include >}} を使う。
+#  400〜1000ページ級の設計書を想定する。PDF は1ファイルで、章番号・図表番号・
+#  相互参照はファイルを分割しても章をまたいで連続する。
+#
+#  注意（book 特有の落とし穴。詳細は PIPELINE.md）:
+#   - include のパスは「その章ファイルのあるディレクトリ」基準（入れ子でも同じ）
+#   - chapters に並べたファイルの先頭見出しは h1（章）に昇格される。
+#     長い章を分割するときは章ファイルを1つ立て、そこから include すること。
+#   - 画像はプロジェクトルート基準の /diagrams/... で書く（../ は Windows で
+#     バックスラッシュ結合され typst 0.15 以降が拒否するため）
+#
+#  HTML（社内レビュー用・章ごとに分割）出力は将来追加する。design-doc.lua は
+#  既に FORMAT == 'html' の分岐を備えており、format.html を足せば有効になる。
+# ============================================================
+project:
+  type: book
+  output-dir: _book
+
+book:
+  title: 受注管理システム 基本設計書
+  subtitle: サンプル・ボイラープレート
+  author: 設計チーム
+  chapters:
+    - index.qmd
+    - chapters/01-overview/_chapter.qmd
+    - chapters/02-architecture.qmd
+    - chapters/03-functions/_chapter.qmd
+    - chapters/04-ipo.qmd
+    - chapters/05-summary.qmd
+
+lang: ja
+doc-number: SD-2026-001
+
+toc: true
+toc-title: 目 次
+toc-depth: 3
+
+format:
+  typst:
+    template-partials:
+      - typst-template.typ
+      - typst-show.typ
+
+filters:
+  - design-doc.lua
