@@ -19,13 +19,13 @@
 //
 //      0                                              210mm
 //      ┌──────────────────────────────────────────────┐
-//      │        ┌─ FRAME-P-POS.x = 15mm               │
+//      │        ┌─ FRAME-P-POS.x = 23mm               │
 //      │        ↓                                     │
 //      │        ┌────────────[資料番号 SD-xxx  1/10]  │ ← 枠の上辺に接地
-//      │        │←── FRAME-P-SIZE.width = 180mm ──→│  │   (dy = y - 枠の高さ)
+//      │        │←── FRAME-P-SIZE.width = 178mm ──→│  │   (dy = y - 枠の高さ)
 //      │        │                                  │  │
-//      │  24mm  │   ← PAGE-P-MARGIN.x = 24mm       │  │  本文は枠より
-//      │ ←───→ │      （枠より 9mm 内側）          │  │  9mm 内側に入る
+//      │  28mm  │   ← PAGE-P-MARGIN.left = 28mm    │  │  本文は外枠の
+//      │ ←───→ │      （枠より 5mm 内側）          │  │  内側 5mm（上下左右）
 //      │        │                                  │  │
 //      │        │  FRAME-P-SIZE.height = 268mm     │  │
 //      │        └──────────────────────────────────┘  │
@@ -33,10 +33,27 @@
 //      └──────────────────────────────────────────────┘
 //
 //  縦は上 20mm・下 9mm（297 - 20 - 268）で非対称。原紙がそうなっている。
-//  左右は 15mm ずつで対称（210 - 15 - 180 = 15）。
+//  左右も非対称で 左 23mm・右 9mm（210 - 23 - 178 = 9）。
 //
 //  横向き（landscape / ipo）は A4 横 = 297 x 210mm。様式ごと 90°回転する。
+//  縦綴じのまま用紙を回して読む配置なので、社名が左端に縦、資料番号が右端に縦。
+//
+//      0                                                        297mm
+//      ┌──────────────────────────────────────────────────────────┐
+//      │  ↑ COMPANY-L-X = 2.5mm（社名を左端に縦書き）              │
+//      │     ┌─ FRAME-L-POS = (x: 9mm, y: 23mm) 外枠の左上         │
+//      │ 社  ↓                                            資  │    │ ← 資料番号は
+//      │ フ  ┌──────────────────────────────────────────┐  料  │    │   外枠の右辺に
+//      │ ト  │←─ FRAME-L-SIZE.width = 268mm ───────────→│  番  │    │   接して 90°縦置き
+//      │ 開  │                                          │  号  │    │   起点 dy =
+//      │ 発  │    FRAME-L-SIZE.height = 178mm            │      │    │   上辺 = 外枠上+DOCNUM-L-TOP
+//      │     └──────────────────────────────────────────┘      │    │
+//      └──────────────────────────────────────────────────────────┘
+//
 //  資料番号は「外枠の右辺に接する」= FRAME-L-POS.x + FRAME-L-SIZE.width の位置。
+//  左右は 9mm・20mm（297 - 9 - 268 = 20）、上下は 23mm・9mm（210 - 23 - 178 = 9）で非対称。
+//  これは A4 縦の外枠を時計回りに 90°回転した配置に一致する（左←下, 上←左, 右←上, 下←右）。
+//  本文余白は枠より内側で、表向き = PAGE-L-MARGIN、IPO 図 = PAGE-IPO-MARGIN と別値。
 // ============================================================
 
 // ---- フォント ----
@@ -60,28 +77,46 @@
 #let HEAD-SIZES = (16pt, 13pt, 11.5pt, 10.5pt)
 
 // ---- 縦ページ（ポートレート）----
-#let PAGE-P-MARGIN = (x: 24mm, top: 28mm, bottom: 24mm)  // 本文の余白
-#let FRAME-P-POS = (x: 15mm, y: 20mm)                    // 外枠の左上
-#let FRAME-P-SIZE = (width: 180mm, height: 268mm)        // 外枠の大きさ
-#let FOOTER-DESCENT = 70%                                // 社名を下げる量
+// 本文は外枠の内側 5mm に流し込む（外枠と本文の間隔を上下左右で 5mm に統一）。
+//   左 = 外枠左23 + 5 = 28 / 右 = 210 - (外枠右201 - 5) = 14
+//   上 = 外枠上20 + 5 = 25 / 下 = 297 - (外枠下288 - 5) = 14
+#let PAGE-P-MARGIN = (left: 28mm, right: 14mm, top: 25mm, bottom: 14mm)  // 本文の余白
+#let FRAME-P-POS = (x: 23mm, y: 20mm)                    // 外枠の左上
+#let FRAME-P-SIZE = (width: 178mm, height: 268mm)        // 外枠の大きさ
+#let FOOTER-DESCENT = 7mm                                // 社名を下げる量（本文下端から。外枠下辺のすぐ下に来る）
 
-// ---- 資料番号の欄（縦横で共通の見た目）----
-#let DOCNUM-INSET = (x: 3.5mm, y: 1.8mm)  // 「資料番号」枠の内側の余白
-#let DOCNUM-SIZE = 10pt                   // 枠内の文字サイズ
-#let DOCNUM-TRACKING = 1pt                // 「資料番号」の字間
-#let DOCNUM-GAP = 3.5mm                   // 「資料番号」と番号の間隔
-#let DOCNUM-PAGE-GAP = 3mm                // 枠とページ番号 n / N の間隔
+// ---- 資料番号の欄（見た目は縦横で共通、寸法・位置は縦横で分離）----
+#let DOCNUM-INSET = (x: 3.5mm, y: 1.65mm) // 資料番号枠の内側の余白（y が枠の高さを決める）
+#let DOCNUM-SIZE = 14pt                   // 枠内の文字サイズ（これも枠の高さに効く）
+// 上記の組合せで枠の高さ（A4横では幅）は約 7mm（Yu Gothic 実測）。
+#let DOCNUM-PAGE-GAP = 5mm                // 資料枠とページ番号 n / N の間隔
+//   ↑ これを増やすとページ番号欄が外枠の縁側へ寄る（外枠との隙間が縮む）。
+#let DOCNUM-PAGE-DIGITS = 4               // ページ番号 n / N の想定最大桁数
+#let DOCNUM-PAGE-WIDTH = 20mm             // ページ番号欄の幅（右寄せ・固定幅）。
+// 欄を固定幅＋右寄せにし、総数 N を DIGITS 桁ぶんの幅へ右空白詰め（数字幅の空白）する
+// ことで "/" の位置と欄の右端を安定させ、"/" と総数の間隔も一定にする。
+// 欄の右端は資料枠のすぐ右で外枠内に収まる。
+// 資料枠の幅・位置（縦横で独立して調整できるよう分離）:
+#let DOCNUM-P-WIDTH = 45mm                // A4縦: 資料枠の幅
+#let DOCNUM-P-LEFT  = 105mm               // A4縦: 外枠の左端から資料枠の左端まで
+// A4横: 資料枠は 90°回転して置くので、この「幅」は用紙上では高さ方向になる。
+// 45mm = A4縦の DOCNUM-P-WIDTH と一致 → 縦を 90°回転した姿にそろう。
+#let DOCNUM-L-WIDTH = 45mm                // A4横: 資料枠の幅（回転後は高さ）
 
 // ---- 横ページ（landscape / IPO 共通の様式）----
-#let FRAME-L-POS = (x: 15mm, y: 15mm)
-#let FRAME-L-SIZE = (width: 262mm, height: 180mm)
+#let FRAME-L-POS = (x: 9mm, y: 23mm)
+#let FRAME-L-SIZE = (width: 268mm, height: 178mm)
 #let COMPANY-L-X = 2.5mm    // 左端に縦書きする社名の位置
-#let DOCNUM-L-Y = 115mm     // 右端の資料番号の高さ（回転後の起点）
+#let DOCNUM-L-TOP = 105mm   // 外枠の上端から資料枠の上端まで（回転後の上辺位置）
 
 // ---- 横ページの本文余白 ----
-// landscape は表を主に置くので左右をやや広く、IPO は枠いっぱいを使う。
-#let PAGE-L-MARGIN = (left: 30mm, right: 32mm, top: 22mm, bottom: 22mm)
-#let PAGE-IPO-MARGIN = (left: 24mm, right: 30mm, top: 20mm, bottom: 20mm)
+// landscape も外枠の内側 5mm に統一（A4縦の PAGE-P-MARGIN を時計回りに 90°回転した値）。
+//   左 = 外枠左9 + 5 = 14 / 右 = 297 - (外枠右277 - 5) = 25
+//   上 = 外枠上23 + 5 = 28 / 下 = 210 - (外枠下201 - 5) = 14
+//   （left←下, top←左, right←上, bottom←右 の対応で縦と一致）
+// IPO は枠いっぱいを使う別値（PAGE-IPO-MARGIN）で、ここは変更しない。
+#let PAGE-L-MARGIN = (left: 14mm, right: 25mm, top: 28mm, bottom: 14mm)
+#let PAGE-IPO-MARGIN = (left: 18mm, right: 30mm, top: 28mm, bottom: 14mm)
 
 // ---- IPO 図の枠割り ----
 // 上段（機能名/処理名）: ラベル幅・値幅・ラベル幅・残り
@@ -108,22 +143,33 @@
 #let _doc-number = state("design-doc-number", "")
 #let _company = state("design-company", "ソフト開発株式会社")
 
-// ---- 「資料番号」欄 + ページ番号 n / N ----
+// 数字の後ろに数字幅の空白（U+2007）を足して指定桁ぶんの幅に揃える（右空白詰め）。
+// ASCII 空白と違い Typst で連続空白が畳まれず、tabular 数字と組めば
+// 「/」と総数の間隔が桁数によらず一定になる（総数は「/」直後に左寄せ）。
+#let _pad-num(n, digits) = {
+  let s = str(n)
+  s + "\u{2007}" * calc.max(0, digits - s.len())
+}
+
+// ---- 資料番号の欄 + ページ番号 n / N ----
 // 縦ページでは右上に水平、横ページでは右端に 90°回転して置かれる。
-// 中身は同じなのでこの1つを使い回す。
-//   [資料番号  SD-2026-001]  3 / 10
-//    └── 枠あり ──────────┘  └ 枠なし
+// 中身は同じなのでこの1つを使い回す。ラベル文字は付けず、番号だけを枠内に置く。
+//   [SD-2026-001]  3 / 10
+//    └─ 枠あり ─┘  └ 枠なし
+// ページ番号欄は固定幅＋右寄せ。総数 N を DOCNUM-PAGE-DIGITS 桁ぶんへ右空白詰めし、
+// tabular 数字にすることで "/" の位置・"/" と総数の間隔を安定させる（4桁まで対応）。
 // 総ページ数は counter(page).final() で組版後に確定するため context が要る。
-#let _docnum-strip(doc-number) = context {
+#let _docnum-strip(doc-number, box-width: auto) = context {
   set text(font: JP-SANS, size: FURNITURE-SIZE)
   let total = counter(page).final().first()
   stack(dir: ltr, spacing: DOCNUM-PAGE-GAP,
-    box(stroke: RULE, inset: DOCNUM-INSET,
-      text(size: DOCNUM-SIZE)[
-        #text(tracking: DOCNUM-TRACKING, "資料番号")#h(DOCNUM-GAP)#doc-number
-      ]),
-    // ページ番号は枠外。上下 inset を枠と揃えて文字のベースラインを合わせる。
-    box(inset: (y: DOCNUM-INSET.y), [#counter(page).display("1") / #total]),
+    box(width: box-width, stroke: RULE, inset: DOCNUM-INSET,
+      align(center, text(size: DOCNUM-SIZE)[#doc-number])),
+    // ページ番号は枠外。固定幅の欄に右寄せで置き、上下 inset を枠と揃える。
+    box(width: DOCNUM-PAGE-WIDTH, inset: (y: DOCNUM-INSET.y),
+      align(right, text(number-width: "tabular")[
+        #counter(page).display("1") / #_pad-num(total, DOCNUM-PAGE-DIGITS)
+      ])),
   )
 }
 
@@ -137,8 +183,10 @@
   place(left + horizon, dx: COMPANY-L-X, rotate(90deg, reflow: true,
     text(font: JP-SANS, size: FURNITURE-SIZE,
       tracking: COMPANY-TRACKING, _company.get())))
-  place(top + left, dx: FRAME-L-POS.x + FRAME-L-SIZE.width, dy: DOCNUM-L-Y,
-    rotate(90deg, reflow: true, _docnum-strip(_doc-number.get())))
+  place(top + left, dx: FRAME-L-POS.x + FRAME-L-SIZE.width,
+    dy: FRAME-L-POS.y + DOCNUM-L-TOP,
+    rotate(90deg, reflow: true,
+      _docnum-strip(_doc-number.get(), box-width: DOCNUM-L-WIDTH)))
 }
 
 // ============================================================
@@ -168,13 +216,13 @@
     // そのために measure() で実際の高さを測り、枠の上辺からその分だけ引く。
     // ＝ 資料番号の文字サイズや inset を変えても接地は自動で保たれる。
     background: context {
-      let strip = _docnum-strip(doc-number)
+      let strip = _docnum-strip(doc-number, box-width: DOCNUM-P-WIDTH)
       let h = measure(strip).height
       place(top + left, dx: FRAME-P-POS.x, dy: FRAME-P-POS.y,
         rect(width: FRAME-P-SIZE.width, height: FRAME-P-SIZE.height,
           stroke: FRAME))
-      // 右端も外枠に揃える。top+right 基準なので dx は負で内側へ。
-      place(top + right, dx: -FRAME-P-POS.x, dy: FRAME-P-POS.y - h, strip)
+      // 資料枠は外枠の左端から DOCNUM-P-LEFT の位置に左端を合わせる（左端基準）。
+      place(top + left, dx: FRAME-P-POS.x + DOCNUM-P-LEFT, dy: FRAME-P-POS.y - h, strip)
     },
   )
   set text(font: JP-SANS, size: BODY-SIZE, lang: "ja")
