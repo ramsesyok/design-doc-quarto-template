@@ -67,10 +67,13 @@
 // ---- 本文の体裁 ----
 #let BODY-SIZE = 10.5pt        // 本文の文字サイズ
 #let BODY-LEADING = 0.9em      // 行間
+#let PARA-INDENT = 1em         // 段落先頭の字下げ（1文字ぶん）
 #let FURNITURE-SIZE = 9pt      // 様式の文字（ページ番号）
 
 // 見出しの文字サイズ（h1〜h4）。採番の書式は【3】の set heading を参照。
 #let HEAD-SIZES = (16pt, 13pt, 11.5pt, 10.5pt)
+#let HEAD-INDENT-STEP = 1em    // 見出しの字下げ量。レベル n を (n-1) 段字下げする
+                               // （L1=0, L2=1, L3=2 …。1em はその見出しの1文字ぶん）
 
 // ---- 縦ページ（ポートレート）----
 // 本文は外枠の内側 5mm に流し込む（外枠と本文の間隔を上下左右で 5mm に統一）。
@@ -148,6 +151,9 @@
 // state を使うのは、landscape()/ipo() が design-doc() の引数を直接見られない
 // （別の呼び出しなので）ため。
 #let _doc-number = state("design-doc-number", "")
+// 直前の見出しレベルに応じた本文の字下げ段数（L1=0, L2=1, L3=2 …）。
+// 各 show heading が更新し、show par が本文段落の左字下げに使う。
+#let _sec-indent = state("design-sec-indent", 0)
 
 // 数字の後ろに数字幅の空白（U+2007）を足して指定桁ぶんの幅に揃える（右空白詰め）。
 // ASCII 空白と違い Typst で連続空白が畳まれず、tabular 数字と組めば
@@ -227,7 +233,18 @@
     },
   )
   set text(font: JP-SANS, size: BODY-SIZE, lang: "ja")
-  set par(justify: true, leading: BODY-LEADING)
+  // 段落の先頭を1文字字下げ。all: true で見出し直後の段落も字下げする（和文の作法）。
+  set par(justify: true, leading: BODY-LEADING,
+    first-line-indent: (amount: PARA-INDENT, all: true))
+  // 本文段落を、直前の見出しレベルと同じ位置から始める（見出し配下の本文をレベルぶん
+  // 字下げ）。字下げ段数は _sec-indent（各 show heading が更新）。見出し自身は各
+  // show heading の inset で字下げ済み。表・図キャプションなど段落でない要素や
+  // セル内の段落には影響しない（top-level の段落だけがこの show に掛かる）。
+  show par: it => context { pad(left: _sec-indent.get() * HEAD-INDENT-STEP, it) }
+  // 箇条書き（list/enum）も本文と同様に見出しレベルぶん字下げする（段落ではないので
+  // 先頭1文字の字下げは付かない）。表・IPO セル内のリストには効かない（top-level のみ）。
+  show list: it => context { pad(left: _sec-indent.get() * HEAD-INDENT-STEP, it) }
+  show enum: it => context { pad(left: _sec-indent.get() * HEAD-INDENT-STEP, it) }
 
   // 章番号の自動採番（付録を A.1 にしたい等はここを差し替えるだけ）
   set heading(numbering: "1.1.1")
@@ -242,25 +259,30 @@
     }
   }
   // 見出しの体裁。サイズは HEAD-SIZES、前後の空きは下の above/below。
+  // 左インセットで見出しをレベルごとに字下げ（L1=0, L2=1, L3=2 …段）。
   // 図表カウンタのリセットは h1/h2 だけに掛ける（h3 以降で戻すと
   // 「章.節-連番」の連番が節の途中で 1 に戻ってしまう）。
   show heading.where(level: 1): it => {
     reset-floats()
+    _sec-indent.update(0)
     set text(size: HEAD-SIZES.at(0), weight: "bold")
-    block(above: 1.4em, below: 0.8em, it)
+    block(above: 1.4em, below: 0.8em, inset: (left: 0 * HEAD-INDENT-STEP), it)
   }
   show heading.where(level: 2): it => {
     reset-floats()
+    _sec-indent.update(1)
     set text(size: HEAD-SIZES.at(1), weight: "bold")
-    block(above: 1.1em, below: 0.6em, it)
+    block(above: 1.1em, below: 0.6em, inset: (left: 1 * HEAD-INDENT-STEP), it)
   }
   show heading.where(level: 3): it => {
+    _sec-indent.update(2)
     set text(size: HEAD-SIZES.at(2), weight: "bold")
-    block(above: 1em, below: 0.5em, it)
+    block(above: 1em, below: 0.5em, inset: (left: 2 * HEAD-INDENT-STEP), it)
   }
   show heading.where(level: 4): it => {
+    _sec-indent.update(3)
     set text(size: HEAD-SIZES.at(3), weight: "bold")
-    block(above: 0.9em, below: 0.4em, it)
+    block(above: 0.9em, below: 0.4em, inset: (left: 3 * HEAD-INDENT-STEP), it)
   }
 
   // 図表番号の接頭辞「章.節」を、指定位置の見出しカウンタから組み立てる。
