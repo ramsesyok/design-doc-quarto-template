@@ -3,8 +3,7 @@
 //  外部パッケージ不要 = 完全オフライン
 //  会社様式（再現目標: ルートの portrait.pdf / landscape.pdf / ipo-landscape.pdf）
 //   - 全ページ: 本文を囲む外枠
-//   - 右上: 枠付き「資料番号」ラベル + 番号 + ページ「n / N」
-//   - 下部中央: 社名（文字間広め）
+//   - 右上: 枠付き資料番号 + ページ「n / N」
 //   - 横向きページ: 様式ごと 90°回転（縦綴じのまま回して読む配置）
 //   - ipo() : IPO図（機能名/処理名 + 入力/処理/出力 の定型表）
 // ============================================================
@@ -29,24 +28,22 @@
 //      │        │                                  │  │
 //      │        │  FRAME-P-SIZE.height = 268mm     │  │
 //      │        └──────────────────────────────────┘  │
-//      │                 ソ フ ト 開 発 株 式 会 社      │ ← footer
 //      └──────────────────────────────────────────────┘
 //
 //  縦は上 20mm・下 9mm（297 - 20 - 268）で非対称。原紙がそうなっている。
 //  左右も非対称で 左 23mm・右 9mm（210 - 23 - 178 = 9）。
 //
 //  横向き（landscape / ipo）は A4 横 = 297 x 210mm。様式ごと 90°回転する。
-//  縦綴じのまま用紙を回して読む配置なので、社名が左端に縦、資料番号が右端に縦。
+//  縦綴じのまま用紙を回して読む配置なので、資料番号を右端に縦置きする。
 //
 //      0                                                        297mm
 //      ┌──────────────────────────────────────────────────────────┐
-//      │  ↑ COMPANY-L-X = 2.5mm（社名を左端に縦書き）              │
 //      │     ┌─ FRAME-L-POS = (x: 9mm, y: 23mm) 外枠の左上         │
-//      │ 社  ↓                                            資  │    │ ← 資料番号は
-//      │ フ  ┌──────────────────────────────────────────┐  料  │    │   外枠の右辺に
-//      │ ト  │←─ FRAME-L-SIZE.width = 268mm ───────────→│  番  │    │   接して 90°縦置き
-//      │ 開  │                                          │  号  │    │   起点 dy =
-//      │ 発  │    FRAME-L-SIZE.height = 178mm            │      │    │   上辺 = 外枠上+DOCNUM-L-TOP
+//      │     ↓                                            資  │    │ ← 資料番号は
+//      │     ┌──────────────────────────────────────────┐  料  │    │   外枠の右辺に
+//      │     │←─ FRAME-L-SIZE.width = 268mm ───────────→│  番  │    │   接して 90°縦置き
+//      │     │                                          │  号  │    │   起点 dy =
+//      │     │    FRAME-L-SIZE.height = 178mm            │      │    │   上辺 = 外枠上+DOCNUM-L-TOP
 //      │     └──────────────────────────────────────────┘      │    │
 //      └──────────────────────────────────────────────────────────┘
 //
@@ -70,8 +67,7 @@
 // ---- 本文の体裁 ----
 #let BODY-SIZE = 10.5pt        // 本文の文字サイズ
 #let BODY-LEADING = 0.9em      // 行間
-#let FURNITURE-SIZE = 9pt      // 様式の文字（社名・ページ番号）
-#let COMPANY-TRACKING = 6pt    // 社名の字間。原紙が広めなので開けてある
+#let FURNITURE-SIZE = 9pt      // 様式の文字（ページ番号）
 
 // 見出しの文字サイズ（h1〜h4）。採番の書式は【3】の set heading を参照。
 #let HEAD-SIZES = (16pt, 13pt, 11.5pt, 10.5pt)
@@ -83,7 +79,6 @@
 #let PAGE-P-MARGIN = (left: 28mm, right: 14mm, top: 25mm, bottom: 14mm)  // 本文の余白
 #let FRAME-P-POS = (x: 23mm, y: 20mm)                    // 外枠の左上
 #let FRAME-P-SIZE = (width: 178mm, height: 268mm)        // 外枠の大きさ
-#let FOOTER-DESCENT = 7mm                                // 社名を下げる量（本文下端から。外枠下辺のすぐ下に来る）
 
 // ---- 資料番号の欄（見た目は縦横で共通、寸法・位置は縦横で分離）----
 #let DOCNUM-INSET = (x: 3.5mm, y: 1.65mm) // 資料番号枠の内側の余白（y が枠の高さを決める）
@@ -106,7 +101,6 @@
 // ---- 横ページ（landscape / IPO 共通の様式）----
 #let FRAME-L-POS = (x: 9mm, y: 23mm)
 #let FRAME-L-SIZE = (width: 268mm, height: 178mm)
-#let COMPANY-L-X = 2.5mm    // 左端に縦書きする社名の位置
 #let DOCNUM-L-TOP = 105mm   // 外枠の上端から資料枠の上端まで（回転後の上辺位置）
 
 // ---- 横ページの本文余白 ----
@@ -147,14 +141,13 @@
 )
 
 // ============================================================
-//  【2】様式パーツ（外枠・資料番号・社名）
+//  【2】様式パーツ（外枠・資料番号）
 // ============================================================
 
 // 様式メタ。design-doc() が設定し、横向きページの様式描画が読む。
 // state を使うのは、landscape()/ipo() が design-doc() の引数を直接見られない
 // （別の呼び出しなので）ため。
 #let _doc-number = state("design-doc-number", "")
-#let _company = state("design-company", "ソフト開発株式会社")
 
 // 数字の後ろに数字幅の空白（U+2007）を足して指定桁ぶんの幅に揃える（右空白詰め）。
 // ASCII 空白と違い Typst で連続空白が畳まれず、tabular 数字と組めば
@@ -186,16 +179,13 @@
   )
 }
 
-// ---- 横向きページの様式（枠・社名・資料番号を 90°回転で配置） ----
-// 縦綴じのまま用紙を回して読む配置なので、社名が左端に縦、資料番号が右端に縦。
+// ---- 横向きページの様式（枠・資料番号を 90°回転で配置） ----
+// 縦綴じのまま用紙を回して読む配置なので、資料番号を右端に縦置きする。
 // 資料番号の枠は外枠の右辺に接する（原紙準拠）ため、x は
 // 「外枠の左端 + 外枠の幅」で求める。外枠を動かせば資料番号も追従する。
 #let _side-furniture = context {
   place(top + left, dx: FRAME-L-POS.x, dy: FRAME-L-POS.y,
     rect(width: FRAME-L-SIZE.width, height: FRAME-L-SIZE.height, stroke: FRAME))
-  place(left + horizon, dx: COMPANY-L-X, rotate(90deg, reflow: true,
-    text(font: JP-SANS, size: FURNITURE-SIZE,
-      tracking: COMPANY-TRACKING, _company.get())))
   place(top + left, dx: FRAME-L-POS.x + FRAME-L-SIZE.width,
     dy: FRAME-L-POS.y + DOCNUM-L-TOP,
     rotate(90deg, reflow: true,
@@ -210,20 +200,18 @@
 // ============================================================
 #let design-doc(
   title: "設計書", subtitle: "", author: "",
-  doc-number: "", company: "ソフト開発株式会社",
+  doc-number: "",
+  cover: false,                        // 表紙（タイトルページ）を出すか。既定は出さない
   toc: false, toc-title: "目 次", toc-depth: 3,
   body,
 ) = {
   set document(title: title, author: author)
   _doc-number.update(doc-number)
-  _company.update(company)
   set page(
     paper: "a4",
     margin: PAGE-P-MARGIN,
     header: none,
-    footer: align(center, text(font: JP-SANS, size: FURNITURE-SIZE,
-      tracking: COMPANY-TRACKING, company)),
-    footer-descent: FOOTER-DESCENT,
+    footer: none,
     // 外枠と資料番号は「背景」層に描く。本文の流し込みに影響させないため。
     // 資料番号は枠の下辺が外枠の上辺にちょうど接するように置く（原紙準拠）。
     // そのために measure() で実際の高さを測り、枠の上辺からその分だけ引く。
@@ -296,17 +284,20 @@
     } else { it }
   }
 
-  // ---- タイトルページ ----
+  // ---- タイトルページ（cover: true のときだけ出す。既定は出さない）----
   // 見出し（heading）にはしない。h1 にすると章カウンタを消費し、
   // 目次にも項目として載ってしまう。
-  align(center + horizon)[
-    #text(font: JP-SANS, size: 24pt, weight: "bold", title)
-    #v(6pt)
-    #if subtitle != "" { text(size: 13pt, fill: rgb("#666"), subtitle) }
-    #v(24pt)
-    #text(size: 11pt, fill: rgb("#666"), author)
-  ]
-  pagebreak()
+  // 表紙を出さないときは pagebreak も打たない（先頭の空ページを避けるため）。
+  if cover {
+    align(center + horizon)[
+      #text(font: JP-SANS, size: 24pt, weight: "bold", title)
+      #v(6pt)
+      #if subtitle != "" { text(size: 13pt, fill: rgb("#666"), subtitle) }
+      #v(24pt)
+      #text(size: 11pt, fill: rgb("#666"), author)
+    ]
+    pagebreak()
+  }
 
   // 目次（toc: true のとき）。章番号・ページ番号・リーダー線は outline が自動生成する。
   if toc {
@@ -333,8 +324,8 @@
 //  【4】landscape() : 中身だけ横向き様式ページにして、終わったら縦に戻す
 //
 //  末尾の set page(flipped: false) が「戻す」役。これが無いと以降の本文が
-//  全部横になる。header/footer を none にするのは、横ページの社名と
-//  ページ番号を _side-furniture が回転して描くため（二重に出さない）。
+//  全部横になる。header/footer を none にするのは、横ページのページ番号を
+//  _side-furniture が回転して描くため（二重に出さない）。
 // ============================================================
 #let landscape(body) = {
   set page(
