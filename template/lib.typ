@@ -116,7 +116,12 @@
 //   （left←下, top←左, right←上, bottom←右 の対応で縦と一致）
 // IPO は枠いっぱいを使う別値（PAGE-IPO-MARGIN）で、ここは変更しない。
 #let PAGE-L-MARGIN = (left: 14mm, right: 25mm, top: 28mm, bottom: 14mm)
-#let PAGE-IPO-MARGIN = (left: 18mm, right: 30mm, top: 28mm, bottom: 14mm)
+// IPO は表示領域を広く取るため左右を外枠の内側 3mm まで詰める（上は 5mm）。
+// 左右は fr 列で本文幅に追従するのでここで決まるが、下辺（表の下端）は
+// IPO-BODY-ROW（固定高さ）で決まる → 下の隙間は IPO-BOTTOM-GAP 側で調整する。
+// bottom は表の下辺をクリップしないための余白（隙間量そのものは決めない）。
+//   左 = 外枠左9 + 3 = 12 / 右 = 297 - (外枠右277 - 3) = 23 / 上 = 外枠上23 + 5 = 28
+#let PAGE-IPO-MARGIN = (left: 12mm, right: 23mm, top: 28mm, bottom: 9mm)
 
 // ---- IPO 図の枠割り ----
 // 上段（機能名/処理名）: ラベル幅・値幅・ラベル幅・残り
@@ -127,11 +132,19 @@
 // （HTML 側の見た目が PDF とずれる）。
 #let IPO-COLS = (1fr, 4.9fr, 1.1fr)
 #let IPO-HEAD-ROW = 8mm     // 「入力/処理/出力」の見出し行の高さ
-#let IPO-BODY-ROW = 150mm   // 本体の高さ。増やすと枠が下にはみ出すので注意
 #let IPO-INSET = (x: 2.5mm, y: 2mm)
 #let IPO-HEAD-TRACKING = 3pt
 // 上段と下段の table を隙間なく繋ぐ。罫線1本ぶん（0.6pt）重ねる。
 #let IPO-STACK-OVERLAP = -0.6pt
+// 本体の高さは固定だが、値を直書きせず「表の下辺が外枠の下辺から IPO-BOTTOM-GAP だけ
+// 内側に来る」よう逆算する。表の上辺 = PAGE-IPO-MARGIN.top なので、上マージンを
+// 変えても下の隙間は保たれる（PAGE-IPO-MARGIN.bottom は下辺をクリップしないための
+// 余白で、隙間量そのものは決めない）。
+#let IPO-BOTTOM-GAP = 3mm   // 外枠の下辺と IPO 枠の下辺の隙間
+#let IPO-BODY-ROW = (
+  FRAME-L-POS.y + FRAME-L-SIZE.height - IPO-BOTTOM-GAP
+    - PAGE-IPO-MARGIN.top - IPO-TITLE-ROW - IPO-HEAD-ROW - IPO-STACK-OVERLAP
+)
 
 // ============================================================
 //  【2】様式パーツ（外枠・資料番号・社名）
