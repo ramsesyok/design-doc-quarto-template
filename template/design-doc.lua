@@ -196,7 +196,16 @@ function Div(el)
   end
 
   if el.classes:includes('ipo') then
-    local func, proc = '', ''
+    -- 記法（div 属性で指定。機能名/処理名/タイトルを別々に扱う）:
+    --   ::: {.ipo module="受注管理" caption="受注処理の流れ"}
+    --   ## 受注登録        ← 見出し = 処理名
+    -- 機能名 = module 属性、処理名 = 最初の見出し、タイトル = caption 属性。
+    -- module 省略時は旧記法として見出しを「機能名 / 処理名」で分割する（後方互換）。
+    local cap = el.attributes.caption or ''
+    local func = el.attributes.module
+    local hasModule = (func ~= nil)
+    if not hasModule then func = '' end
+    local proc = ''
     local titleSeen = false
     local cols = {
       input = pandoc.Blocks({}),
@@ -211,8 +220,12 @@ function Div(el)
         if key then
           cur = key
         elseif not titleSeen then
-          func = txt:match('^(.-)%s*/') or txt
-          proc = txt:match('/%s*(.*)$') or ''
+          if hasModule then
+            proc = txt                                  -- 新記法: 見出し = 処理名
+          else
+            func = txt:match('^(.-)%s*/') or txt        -- 旧記法: 見出しを分割
+            proc = txt:match('/%s*(.*)$') or ''
+          end
           titleSeen = true
         end
       elseif cur then
@@ -250,7 +263,8 @@ function Div(el)
     end
     local out = pandoc.Blocks({ pandoc.RawBlock('typst',
       '#ipo(\n  function-name: "' .. func ..
-      '",\n  process-name: "' .. proc .. '",\n  input: [') })
+      '",\n  process-name: "' .. proc ..
+      '",\n  caption: "' .. cap .. '",\n  input: [') })
     out:extend(cols.input)
     out:insert(pandoc.RawBlock('typst', '],\n  process: ['))
     out:extend(cols.process)
