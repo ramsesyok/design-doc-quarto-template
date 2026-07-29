@@ -115,6 +115,9 @@
 #let SPEC-SUB-SIZE = 18pt       // 「SPECIFICATION」の文字サイズ
 #let SPEC-LABEL-SIZE = 9pt      // 中央ラベル（スペック番号/SPEC No. 等）の文字サイズ
 #let SPEC-GAP = 5mm             // 表題欄と本文の間隔（本文の上マージンに加算）
+#let SPEC-COMPANY-SIZE = 10.5pt // スペック様式フッターの会社名（日/英とも）の文字サイズ
+#let SPEC-COMPANY-GAP = 3mm     // 外枠の下辺から会社名フッターまでの間隔
+#let SPEC-COMPANY-LEADING = 0.3em // 日本語会社名と英語会社名の行間（詰めると英語が上に寄る）
 
 // ---- 横ページ（landscape / IPO 共通の様式）----
 #let FRAME-L-POS = (x: 14mm, y: 23mm)
@@ -170,6 +173,9 @@
 #let _spec = state("design-spec", false)
 // 改訂符号（スペック様式で番号と別セルに出す）。横ページ/IPO の様式描画が読む。
 #let _doc-revision = state("design-doc-revision", "")
+// スペック様式フッターの会社名（日/英）。横ページ/IPO の様式描画が読む。
+#let _company-ja = state("design-company-ja", "")
+#let _company-en = state("design-company-en", "")
 // 直前の見出しレベルに応じた本文の字下げ段数（L1=0, L2=1, L3=2 …）。
 // 各 show heading が更新し、show par が本文段落の左字下げに使う。
 #let _sec-indent = state("design-sec-indent", 0)
@@ -230,6 +236,14 @@
   )
 }
 
+// ---- スペック様式のフッター（会社名。日本語→英語、指定幅の中央に2行）----
+// width の中央に配置する。縦は外枠の下（幅=ページ幅）、横/IPO は左余白に 90°回転で置く。
+#let _spec-footer(company-ja, company-en, width) = block(width: width, align(center, {
+  set text(font: JP-SANS, size: SPEC-COMPANY-SIZE)
+  set par(leading: SPEC-COMPANY-LEADING)
+  text(company-ja); linebreak(); text(company-en)
+}))
+
 // ---- 横向きページの様式（枠・資料番号を 90°回転で配置） ----
 // 縦綴じのまま用紙を回して読む配置なので、資料番号を右端に縦置きする。
 // 資料番号の枠は外枠の右辺に接する（原紙準拠）ため、x は
@@ -251,6 +265,11 @@
       dx: FRAME-L-POS.x + FRAME-L-SIZE.width + 1mm,
       dy: FRAME-L-POS.y + FRAME-L-SIZE.height - DOCNUM-PAGE-WIDTH - 2mm,
       rotate(90deg, reflow: true, _pagenum-box()))
+    // フッター（会社名）を左余白に 90°回転で、ページ中央（縦）に置く（縦様式を回転した形）。
+    let ft = _spec-footer(_company-ja.get(), _company-en.get(), 210mm)
+    let ftw = measure(ft).height   // 回転前の高さ = 回転後の帯の幅
+    place(top + left, dx: (FRAME-L-POS.x - ftw) / 2, dy: 0mm,
+      rotate(90deg, reflow: true, ft))
   } else {
     // 通常様式: 資料番号（番号+改訂記号）+ ページ番号を外枠の右辺に 90°回転で置く。
     place(top + left, dx: FRAME-L-POS.x + FRAME-L-SIZE.width,
@@ -271,6 +290,7 @@
   doc-number: "",
   doc-revision: "",                    // 改訂記号（A〜Z / NC）。既定は空。資料番号の末尾に結合
   spec: false,                         // スペック様式（全ページ上部に表題欄）にするか。既定 false
+  company-ja: "", company-en: "",      // スペック様式のフッターに出す会社名（日本語/英語）
   cover: false,                        // 表紙（タイトルページ）を出すか。既定は出さない
   toc: false, toc-title: "目 次", toc-depth: 3,
   body,
@@ -284,6 +304,8 @@
   // スペック様式は別セルに使うため）。縦ページは背景で引数を直接使う。
   _doc-number.update(doc-number)
   _doc-revision.update(doc-revision)
+  _company-ja.update(company-ja)
+  _company-en.update(company-en)
   _spec.update(spec)
   set page(
     paper: "a4",
@@ -312,6 +334,10 @@
         place(top + left,
           dx: FRAME-P-POS.x + DOCNUM-P-LEFT + DOCNUM-P-WIDTH + DOCNUM-PAGE-GAP,
           dy: FRAME-P-POS.y - ph - 1mm, pg)
+        // フッター: 会社名を外枠の下・ページ中央に。日本語（上）→ 英語（下）。
+        place(top + left, dx: 0mm,
+          dy: FRAME-P-POS.y + FRAME-P-SIZE.height + SPEC-COMPANY-GAP,
+          _spec-footer(company-ja, company-en, 100%))
       } else {
         // 通常様式: 資料番号枠 + ページ番号を外枠の左端から DOCNUM-P-LEFT、上辺に接地。
         let strip = _docnum-strip(doc-id, box-width: DOCNUM-P-WIDTH)
