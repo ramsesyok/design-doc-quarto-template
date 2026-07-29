@@ -142,6 +142,8 @@
 // 上段（機能名/処理名）: ラベル幅・値幅・ラベル幅・残り
 #let IPO-TITLE-COLS = (24mm, 72mm, 24mm, 1fr)
 #let IPO-TITLE-ROW = 8.5mm
+#let IPO-NUM-ROW = 5mm      // 最上部「表番号」の領域高さ（表番号とIPO表の間隔を決める）
+#let IPO-NUM-SIZE = 10.5pt  // 表番号の文字サイズ
 // 下段（入力/処理/出力）: 列比。処理欄に mermaid を置くので中央を広く取る。
 // **この比は design-doc.css の .ipo-frame の grid-template-columns と揃えること**
 // （HTML 側の見た目が PDF とずれる）。
@@ -156,9 +158,10 @@
 // 変えても下の隙間は保たれる（PAGE-IPO-MARGIN.bottom は下辺をクリップしないための
 // 余白で、隙間量そのものは決めない）。
 #let IPO-BOTTOM-GAP = 3mm   // 外枠の下辺と IPO 枠の下辺の隙間
+// 最上部の表番号欄（IPO-NUM-ROW）ぶんも差し引いて、表全体が外枠下辺の内側に収まるようにする。
 #let IPO-BODY-ROW = (
   FRAME-L-POS.y + FRAME-L-SIZE.height - IPO-BOTTOM-GAP
-    - PAGE-IPO-MARGIN.top - IPO-TITLE-ROW - IPO-HEAD-ROW - IPO-STACK-OVERLAP
+    - PAGE-IPO-MARGIN.top - IPO-NUM-ROW - IPO-TITLE-ROW - IPO-HEAD-ROW - IPO-STACK-OVERLAP
 )
 
 // ============================================================
@@ -243,6 +246,21 @@
   set par(leading: SPEC-COMPANY-LEADING)
   text(company-ja); linebreak(); text(company-en)
 }))
+
+// 図表番号の接頭辞「章.節」を、指定位置の見出しカウンタから組み立てる。
+// design-doc()（図表の採番・参照）と ipo()（表番号）で共用する。
+#let _section-prefix(loc) = {
+  let heads = counter(heading).at(loc)
+  numbering("1.1", heads.at(0, default: 0), heads.at(1, default: 0))
+}
+
+// IPO の表番号用の接頭辞。節がある = 章.節（例 3.1）、節なし（章直下）= 章のみ（例 4）。
+#let _ipo-prefix(loc) = {
+  let heads = counter(heading).at(loc)
+  let sec = heads.at(1, default: 0)
+  if sec == 0 { numbering("1", heads.at(0, default: 0)) }
+  else { numbering("1.1", heads.at(0, default: 0), sec) }
+}
 
 // ---- 横向きページの様式（枠・資料番号を 90°回転で配置） ----
 // 縦綴じのまま用紙を回して読む配置なので、資料番号を右端に縦置きする。
@@ -404,16 +422,10 @@
     block(above: 0.9em, below: 0.4em, inset: (left: 3 * HEAD-INDENT-STEP), it)
   }
 
-  // 図表番号の接頭辞「章.節」を、指定位置の見出しカウンタから組み立てる。
-  let section-prefix(loc) = {
-    let heads = counter(heading).at(loc)
-    numbering("1.1", heads.at(0, default: 0), heads.at(1, default: 0))
-  }
-
-  // 図・表の日本語キャプションと採番（「図 3.2-1」＝ 章.節-連番）
+  // 図・表の日本語キャプションと採番（「図 3.2-1」＝ 章.節-連番。接頭辞は _section-prefix）
   set figure.caption(separator: [　])
   show figure.where(kind: table): set figure.caption(position: top)
-  set figure(numbering: n => context section-prefix(here()) + "-" + str(n))
+  set figure(numbering: n => context _section-prefix(here()) + "-" + str(n))
   // 参照(@fig-x)も本体と同じ番号にする。必ず対象図表の location で counter を読む
   // （参照位置で評価すると節番号がずれるため）。
   show ref: it => {
@@ -421,7 +433,7 @@
     if el != none and el.func() == figure {
       let loc = el.location()
       let n = counter(figure.where(kind: el.kind)).at(loc).first()
-      link(loc, [#el.supplement #section-prefix(loc)-#n])
+      link(loc, [#el.supplement #_section-prefix(loc)-#n])
     } else { it }
   }
 
@@ -503,6 +515,7 @@
 // ============================================================
 #let ipo(
   function-name: "", process-name: "",
+  caption: "",                       // 表番号の右に付けるタイトル（機能名/処理名とは別）
   input: [], process: [], output: [],
 ) = context {
   // スペック様式では右側に表題欄の帯（幅 2*SPEC-ROW）が入るので IPO 表の右余白を広げる。
@@ -517,23 +530,36 @@
   // 欄見出し（機能名/処理名/入力/処理/出力）の共通スタイル
   let head(t) = align(center + horizon,
     text(weight: "bold", tracking: IPO-HEAD-TRACKING, t))
-  stack(spacing: IPO-STACK-OVERLAP,
-    // 上段: 機能名 / 処理名
-    table(
-      columns: IPO-TITLE-COLS, rows: IPO-TITLE-ROW,
-      stroke: RULE, inset: (x: 2mm, y: 0pt),
-      head("機能名"), align(horizon, function-name),
-      head("処理名"), align(horizon, process-name),
-    ),
-    // 下段: 入力 / 処理 / 出力
-    // 見出しセルだけ inset を 0 にして、head() の中央揃えを効かせる。
-    table(
-      columns: IPO-COLS, rows: (IPO-HEAD-ROW, IPO-BODY-ROW),
-      stroke: RULE, inset: IPO-INSET,
-      table.cell(inset: 0pt, head("入力")),
-      table.cell(inset: 0pt, head("処理")),
-      table.cell(inset: 0pt, head("出力")),
-      align(top, input), align(top, process), align(top, output),
+  // この IPO を「表」として採番する（図ではなく表。ドキュメントの表と同じ連番列に載る）。
+  // step は表番号の位置で行い、その位置の値を表示する。
+  let tblc = counter(figure.where(kind: "quarto-float-tbl"))
+  stack(dir: ttb, spacing: 0pt,
+    // 表番号 + タイトル: 枠なしで IPO 表の外（上）に、左右中央・上寄せで記載。
+    // 上寄せにするのは、本文上マージン（外枠の内側5mm）にテキスト上端を合わせるため。
+    block(width: 100%, height: IPO-NUM-ROW, {
+      tblc.step()
+      align(center + top, context text(size: IPO-NUM-SIZE, top-edge: "cap-height")[
+        表 #_ipo-prefix(here())-#tblc.get().first()#if caption != "" [　#caption]
+      ])
+    }),
+    // IPO 本体（2つの table を罫線1本ぶん重ねて接続）
+    stack(spacing: IPO-STACK-OVERLAP,
+      // 上段: 機能名 / 処理名
+      table(
+        columns: IPO-TITLE-COLS, rows: IPO-TITLE-ROW,
+        stroke: RULE, inset: (x: 2mm, y: 0pt),
+        head("機能名"), align(horizon, function-name),
+        head("処理名"), align(horizon, process-name),
+      ),
+      // 下段: 入力 / 処理 / 出力（見出しセルだけ inset 0 で中央揃えを効かせる）
+      table(
+        columns: IPO-COLS, rows: (IPO-HEAD-ROW, IPO-BODY-ROW),
+        stroke: RULE, inset: IPO-INSET,
+        table.cell(inset: 0pt, head("入力")),
+        table.cell(inset: 0pt, head("処理")),
+        table.cell(inset: 0pt, head("出力")),
+        align(top, input), align(top, process), align(top, output),
+      ),
     ),
   )
   set page(flipped: false)
