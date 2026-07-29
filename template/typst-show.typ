@@ -1,6 +1,6 @@
 // Quarto 用テンプレートパーシャル。
 // qmd のフロントマター（title / subtitle / author / doc-number / doc-revision /
-// cover / toc / toc-title / toc-depth）を lib.typ の design-doc() に引き渡す。
+// spec / cover / toc / toc-title / toc-depth）を lib.typ の design-doc() に引き渡す。
 #show: design-doc.with(
 $if(title)$
   title: "$title$",
@@ -16,6 +16,9 @@ $if(doc-number)$
 $endif$
 $if(doc-revision)$
   doc-revision: "$doc-revision$",
+$endif$
+$if(spec)$
+  spec: true,
 $endif$
 $if(cover)$
   cover: true,
