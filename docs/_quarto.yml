@@ -35,6 +35,7 @@ book:
 
 lang: ja
 doc-number: SD-2026-001
+doc-revision: ""       # 改訂記号（A〜Z / NC）。doc-number の末尾に結合して資料番号に表示。空=改訂記号なし
 
 toc: true
 toc-title: 目 次
