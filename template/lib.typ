@@ -68,10 +68,12 @@
 #let BODY-SIZE = 10.5pt        // 本文の文字サイズ
 #let BODY-LEADING = 0.9em      // 行間
 #let PARA-INDENT = 1em         // 段落先頭の字下げ（1文字ぶん）
+#let LIST-INDENT = 1em         // 箇条書きの追加字下げ（見出しレベルぶんに加えて1文字ぶん）
 #let FURNITURE-SIZE = 9pt      // 様式の文字（ページ番号）
 
 // 見出しの文字サイズ（h1〜h4）。採番の書式は【3】の set heading を参照。
-#let HEAD-SIZES = (16pt, 13pt, 11.5pt, 10.5pt)
+// 現在は全レベル 10.5pt（本文と同サイズ）。レベルごとに変えたいときは各値を戻す。
+#let HEAD-SIZES = (10.5pt, 10.5pt, 10.5pt, 10.5pt)
 #let HEAD-INDENT-STEP = 1em    // 見出しの字下げ量。レベル n を (n-1) 段字下げする
                                // （L1=0, L2=1, L3=2 …。1em はその見出しの1文字ぶん）
 
@@ -241,13 +243,18 @@
   // show heading の inset で字下げ済み。表・図キャプションなど段落でない要素や
   // セル内の段落には影響しない（top-level の段落だけがこの show に掛かる）。
   show par: it => context { pad(left: _sec-indent.get() * HEAD-INDENT-STEP, it) }
-  // 箇条書き（list/enum）も本文と同様に見出しレベルぶん字下げする（段落ではないので
-  // 先頭1文字の字下げは付かない）。表・IPO セル内のリストには効かない（top-level のみ）。
-  show list: it => context { pad(left: _sec-indent.get() * HEAD-INDENT-STEP, it) }
-  show enum: it => context { pad(left: _sec-indent.get() * HEAD-INDENT-STEP, it) }
+  // 箇条書き（list/enum）は見出しレベルぶんに加えて さらに LIST-INDENT（1文字）字下げする
+  // （段落の先頭字下げと頭を揃える）。表・IPO セル内のリストには効かない（top-level のみ）。
+  show list: it => context { pad(left: _sec-indent.get() * HEAD-INDENT-STEP + LIST-INDENT, it) }
+  show enum: it => context { pad(left: _sec-indent.get() * HEAD-INDENT-STEP + LIST-INDENT, it) }
 
-  // 章番号の自動採番（付録を A.1 にしたい等はここを差し替えるだけ）
-  set heading(numbering: "1.1.1")
+  // 章番号の自動採番。レベル1だけ末尾にドットを付ける（"1." / "1.1" / "1.1.1"）。
+  // 付録を A.1 にしたい等はここを差し替える。
+  set heading(numbering: (..n) => {
+    let nums = n.pos()
+    if nums.len() == 1 { numbering("1.", nums.at(0)) }
+    else { numbering("1.1.1.1", ..nums) }
+  })
   // 章（level 1）・節（level 2）の先頭で図表カウンタを 0 に戻す。
   // → 図表番号は「章.節-連番」で、連番は節ごとにリセットされる。
   // （関数にして毎回新しい update を発行する。値を使い回すと1回しか発火しない）
