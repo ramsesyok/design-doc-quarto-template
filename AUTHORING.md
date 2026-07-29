@@ -51,16 +51,34 @@ book:
 
 lang: ja
 doc-number: SD-2026-001   # 資料番号（各ページ右上・横ページ右端に出る）
+doc-revision: ""          # 改訂記号（A〜Z / NC）。doc-number の末尾に結合。空=なし
 
-cover: true               # 表紙（タイトルページ）を出す。省略／false で表紙なし
+spec: false               # スペック様式（表題欄）にするか。true で切り替え
+company-ja: ソフト開発株式会社          # スペック様式フッターの会社名（日本語）
+company-en: Soft Development Co., Ltd.  # スペック様式フッターの会社名（英語）
+
+cover: false              # 表紙（タイトルページ）を出す。true で出す
 toc: true                 # 目次を出す
 toc-title: 目 次          # 目次の見出し
 toc-depth: 3              # 目次に載せる見出しの深さ
 ```
 
 - **`doc-number`**: 全ページの資料番号欄に表示されます。
+- **`doc-revision`**: 改訂記号（`A`〜`Z` または `NC`）。`doc-number` の末尾に結合して表示されます（例: `SD-2026-001A`）。空なら番号のみ。
 - **`cover`**: 既定は表紙なし。表紙が要るときだけ `true` にします。
 - **`toc`**: 目次の自動生成。章番号・リーダー線・実ページ番号つきで、本文を直せば自動追従します。
+
+### スペック様式（`spec: true`）
+
+`spec: true` にすると、資料番号欄のかわりに**表題欄**（左に「スペック / SPECIFICATION」、右に
+スペック番号＝`doc-number` と 改訂符号＝`doc-revision`）を全ページの上部（A4横・IPO は右側に
+90°回転）に出す様式へ切り替わります。あわせて外枠の下に会社名フッターを出します。
+
+- **`spec`**: `true` でスペック様式。既定 `false`（通常の資料番号様式）。
+- **`company-ja` / `company-en`**: スペック様式フッターに出す会社名（日本語・英語）。
+  `spec: true` のときだけ表示されます（A4縦は外枠下・ページ中央、A4横/IPO は左余白に回転）。
+
+執筆する Markdown（本文の書き方）は `spec` の値に関係なく同じです。
 
 ---
 
