@@ -209,12 +209,16 @@
 #let design-doc(
   title: "設計書", subtitle: "", author: "",
   doc-number: "",
+  doc-revision: "",                    // 改訂記号（A〜Z / NC）。既定は空。資料番号の末尾に結合
   cover: false,                        // 表紙（タイトルページ）を出すか。既定は出さない
   toc: false, toc-title: "目 次", toc-depth: 3,
   body,
 ) = {
   set document(title: title, author: author)
-  _doc-number.update(doc-number)
+  // 資料番号は「番号 + 改訂記号」を結合して表示する（改訂記号が空なら番号のみ）。
+  // 横ページは _doc-number state 経由、縦ページは下の背景で doc-id を直接使う。
+  let doc-id = doc-number + doc-revision
+  _doc-number.update(doc-id)
   set page(
     paper: "a4",
     margin: PAGE-P-MARGIN,
@@ -225,7 +229,7 @@
     // そのために measure() で実際の高さを測り、枠の上辺からその分だけ引く。
     // ＝ 資料番号の文字サイズや inset を変えても接地は自動で保たれる。
     background: context {
-      let strip = _docnum-strip(doc-number, box-width: DOCNUM-P-WIDTH)
+      let strip = _docnum-strip(doc-id, box-width: DOCNUM-P-WIDTH)
       let h = measure(strip).height
       place(top + left, dx: FRAME-P-POS.x, dy: FRAME-P-POS.y,
         rect(width: FRAME-P-SIZE.width, height: FRAME-P-SIZE.height,
