@@ -103,6 +103,22 @@
 // 45mm = A4縦の DOCNUM-P-WIDTH と一致 → 縦を 90°回転した姿にそろう。
 #let DOCNUM-L-WIDTH = 45mm                // A4横: 資料枠の幅（回転後は高さ）
 
+// ---- スペック様式（spec: true）の表題欄 ----
+// 全ページ上部に表題欄を出す。左＝スペック/SPECIFICATION（固定）、中央＝ラベル（固定）、
+// 右＝スペック番号(doc-number) と 改訂符号(doc-revision) を別セルに表示。
+// 各行の高さ・右の値列幅は資料番号枠と同じ。左列は残り幅。A4横/IPO では 90°回転する。
+#let SPEC-ROW = 7mm             // 表題欄の各行の高さ（資料番号枠と同じ）
+#let SPEC-LEADING = 0.2em       // 表題欄セル内の行間（2行を詰めて 7mm/14mm に収める）
+#let SPEC-LABEL-W = 25mm        // 中央ラベル列の幅（スペック番号/改訂符号）
+#let SPEC-VALUE-W = 45mm        // 右の値列の幅（資料番号枠と同じ）
+#let SPEC-TITLE-SIZE = 22pt     // 「スペック」の文字サイズ
+#let SPEC-SUB-SIZE = 18pt       // 「SPECIFICATION」の文字サイズ
+#let SPEC-LABEL-SIZE = 9pt      // 中央ラベル（スペック番号/SPEC No. 等）の文字サイズ
+#let SPEC-GAP = 5mm             // 表題欄と本文の間隔（本文の上マージンに加算）
+#let SPEC-COMPANY-SIZE = 10.5pt // スペック様式フッターの会社名（日/英とも）の文字サイズ
+#let SPEC-COMPANY-GAP = 3mm     // 外枠の下辺から会社名フッターまでの間隔
+#let SPEC-COMPANY-LEADING = 0.3em // 日本語会社名と英語会社名の行間（詰めると英語が上に寄る）
+
 // ---- 横ページ（landscape / IPO 共通の様式）----
 #let FRAME-L-POS = (x: 14mm, y: 23mm)
 #let FRAME-L-SIZE = (width: 256mm, height: 178mm)
@@ -153,6 +169,13 @@
 // state を使うのは、landscape()/ipo() が design-doc() の引数を直接見られない
 // （別の呼び出しなので）ため。
 #let _doc-number = state("design-doc-number", "")
+// スペック様式かどうか。横ページ/IPO の様式描画（_side-furniture）が読む。
+#let _spec = state("design-spec", false)
+// 改訂符号（スペック様式で番号と別セルに出す）。横ページ/IPO の様式描画が読む。
+#let _doc-revision = state("design-doc-revision", "")
+// スペック様式フッターの会社名（日/英）。横ページ/IPO の様式描画が読む。
+#let _company-ja = state("design-company-ja", "")
+#let _company-en = state("design-company-en", "")
 // 直前の見出しレベルに応じた本文の字下げ段数（L1=0, L2=1, L3=2 …）。
 // 各 show heading が更新し、show par が本文段落の左字下げに使う。
 #let _sec-indent = state("design-sec-indent", 0)
@@ -173,31 +196,87 @@
 // ページ番号欄は固定幅＋右寄せ。総数 N を DOCNUM-PAGE-DIGITS 桁ぶんへ右空白詰めし、
 // tabular 数字にすることで "/" の位置・"/" と総数の間隔を安定させる（4桁まで対応）。
 // 総ページ数は counter(page).final() で組版後に確定するため context が要る。
-#let _docnum-strip(doc-number, box-width: auto) = context {
+// ページ番号 n / N の欄（固定幅・右寄せ）。資料番号欄・スペック様式で共用する。
+#let _pagenum-box() = context {
   set text(font: JP-SANS, size: FURNITURE-SIZE)
   let total = counter(page).final().first()
-  stack(dir: ltr, spacing: DOCNUM-PAGE-GAP,
-    box(width: box-width, stroke: RULE, inset: DOCNUM-INSET,
-      align(center, text(size: DOCNUM-SIZE)[#doc-number])),
-    // ページ番号は枠外。固定幅の欄に右寄せで置き、上下 inset を枠と揃える。
-    box(width: DOCNUM-PAGE-WIDTH, inset: (y: DOCNUM-INSET.y),
-      align(right, text(number-width: "tabular")[
-        #counter(page).display("1") / #_pad-num(total, DOCNUM-PAGE-DIGITS)
-      ])),
+  box(width: DOCNUM-PAGE-WIDTH, inset: (y: DOCNUM-INSET.y),
+    align(right, text(number-width: "tabular")[
+      #counter(page).display("1") / #_pad-num(total, DOCNUM-PAGE-DIGITS)
+    ]))
+}
+
+#let _docnum-strip(doc-number, box-width: auto) = stack(dir: ltr, spacing: DOCNUM-PAGE-GAP,
+  box(width: box-width, stroke: RULE, inset: DOCNUM-INSET,
+    align(center, text(font: JP-SANS, size: DOCNUM-SIZE)[#doc-number])),
+  // ページ番号は枠外。固定幅の欄に右寄せ。
+  _pagenum-box(),
+)
+
+// ---- スペック様式の表題欄（spec: true。全ページ上部・幅いっぱい）----
+// 左＝スペック/SPECIFICATION（固定・2行結合）、中央＝固定ラベル、右＝番号・改訂符号。
+// width は外枠の幅（縦）／高さ（横・回転後）。左列は残り幅。
+#let _spec-title-block(doc-number, doc-revision, width) = {
+  // 行ボックスと行間を詰めて 2行を 7mm/14mm に収める。
+  set text(font: JP-SANS, top-edge: "cap-height", bottom-edge: "baseline")
+  set par(leading: SPEC-LEADING)
+  let left-w = width - SPEC-LABEL-W - SPEC-VALUE-W
+  let lbl(a, b) = text(size: SPEC-LABEL-SIZE)[#a\ #b]
+  table(
+    columns: (left-w, SPEC-LABEL-W, SPEC-VALUE-W),
+    rows: (SPEC-ROW, SPEC-ROW),
+    stroke: RULE, inset: (x: 1.5mm, y: 0pt), align: center + horizon,
+    table.cell(rowspan: 2, {
+      text(size: SPEC-TITLE-SIZE)[スペック]
+      linebreak()
+      text(size: SPEC-SUB-SIZE)[SPECIFICATION]
+    }),
+    lbl[スペック番号][SPEC No.], text(size: DOCNUM-SIZE)[#doc-number],
+    lbl[改訂符号][REV LTR],     text(size: DOCNUM-SIZE)[#doc-revision],
   )
 }
+
+// ---- スペック様式のフッター（会社名。日本語→英語、指定幅の中央に2行）----
+// width の中央に配置する。縦は外枠の下（幅=ページ幅）、横/IPO は左余白に 90°回転で置く。
+#let _spec-footer(company-ja, company-en, width) = block(width: width, align(center, {
+  set text(font: JP-SANS, size: SPEC-COMPANY-SIZE)
+  set par(leading: SPEC-COMPANY-LEADING)
+  text(company-ja); linebreak(); text(company-en)
+}))
 
 // ---- 横向きページの様式（枠・資料番号を 90°回転で配置） ----
 // 縦綴じのまま用紙を回して読む配置なので、資料番号を右端に縦置きする。
 // 資料番号の枠は外枠の右辺に接する（原紙準拠）ため、x は
 // 「外枠の左端 + 外枠の幅」で求める。外枠を動かせば資料番号も追従する。
 #let _side-furniture = context {
+  // 外枠はどちらの様式でも描く。
   place(top + left, dx: FRAME-L-POS.x, dy: FRAME-L-POS.y,
     rect(width: FRAME-L-SIZE.width, height: FRAME-L-SIZE.height, stroke: FRAME))
-  place(top + left, dx: FRAME-L-POS.x + FRAME-L-SIZE.width,
-    dy: FRAME-L-POS.y + DOCNUM-L-TOP,
-    rotate(90deg, reflow: true,
-      _docnum-strip(_doc-number.get(), box-width: DOCNUM-L-WIDTH)))
+  if _spec.get() {
+    // スペック様式: 表題欄を外枠の右側の帯（幅 = 表題欄の高さ 2*SPEC-ROW）に 90°回転で置く。
+    // 帯は外枠の高さいっぱい（＝縦様式の幅いっぱいを回転したもの）。
+    place(top + left,
+      dx: FRAME-L-POS.x + FRAME-L-SIZE.width - 2 * SPEC-ROW,
+      dy: FRAME-L-POS.y,
+      rotate(90deg, reflow: true,
+        _spec-title-block(_doc-number.get(), _doc-revision.get(), FRAME-L-SIZE.height)))
+    // ページ番号（回転）。表題欄の右（右余白）・下寄りに置く。
+    place(top + left,
+      dx: FRAME-L-POS.x + FRAME-L-SIZE.width + 1mm,
+      dy: FRAME-L-POS.y + FRAME-L-SIZE.height - DOCNUM-PAGE-WIDTH - 2mm,
+      rotate(90deg, reflow: true, _pagenum-box()))
+    // フッター（会社名）を左余白に 90°回転で、ページ中央（縦）に置く（縦様式を回転した形）。
+    let ft = _spec-footer(_company-ja.get(), _company-en.get(), 210mm)
+    let ftw = measure(ft).height   // 回転前の高さ = 回転後の帯の幅
+    place(top + left, dx: (FRAME-L-POS.x - ftw) / 2, dy: 0mm,
+      rotate(90deg, reflow: true, ft))
+  } else {
+    // 通常様式: 資料番号（番号+改訂記号）+ ページ番号を外枠の右辺に 90°回転で置く。
+    place(top + left, dx: FRAME-L-POS.x + FRAME-L-SIZE.width,
+      dy: FRAME-L-POS.y + DOCNUM-L-TOP,
+      rotate(90deg, reflow: true,
+        _docnum-strip(_doc-number.get() + _doc-revision.get(), box-width: DOCNUM-L-WIDTH)))
+  }
 }
 
 // ============================================================
@@ -210,32 +289,61 @@
   title: "設計書", subtitle: "", author: "",
   doc-number: "",
   doc-revision: "",                    // 改訂記号（A〜Z / NC）。既定は空。資料番号の末尾に結合
+  spec: false,                         // スペック様式（全ページ上部に表題欄）にするか。既定 false
+  company-ja: "", company-en: "",      // スペック様式のフッターに出す会社名（日本語/英語）
   cover: false,                        // 表紙（タイトルページ）を出すか。既定は出さない
   toc: false, toc-title: "目 次", toc-depth: 3,
   body,
 ) = {
   set document(title: title, author: author)
-  // 資料番号は「番号 + 改訂記号」を結合して表示する（改訂記号が空なら番号のみ）。
-  // 横ページは _doc-number state 経由、縦ページは下の背景で doc-id を直接使う。
+  // 通常様式: 資料番号は「番号 + 改訂記号」を結合して表示（改訂記号が空なら番号のみ）。
+  // スペック様式: 番号(doc-number)と改訂符号(doc-revision)を別セルに分けて表示。
+  // 横ページは state 経由、縦ページは下の背景で引数を直接使う。
   let doc-id = doc-number + doc-revision
-  _doc-number.update(doc-id)
+  // state には「生の番号」と「改訂符号」を別々に持たせる（横/IPO で通常様式は結合、
+  // スペック様式は別セルに使うため）。縦ページは背景で引数を直接使う。
+  _doc-number.update(doc-number)
+  _doc-revision.update(doc-revision)
+  _company-ja.update(company-ja)
+  _company-en.update(company-en)
+  _spec.update(spec)
   set page(
     paper: "a4",
-    margin: PAGE-P-MARGIN,
+    // スペック様式は表題欄（2行）のぶん本文の上マージンを下げる。
+    margin: if spec {
+      (left: PAGE-P-MARGIN.left, right: PAGE-P-MARGIN.right,
+       top: FRAME-P-POS.y + 2 * SPEC-ROW + SPEC-GAP, bottom: PAGE-P-MARGIN.bottom)
+    } else { PAGE-P-MARGIN },
     header: none,
     footer: none,
-    // 外枠と資料番号は「背景」層に描く。本文の流し込みに影響させないため。
-    // 資料番号は枠の下辺が外枠の上辺にちょうど接するように置く（原紙準拠）。
-    // そのために measure() で実際の高さを測り、枠の上辺からその分だけ引く。
-    // ＝ 資料番号の文字サイズや inset を変えても接地は自動で保たれる。
+    // 外枠と資料番号（またはスペック表題欄）は「背景」層に描く。本文の流し込みに
+    // 影響させないため。通常様式の資料番号は枠の下辺が外枠の上辺に接地するよう
+    // measure() で高さを測って引く（文字サイズや inset を変えても接地が保たれる）。
     background: context {
-      let strip = _docnum-strip(doc-id, box-width: DOCNUM-P-WIDTH)
-      let h = measure(strip).height
+      // 外枠はどちらの様式でも描く。
       place(top + left, dx: FRAME-P-POS.x, dy: FRAME-P-POS.y,
         rect(width: FRAME-P-SIZE.width, height: FRAME-P-SIZE.height,
           stroke: FRAME))
-      // 資料枠は外枠の左端から DOCNUM-P-LEFT の位置に左端を合わせる（左端基準）。
-      place(top + left, dx: FRAME-P-POS.x + DOCNUM-P-LEFT, dy: FRAME-P-POS.y - h, strip)
+      if spec {
+        // 表題欄を外枠の上部（内側）に幅いっぱいで置く。
+        place(top + left, dx: FRAME-P-POS.x, dy: FRAME-P-POS.y,
+          _spec-title-block(doc-number, doc-revision, FRAME-P-SIZE.width))
+        // ページ番号は表題欄の上・右側（横位置は通常様式と同じ、上にスライド）。
+        let pg = _pagenum-box()
+        let ph = measure(pg).height
+        place(top + left,
+          dx: FRAME-P-POS.x + DOCNUM-P-LEFT + DOCNUM-P-WIDTH + DOCNUM-PAGE-GAP,
+          dy: FRAME-P-POS.y - ph - 1mm, pg)
+        // フッター: 会社名を外枠の下・ページ中央に。日本語（上）→ 英語（下）。
+        place(top + left, dx: 0mm,
+          dy: FRAME-P-POS.y + FRAME-P-SIZE.height + SPEC-COMPANY-GAP,
+          _spec-footer(company-ja, company-en, 100%))
+      } else {
+        // 通常様式: 資料番号枠 + ページ番号を外枠の左端から DOCNUM-P-LEFT、上辺に接地。
+        let strip = _docnum-strip(doc-id, box-width: DOCNUM-P-WIDTH)
+        let h = measure(strip).height
+        place(top + left, dx: FRAME-P-POS.x + DOCNUM-P-LEFT, dy: FRAME-P-POS.y - h, strip)
+      }
     },
   )
   set text(font: JP-SANS, size: BODY-SIZE, lang: "ja")
@@ -360,10 +468,12 @@
 //  全部横になる。header/footer を none にするのは、横ページのページ番号を
 //  _side-furniture が回転して描くため（二重に出さない）。
 // ============================================================
-#let landscape(body) = {
+#let landscape(body) = context {
+  // スペック様式では右側に表題欄の帯（幅 2*SPEC-ROW）が入るので本文の右余白を広げる。
+  let extra-right = if _spec.get() { 2 * SPEC-ROW } else { 0mm }
   set page(
     flipped: true,
-    margin: PAGE-L-MARGIN,
+    margin: (..PAGE-L-MARGIN, right: PAGE-L-MARGIN.right + extra-right),
     header: none, footer: none,
     background: _side-furniture,
   )
@@ -394,10 +504,12 @@
 #let ipo(
   function-name: "", process-name: "",
   input: [], process: [], output: [],
-) = {
+) = context {
+  // スペック様式では右側に表題欄の帯（幅 2*SPEC-ROW）が入るので IPO 表の右余白を広げる。
+  let extra-right = if _spec.get() { 2 * SPEC-ROW } else { 0mm }
   set page(
     flipped: true,
-    margin: PAGE-IPO-MARGIN,
+    margin: (..PAGE-IPO-MARGIN, right: PAGE-IPO-MARGIN.right + extra-right),
     header: none, footer: none,
     background: _side-furniture,
   )
