@@ -58,6 +58,8 @@
 // （字形確認は Noto を入れて行うこと）。
 #let JP-SANS = ("Noto Sans CJK JP", "Yu Gothic", "MS PGothic")
 #let JP-SERIF = ("Noto Serif CJK JP", "Yu Mincho", "MS PMincho")
+// spec: true の表題欄（ヘッダ領域）の書体。MS Gothic を既定にし、無い環境では JP-SANS に落ちる。
+#let SPEC-HEAD-FONT = ("MS Gothic", "Noto Sans CJK JP", "Yu Gothic", "MS PGothic")
 
 // ---- 線 ----
 #let BORDER = rgb("#b0b0b0")   // 本文中の表罫線（様式ではなく中身の罫線）
@@ -220,8 +222,8 @@
 // 左＝スペック/SPECIFICATION（固定・2行結合）、中央＝固定ラベル、右＝番号・改訂符号。
 // width は外枠の幅（縦）／高さ（横・回転後）。左列は残り幅。
 #let _spec-title-block(doc-number, doc-revision, width) = {
-  // 行ボックスと行間を詰めて 2行を 7mm/14mm に収める。
-  set text(font: JP-SANS, top-edge: "cap-height", bottom-edge: "baseline")
+  // 行ボックスと行間を詰めて 2行を 7mm/14mm に収める。書体は表題欄専用（MS Gothic）。
+  set text(font: SPEC-HEAD-FONT, top-edge: "cap-height", bottom-edge: "baseline")
   set par(leading: SPEC-LEADING)
   let left-w = width - SPEC-LABEL-W - SPEC-VALUE-W
   let lbl(a, b) = text(size: SPEC-LABEL-SIZE)[#a\ #b]
