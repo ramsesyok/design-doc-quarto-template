@@ -73,6 +73,23 @@
 #let LIST-INDENT = 1em         // 箇条書きの追加字下げ（見出しレベルぶんに加えて1文字ぶん）
 #let FURNITURE-SIZE = 9pt      // 様式の文字（ページ番号）
 
+// 番号付きリスト（enum）の採番。規格 表Ｂ.４ の細別番号に合わせ、入れ子の深さで
+//   (1) → ① → (ア) → a) → (a)
+// と自動で切り替える。full: true と併用し、各段は自分の階層の記号だけを表示する
+// （① を (2)① のように親番号と連ねない）。
+//   - カタカナは (ア)=アイウエオ順。イロハ順にするなら "(ア)" を "(イ)" に変える。
+//   - 6段目以降は (a) を繰り返す（規格は5段まで想定）。
+#let ENUM-NUMBERING = (..n) => {
+  let nums = n.pos()
+  let d = nums.len()
+  let k = nums.last()
+  if d == 1 { numbering("(1)", k) }
+  else if d == 2 { numbering("①", k) }
+  else if d == 3 { numbering("(ア)", k) }
+  else if d == 4 { numbering("a)", k) }
+  else { numbering("(a)", k) }
+}
+
 // 見出しの文字サイズ（h1〜h5）。採番の書式は【3】の set heading を参照。
 // 現在は全レベル 10.5pt（本文と同サイズ）。レベルごとに変えたいときは各値を戻す。
 // 規格（1.1.1.1.1）に合わせ 5 段まで対応する。
@@ -186,6 +203,10 @@
 // 直前の見出しレベルに応じた本文の字下げ段数（L1=0, L2=1, L3=2 …）。
 // 各 show heading が更新し、show par が本文段落の左字下げに使う。
 #let _sec-indent = state("design-sec-indent", 0)
+// リスト（list/enum）の入れ子ガード。最上位のリストにだけ見出しレベルの字下げを
+// 与え、入れ子は Typst 標準のネスト字下げに任せる（見出しレベルぶんを段ごとに
+// 重ね掛けして右へ流れるのを防ぐ）。list/enum 共通の1つの状態で管理する。
+#let _in-list = state("design-in-list", false)
 
 // 数字の後ろに数字幅の空白（U+2007）を足して指定桁ぶんの幅に揃える（右空白詰め）。
 // ASCII 空白と違い Typst で連続空白が畳まれず、tabular 数字と組めば
@@ -377,11 +398,27 @@
   // 字下げ）。字下げ段数は _sec-indent（各 show heading が更新）。見出し自身は各
   // show heading の inset で字下げ済み。表・図キャプションなど段落でない要素や
   // セル内の段落には影響しない（top-level の段落だけがこの show に掛かる）。
-  show par: it => context { pad(left: _sec-indent.get() * HEAD-INDENT-STEP, it) }
-  // 箇条書き（list/enum）は見出しレベルぶんに加えて さらに LIST-INDENT（1文字）字下げする
-  // （段落の先頭字下げと頭を揃える）。表・IPO セル内のリストには効かない（top-level のみ）。
-  show list: it => context { pad(left: _sec-indent.get() * HEAD-INDENT-STEP + LIST-INDENT, it) }
-  show enum: it => context { pad(left: _sec-indent.get() * HEAD-INDENT-STEP + LIST-INDENT, it) }
+  // リスト項目の本文（子リストを持つ項目は本文が Para 化する）には掛けない。
+  // リスト側で位置決め済みなので、掛けるとマーカーと本文の間に隙間が空く。
+  show par: it => context {
+    if _in-list.get() { it } else { pad(left: _sec-indent.get() * HEAD-INDENT-STEP, it) }
+  }
+  // 箇条書き（list/enum）は「最上位のリストだけ」を見出しレベルぶん＋LIST-INDENT
+  // 字下げする（段落の先頭字下げと頭を揃える）。入れ子のリストには重ね掛けせず、
+  // Typst 標準のネスト字下げに任せる（重ね掛けすると段ごとに右へ流れてしまう）。
+  // _in-list は入れ子判定用の共有フラグ。update の順序（true → 中身 → false）で、
+  // 中身のリストは _in-list=true を見て追加の pad を掛けない。
+  let _list-pad(it) = context {
+    if _in-list.get() { it } else {
+      _in-list.update(true)
+      pad(left: _sec-indent.get() * HEAD-INDENT-STEP + LIST-INDENT, it)
+      _in-list.update(false)
+    }
+  }
+  show list: it => _list-pad(it)
+  show enum: it => _list-pad(it)
+  // 番号付きリストの採番を規格 表Ｂ.４ の細別番号（深さ連動）にする。
+  set enum(full: true, numbering: ENUM-NUMBERING)
 
   // 章番号の自動採番。レベル1だけ末尾にドットを付ける（"1." / "1.1" / "1.1.1"）。
   // 付録を A.1 にしたい等はここを差し替える。
