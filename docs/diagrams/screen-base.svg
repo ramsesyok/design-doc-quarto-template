@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 480" width="100%" role="img" aria-label="基本画面レイアウト">
+  <style>
+    .t   { font-family: 'Yu Gothic','Noto Sans CJK JP',sans-serif; }
+    .title { fill:#ffffff; font-size:15px; font-weight:bold; }
+    .region { fill:#5a6472; font-size:15px; }
+    .tag  { fill:#ffffff; font-size:11px; }
+    .tagtxt { fill:#2c5985; font-size:11px; font-weight:bold; }
+    .fk   { fill:#33405a; font-size:12px; }
+    .fkhd { fill:#5a6472; font-size:11px; font-weight:bold; }
+    .msg  { fill:#7a5b12; font-size:13px; }
+    .muted{ fill:#8a94a6; font-size:12px; }
+  </style>
+
+  <!-- window body -->
+  <rect x="10" y="10" width="700" height="460" rx="8" fill="#ffffff" stroke="#c2c8d2" stroke-width="1.5"/>
+
+  <!-- title bar (rounded top only) -->
+  <path d="M10 48 L10 18 Q10 10 18 10 L702 10 Q710 10 710 18 L710 48 Z" fill="#2c5985"/>
+  <text class="t title" x="26" y="34">受注管理システム</text>
+  <!-- window buttons -->
+  <text class="t" x="656" y="34" fill="#cdd8e8" font-size="15">&#8211; &#9723; &#10005;</text>
+  <!-- title-area tag -->
+  <rect x="450" y="18" width="86" height="20" rx="10" fill="#ffffff" opacity="0.9"/>
+  <text class="t tagtxt" x="460" y="32">タイトル領域</text>
+
+  <!-- I/O (main body) area -->
+  <rect x="20" y="58" width="580" height="352" rx="4" fill="#f7f9fb" stroke="#b8c0cc" stroke-width="1" stroke-dasharray="4 3"/>
+  <text class="t region" x="230" y="238">入出力領域（本体）</text>
+  <text class="t muted" x="210" y="262">受注入力・照会などの業務データを配置する領域</text>
+  <rect x="30" y="66" width="86" height="20" rx="10" fill="#e7edf5"/>
+  <text class="t tagtxt" x="40" y="80">入出力領域</text>
+
+  <!-- system (function key) area -->
+  <rect x="610" y="58" width="90" height="352" rx="4" fill="#eef1f5" stroke="#c2c8d2" stroke-width="1"/>
+  <text class="t fkhd" x="620" y="78">システム用領域</text>
+  <g>
+    <rect x="620" y="90"  width="70" height="26" rx="4" fill="#ffffff" stroke="#9aa4b2"/><text class="t fk" x="630" y="107">F1 ヘルプ</text>
+    <rect x="620" y="122" width="70" height="26" rx="4" fill="#ffffff" stroke="#9aa4b2"/><text class="t fk" x="630" y="139">F9 クリア</text>
+    <rect x="620" y="154" width="70" height="26" rx="4" fill="#ffffff" stroke="#9aa4b2"/><text class="t fk" x="628" y="171">F12 確定</text>
+  </g>
+
+  <!-- message area -->
+  <rect x="20" y="418" width="680" height="44" rx="4" fill="#fff8e1" stroke="#e6d08a" stroke-width="1"/>
+  <text class="t msg" x="34" y="445">メッセージ領域（エラー・案内メッセージを表示）</text>
+  <rect x="600" y="426" width="90" height="20" rx="10" fill="#f4e6bf"/>
+  <text class="t tagtxt" x="612" y="440" fill="#7a5b12">メッセージ領域</text>
+</svg>

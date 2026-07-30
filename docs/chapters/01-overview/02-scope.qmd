@@ -1,0 +1,36 @@
+## 対象範囲
+
+本システムの対象範囲は、受注登録・在庫引当・出荷指示の3業務とする。会計処理・
+仕入（購買）・配送手配は他システムの担当とし、本システムはそれらとデータ連携のみを
+行う。他システムとの関連を含めたシステムコンテキストを @fig-context に示す。
+
+::: {#fig-context}
+
+```mermaid
+flowchart LR
+  cust([顧客]):::actor
+  ec[ECサイト]:::ext
+  subgraph OMS[受注管理システム 対象範囲]
+    order[受注登録]
+    alloc[在庫引当]
+    ship[出荷指示]
+  end
+  acc[(会計システム)]:::ext
+  wms[(倉庫管理システム)]:::ext
+  pur[(購買システム)]:::ext
+
+  cust --> ec --> order
+  order --> alloc --> ship
+  ship --> wms
+  order -. 売上連携 .-> acc
+  alloc -. 補充依頼 .-> pur
+
+  classDef ext fill:#eef,stroke:#557
+  classDef actor fill:#efe,stroke:#575
+```
+
+システムコンテキスト
+:::
+
+@fig-context のとおり、点線は他システムとのデータ連携、実線は本システム内の
+処理の流れを表す。破線で示した会計・購買・倉庫の各システムは対象範囲外である。
