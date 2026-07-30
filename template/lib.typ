@@ -110,7 +110,8 @@
 // 右＝スペック番号(doc-number) と 改訂符号(doc-revision) を別セルに表示。
 // 各行の高さ・右の値列幅は資料番号枠と同じ。左列は残り幅。A4横/IPO では 90°回転する。
 #let SPEC-ROW = 7mm             // 表題欄の各行の高さ（資料番号枠と同じ）
-#let SPEC-LEADING = 0.55em      // 表題欄セル内の行間（スペック/SPECIFICATION の2行が重ならない値。14mm 内に収まる）
+#let SPEC-LEADING = 0.55em      // 表題欄「スペック/SPECIFICATION」の行間（2行が重ならない値。14mm 内に収まる）
+#let SPEC-LABEL-LEADING = 0.2em // 中央ラベル（スペック番号/SPEC No.・改訂符号/REV LTR）の2行の行間。7mm 枠に被らないよう詰める
 #let SPEC-LABEL-W = 25mm        // 中央ラベル列の幅（スペック番号/改訂符号）
 #let SPEC-VALUE-W = 45mm        // 右の値列の幅（資料番号枠と同じ）
 #let SPEC-TITLE-SIZE = 22pt     // 「スペック」の文字サイズ
@@ -226,7 +227,8 @@
   set text(font: SPEC-HEAD-FONT, top-edge: "cap-height", bottom-edge: "baseline")
   set par(leading: SPEC-LEADING)
   let left-w = width - SPEC-LABEL-W - SPEC-VALUE-W
-  let lbl(a, b) = text(size: SPEC-LABEL-SIZE)[#a\ #b]
+  // 中央ラベルの2行は、タイトル(スペック/SPECIFICATION)より行間を詰めて 7mm 枠に収める。
+  let lbl(a, b) = { set par(leading: SPEC-LABEL-LEADING); text(size: SPEC-LABEL-SIZE)[#a\ #b] }
   table(
     columns: (left-w, SPEC-LABEL-W, SPEC-VALUE-W),
     rows: (SPEC-ROW, SPEC-ROW),
