@@ -73,11 +73,12 @@
 #let LIST-INDENT = 1em         // 箇条書きの追加字下げ（見出しレベルぶんに加えて1文字ぶん）
 #let FURNITURE-SIZE = 9pt      // 様式の文字（ページ番号）
 
-// 見出しの文字サイズ（h1〜h4）。採番の書式は【3】の set heading を参照。
+// 見出しの文字サイズ（h1〜h5）。採番の書式は【3】の set heading を参照。
 // 現在は全レベル 10.5pt（本文と同サイズ）。レベルごとに変えたいときは各値を戻す。
-#let HEAD-SIZES = (10.5pt, 10.5pt, 10.5pt, 10.5pt)
+// 規格（1.1.1.1.1）に合わせ 5 段まで対応する。
+#let HEAD-SIZES = (10.5pt, 10.5pt, 10.5pt, 10.5pt, 10.5pt)
 #let HEAD-INDENT-STEP = 1em    // 見出しの字下げ量。レベル n を (n-1) 段字下げする
-                               // （L1=0, L2=1, L3=2 …。1em はその見出しの1文字ぶん）
+                               // （L1=0, L2=1, L3=2, L4=3, L5=4。1em はその見出しの1文字ぶん）
 
 // ---- 縦ページ（ポートレート）----
 // 本文は外枠の内側 5mm に流し込む（外枠と本文の間隔を上下左右で 5mm に統一）。
@@ -424,6 +425,11 @@
     _sec-indent.update(3)
     set text(size: HEAD-SIZES.at(3), weight: "bold")
     block(above: 0.9em, below: 0.4em, inset: (left: 3 * HEAD-INDENT-STEP), it)
+  }
+  show heading.where(level: 5): it => {
+    _sec-indent.update(4)
+    set text(size: HEAD-SIZES.at(4), weight: "bold")
+    block(above: 0.85em, below: 0.35em, inset: (left: 4 * HEAD-INDENT-STEP), it)
   }
 
   // 図・表の日本語キャプションと採番（「図 3.2-1」＝ 章.節-連番。接頭辞は _section-prefix）
