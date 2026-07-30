@@ -518,6 +518,10 @@
   caption: "",                       // 表番号の右に付けるタイトル（機能名/処理名とは別）
   input: [], process: [], output: [],
 ) = context {
+  // IPO 内の入力/処理/出力欄は横向き定型枠であり、本文の見出しレベル字下げ
+  // （_sec-indent に基づく show par/list/enum の左パディング）を持ち込まない。
+  // IPO 本体を描く間だけ _sec-indent を 0 に落とし、描画後に元の値へ戻す。
+  let prev-sec-indent = _sec-indent.get()
   // スペック様式では右側に表題欄の帯（幅 2*SPEC-ROW）が入るので IPO 表の右余白を広げる。
   let extra-right = if _spec.get() { 2 * SPEC-ROW } else { 0mm }
   set page(
@@ -533,6 +537,8 @@
   // この IPO を「表」として採番する（図ではなく表。ドキュメントの表と同じ連番列に載る）。
   // step は表番号の位置で行い、その位置の値を表示する。
   let tblc = counter(figure.where(kind: "quarto-float-tbl"))
+  // ここから IPO 本体。入出力欄のリスト/段落に見出しレベル字下げを効かせない。
+  _sec-indent.update(0)
   stack(dir: ttb, spacing: 0pt,
     // 表番号 + タイトル: 枠なしで IPO 表の外（上）に、左右中央・上寄せで記載。
     // 上寄せにするのは、本文上マージン（外枠の内側5mm）にテキスト上端を合わせるため。
@@ -562,5 +568,7 @@
       ),
     ),
   )
+  // IPO 本体を抜けたので、周囲の見出しレベル字下げを元に戻す。
+  _sec-indent.update(prev-sec-indent)
   set page(flipped: false)
 }
