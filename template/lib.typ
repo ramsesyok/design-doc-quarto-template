@@ -56,10 +56,10 @@
 // ---- フォント ----
 // 実運用は Noto CJK を前提。無い環境では Yu Gothic → MS PGothic に落ちる
 // （字形確認は Noto を入れて行うこと）。
-#let JP-SANS = ("Noto Sans CJK JP", "Yu Gothic", "MS PGothic")
-#let JP-SERIF = ("Noto Serif CJK JP", "Yu Mincho", "MS PMincho")
+#let JP-SANS = ("Meiryo UI", "Yu Gothic", "MS PGothic")
+#let JP-SERIF = ("Meiryo UI", "Yu Mincho", "MS PMincho")
 // spec: true の表題欄（ヘッダ領域）の書体。MS Gothic を既定にし、無い環境では JP-SANS に落ちる。
-#let SPEC-HEAD-FONT = ("MS Gothic", "Noto Sans CJK JP", "Yu Gothic", "MS PGothic")
+#let SPEC-HEAD-FONT = ("MS Gothic", "Yu Gothic", "MS PGothic")
 
 // ---- 線 ----
 #let BORDER = rgb("#b0b0b0")   // 本文中の表罫線（様式ではなく中身の罫線）
@@ -111,12 +111,12 @@
 // 各行の高さ・右の値列幅は資料番号枠と同じ。左列は残り幅。A4横/IPO では 90°回転する。
 #let SPEC-ROW = 7mm             // 表題欄の各行の高さ（資料番号枠と同じ）
 #let SPEC-LEADING = 0.55em      // 表題欄「スペック/SPECIFICATION」の行間（2行が重ならない値。14mm 内に収まる）
-#let SPEC-LABEL-LEADING = 0.2em // 中央ラベル（スペック番号/SPEC No.・改訂符号/REV LTR）の2行の行間。7mm 枠に被らないよう詰める
+#let SPEC-LABEL-LEADING = 0.25em // 中央ラベル（スペック番号/SPEC NO.・改訂符号/REV LTR）の2行の行間。7mm 枠に被らないよう詰める
 #let SPEC-LABEL-W = 25mm        // 中央ラベル列の幅（スペック番号/改訂符号）
 #let SPEC-VALUE-W = 45mm        // 右の値列の幅（資料番号枠と同じ）
 #let SPEC-TITLE-SIZE = 22pt     // 「スペック」の文字サイズ
 #let SPEC-SUB-SIZE = 18pt       // 「SPECIFICATION」の文字サイズ
-#let SPEC-LABEL-SIZE = 9pt      // 中央ラベル（スペック番号/SPEC No. 等）の文字サイズ
+#let SPEC-LABEL-SIZE = 9pt      // 中央ラベル（スペック番号/SPEC NO. 等）の文字サイズ
 #let SPEC-GAP = 5mm             // 表題欄と本文の間隔（本文の上マージンに加算）
 #let SPEC-COMPANY-SIZE = 10.5pt // スペック様式フッターの会社名（日/英とも）の文字サイズ
 #let SPEC-COMPANY-GAP = 3mm     // 外枠の下辺から会社名フッターまでの間隔
@@ -238,7 +238,7 @@
       linebreak()
       text(size: SPEC-SUB-SIZE)[SPECIFICATION]
     }),
-    lbl[スペック番号][SPEC No.], text(size: DOCNUM-SIZE)[#doc-number],
+    lbl[スペック番号][SPEC NO.], text(size: DOCNUM-SIZE)[#doc-number],
     lbl[改訂符号][REV LTR],     text(size: DOCNUM-SIZE)[#doc-revision],
   )
 }
