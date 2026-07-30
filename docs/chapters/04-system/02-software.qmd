@@ -1,0 +1,60 @@
+## ソフトウェア環境
+
+### ソフトウェア構成
+
+基本ソフトウェアからアプリケーションまでの階層を @fig-sw に示す。
+
+::: {#fig-sw}
+
+```mermaid
+flowchart TD
+  subgraph app[アプリケーション層]
+    oms[受注管理アプリ]
+    batch[会計連携バッチ]
+  end
+  subgraph mw[ミドルウェア層]
+    tomcat[Apache Tomcat]
+    pg[PostgreSQL 15]
+    mq[メッセージブローカ]
+  end
+  subgraph os[基本ソフトウェア層]
+    linux[Linux]
+    jre[Java Runtime 21]
+  end
+  oms --> tomcat --> jre --> linux
+  batch --> jre
+  oms --> pg
+  oms --> mq
+  pg --> linux
+  mq --> linux
+```
+
+ソフトウェア構成
+:::
+
+### ソフトウェア仕様
+
+使用する個々のソフトウェアを @tbl-sw に示す。
+
+| ソフトウェア   | バージョン | 用途                     | 稼働条件           |
+|----------------|------------|--------------------------|--------------------|
+| Linux          | 9.x        | 基本ソフトウェア         | —                  |
+| Java Runtime   | 21 (LTS)   | アプリ実行基盤           | —                  |
+| Apache Tomcat  | 10.x       | Web アプリケーション基盤 | Java 21 以上       |
+| PostgreSQL     | 15         | データベース             | —                  |
+| メッセージブローカ | 3.x    | 倉庫システムとの連携     | 永続化キュー有効化 |
+
+: ソフトウェア仕様 {#tbl-sw}
+
+### ソフトウェア設定パラメータ
+
+市販ソフトウェアで設定が必要な主なパラメータを @tbl-swparam に示す。
+
+| ソフトウェア | パラメータ         | 設定値 |
+|--------------|--------------------|--------|
+| Tomcat       | maxThreads         | 200    |
+| Tomcat       | connectionTimeout  | 20000  |
+| PostgreSQL   | max_connections    | 200    |
+| PostgreSQL   | shared_buffers     | 32 GB  |
+
+: ソフトウェア設定パラメータ {#tbl-swparam}
