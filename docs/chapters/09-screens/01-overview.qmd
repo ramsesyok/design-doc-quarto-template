@@ -5,22 +5,7 @@
 全画面共通の基本レイアウトを @fig-screen-base に示す。画面はタイトル領域・
 入出力領域・メッセージ領域・システム用領域に分割する。
 
-::: {#fig-screen-base}
-
-```mermaid
-block-beta
-  columns 1
-  title["タイトル領域（機能名・ログインユーザ）"]
-  block:main
-    columns 4
-    io["入出力領域（本体）"]:3
-    sys["システム用領域（機能キー）"]:1
-  end
-  msg["メッセージ領域（エラー・案内）"]
-```
-
-基本画面レイアウト
-:::
+![基本画面レイアウト](/diagrams/screen-base.svg){#fig-screen-base width=85%}
 
 機能キーは全画面共通で、F1=ヘルプ、F9=クリア、F12=確定とする。
 

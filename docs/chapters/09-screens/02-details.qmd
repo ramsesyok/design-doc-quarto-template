@@ -6,22 +6,9 @@
 
 #### 画面レイアウト
 
-受注入力画面の領域構成を @fig-order-screen に示す。
+受注入力画面のレイアウトを @fig-order-screen に示す。
 
-::: {#fig-order-screen}
-
-```mermaid
-block-beta
-  columns 2
-  h["受注入力"]:2
-  l1["顧客ID"] i1["[____]"]
-  l2["商品コード"] i2["[____]"]
-  l3["数量"] i3["[__]"]
-  b["登録(F12) / クリア(F9)"]:2
-```
-
-受注入力画面レイアウト
-:::
+![受注入力画面](/diagrams/screen-order.svg){#fig-order-screen width=85%}
 
 #### データ項目
 
