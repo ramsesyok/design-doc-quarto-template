@@ -110,7 +110,7 @@
 // 右＝スペック番号(doc-number) と 改訂符号(doc-revision) を別セルに表示。
 // 各行の高さ・右の値列幅は資料番号枠と同じ。左列は残り幅。A4横/IPO では 90°回転する。
 #let SPEC-ROW = 7mm             // 表題欄の各行の高さ（資料番号枠と同じ）
-#let SPEC-LEADING = 0.2em       // 表題欄セル内の行間（2行を詰めて 7mm/14mm に収める）
+#let SPEC-LEADING = 0.55em      // 表題欄セル内の行間（スペック/SPECIFICATION の2行が重ならない値。14mm 内に収まる）
 #let SPEC-LABEL-W = 25mm        // 中央ラベル列の幅（スペック番号/改訂符号）
 #let SPEC-VALUE-W = 45mm        // 右の値列の幅（資料番号枠と同じ）
 #let SPEC-TITLE-SIZE = 22pt     // 「スペック」の文字サイズ
