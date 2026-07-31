@@ -46,7 +46,8 @@ if defined BROWSER (
   echo   -^> %PP% に記録しました
 ) else (
   echo 警告: Chrome / Edge が見つかりませんでした。 1>&2
-  echo       mermaid を使うなら EXECUTABLE_BROWSER を指定して再実行してください。 1>&2
+  echo       執筆・プレビューはこのまま可能です（mermaid はブラウザ内描画・node 不要）。 1>&2
+  echo       納品 PDF・配布 HTML を作るときだけ EXECUTABLE_BROWSER を指定して再実行してください。 1>&2
 )
 
 echo OK: "%CONTENT_DIR%" の初期化が完了しました。
