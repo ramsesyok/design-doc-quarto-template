@@ -2,10 +2,12 @@
 chcp 65001 >nul
 setlocal enabledelayedexpansion
 rem ============================================================
-rem  執筆環境の初期化（Windows / cmd 版）。冪等。詳細は setup.sh を参照。
-rem  使い方（リポジトリのルートから）:  template\setup.bat [執筆フォルダ名]
-rem   1) template の lib.typ / design-doc.css を執筆フォルダへ配置
-rem   2) Chrome/Edge を検出して template\puppeteer.json に記録（mermaid 用）
+rem  Initialize the writing environment (Windows / cmd). Idempotent. See setup.sh.
+rem  Usage (from the repository root):  template\setup.bat [content-dir]
+rem   1) Copy template's lib.typ / design-doc.css into the content dir
+rem   2) Detect Chrome/Edge and record it in template\puppeteer.json (for mermaid)
+rem  NOTE: keep this file ASCII only. cmd.exe misparses multibyte (Japanese)
+rem        text in .bat files, so comments/messages must stay in English.
 rem ============================================================
 
 set "TEMPLATE_ROOT=%~dp0"
@@ -15,17 +17,17 @@ set "CONTENT_DIR=%~1"
 if "%CONTENT_DIR%"=="" set "CONTENT_DIR=docs"
 
 if not exist "%CONTENT_DIR%\_quarto.yml" (
-  echo エラー: "%CONTENT_DIR%\_quarto.yml" が見つかりません。 1>&2
-  echo        リポジトリのルートから実行し、第1引数に執筆フォルダ名を渡してください。 1>&2
+  echo ERROR: "%CONTENT_DIR%\_quarto.yml" not found. 1>&2
+  echo        Run from the repository root and pass the content dir as the 1st argument. 1>&2
   exit /b 1
 )
 
-rem 1) 機構ファイルを配置（常に上書き）
+rem 1) Place mechanism files (always overwrite)
 copy /Y "%TEMPLATE_ROOT%\lib.typ" "%CONTENT_DIR%\lib.typ" >nul
 copy /Y "%TEMPLATE_ROOT%\design-doc.css" "%CONTENT_DIR%\design-doc.css" >nul
-echo 配置: %CONTENT_DIR%\lib.typ, %CONTENT_DIR%\design-doc.css
+echo Placed: %CONTENT_DIR%\lib.typ, %CONTENT_DIR%\design-doc.css
 
-rem 2) mermaid 用ブラウザ（Chrome → Edge の順に検出）。EXECUTABLE_BROWSER があれば優先。
+rem 2) Browser for mermaid (detect Chrome, then Edge). EXECUTABLE_BROWSER takes priority.
 set "BROWSER=%EXECUTABLE_BROWSER%"
 if not defined BROWSER (
   for %%P in (
@@ -39,16 +41,22 @@ if not defined BROWSER (
 )
 
 set "PP=%TEMPLATE_ROOT%\puppeteer.json"
-if defined BROWSER (
-  set "WINP=!BROWSER:\=/!"
-  >"%PP%" echo {"executablePath": "!WINP!", "args": ["--no-sandbox"]}
-  echo mermaid 用ブラウザ: !WINP!
-  echo   -^> %PP% に記録しました
-) else (
-  echo 警告: Chrome / Edge が見つかりませんでした。 1>&2
-  echo       執筆・プレビューはこのまま可能です（mermaid はブラウザ内描画・node 不要）。 1>&2
-  echo       納品 PDF・配布 HTML を作るときだけ EXECUTABLE_BROWSER を指定して再実行してください。 1>&2
-)
+rem NOTE: use goto labels instead of an if/else block here. A parenthesized
+rem block that mixes a redirection (>"%PP%" echo ...) with a caret escape
+rem (echo ... -^> ...) makes cmd.exe misparse the block (". was unexpected").
+if not defined BROWSER goto :no_browser
 
-echo OK: "%CONTENT_DIR%" の初期化が完了しました。
+set "WINP=%BROWSER:\=/%"
+> "%PP%" echo {"executablePath": "%WINP%", "args": ["--no-sandbox"]}
+echo mermaid browser: %WINP%
+echo   recorded in %PP%
+goto :after_browser
+
+:no_browser
+echo WARNING: Chrome / Edge not found. 1>&2
+echo          Writing and preview still work (mermaid renders in-browser, no node). 1>&2
+echo          Only when building the deliverable PDF / distribution HTML, set EXECUTABLE_BROWSER and re-run. 1>&2
+
+:after_browser
+echo OK: initialized "%CONTENT_DIR%".
 endlocal
