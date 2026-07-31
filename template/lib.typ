@@ -277,7 +277,11 @@
 // design-doc()（図表の採番・参照）と ipo()（表番号）で共用する。
 #let _section-prefix(loc) = {
   let heads = counter(heading).at(loc)
-  numbering("1.1", heads.at(0, default: 0), heads.at(1, default: 0))
+  let sec = heads.at(1, default: 0)
+  // 節がある = 章.節（例 3.2）、節なし（章直下 = h1）= 章のみ（例 3）。
+  // 「3.0」のような 0 の節番号を出さない（図表番号は 表3-1 のようになる）。
+  if sec == 0 { numbering("1", heads.at(0, default: 0)) }
+  else { numbering("1.1", heads.at(0, default: 0), sec) }
 }
 
 // IPO の表番号用の接頭辞。節がある = 章.節（例 3.1）、節なし（章直下）= 章のみ（例 4）。
