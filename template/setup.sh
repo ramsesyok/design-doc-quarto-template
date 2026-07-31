@@ -11,12 +11,13 @@
 #      - design-doc.css … Quarto がローカル css として _book/ に取り込み、
 #        _book/ 単体で配信・zip できるようにする（HTML）。
 #      どちらも .gitignore 済みなので git には載らない。
-#   2) mermaid 図の SVG 化に使う Chrome/Edge を検出し、template/puppeteer.json に
-#      その実行パスを書く（Chromium はダウンロードしない）。design-doc.lua は
-#      環境変数なしでこの設定を読むので、VSCode の Quarto 拡張からも mermaid が動く。
+#   2) mermaid 図のベクター SVG 化に使う Chrome/Edge を検出し、template/puppeteer.json に
+#      その実行パスを書く（Chromium はダウンロードしない）。これは納品 PDF・配布 HTML を
+#      作る係にだけ要る（build-*.sh / MERMAID_SVG=1）。**執筆者のプレビューは不要**:
+#      quarto preview の HTML は Quarto 同梱 mermaid でブラウザ内描画され node も要らない。
 #
 # これを実行しておけば、以後はビルドスクリプトでも VSCode の Quarto 拡張
-# （quarto preview / render）でも PDF/HTML を出力できる。
+# （quarto preview / render）でも PDF/HTML を出力できる（プレビューは node 不要）。
 set -euo pipefail
 
 TEMPLATE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -61,9 +62,9 @@ if [ -n "$BROWSER" ]; then
   echo "  -> $PP に記録しました"
 else
   echo "警告: Chrome / Edge が見つかりませんでした。" >&2
-  echo "      mermaid 図を新規に書かないなら、このままで PDF/HTML は出力できます。" >&2
-  echo "      mermaid を使うなら EXECUTABLE_BROWSER=<chrome/msedge の実行ファイル> を" >&2
-  echo "      指定して setup を再実行してください。" >&2
+  echo "      執筆・プレビュー（quarto preview）はこのままで可能です（mermaid はブラウザ内描画）。" >&2
+  echo "      納品 PDF・配布 HTML を作るときだけ、EXECUTABLE_BROWSER=<chrome/msedge の実行" >&2
+  echo "      ファイル> を指定して setup を再実行してください。" >&2
 fi
 
 echo "OK: '$CONTENT_DIR' の初期化が完了しました。"

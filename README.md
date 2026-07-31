@@ -18,7 +18,8 @@ PDF 生成には Quarto と、その同梱の Typst バックエンドを使い�
 - 図・表の相互参照（本文中の「図 3.2-1」を自動生成）
 - 表のセル結合（大分類/中分類の縦結合を自動化。HTML タグを書かせない）
 - ポートレート／ランドスケープの混在、IPO 図の横向き定型ページ
-- mermaid（フローチャート／ステート図等）をビルド時に SVG 化して貼付
+- mermaid（フローチャート／ステート図等）。執筆者プレビューはブラウザ内描画（node 不要）、
+  納品 PDF・配布 HTML はビルド時にベクター SVG 化して貼付
 - 章・節ごとのファイル分割（`{{< include >}}`）でも採番は文書全体で連続
 - 章の途中で改ページ（`{{< pagebreak >}}`）
 - 同じ qmd から PDF（納品物）と静的 HTML（社内レビュー用・章ごとに分割）を出力
@@ -78,7 +79,12 @@ design-doc-quarto-template/
 (2) mermaid 図の SVG 化に使う Chrome/Edge を検出して `template/puppeteer.json` に
 記録します（Chromium はダウンロードしません）。どちらも `.gitignore` 済みです。
 これを一度やっておけば、下記のビルドスクリプトでも **VSCode の Quarto 拡張**
-（quarto preview / render）でも、mermaid を含めて PDF/HTML を出力できます。
+（quarto preview / render）でも、PDF/HTML を出力できます。
+
+> **執筆者は node.js 不要です。** `quarto preview`（HTML）での mermaid は Quarto 同梱の
+> ランタイムでブラウザ内描画されるため、node も npm も Chrome/Edge 設定も要りません
+> （上記 (2) は納品 PDF・配布 HTML を作る係だけが必要。→「mermaid を使う場合」）。
+> 執筆者に必要なのは Quarto と、css を配置するための `setup` だけです。
 
 > `template/lib.typ` や `design-doc.css` を改修したら `setup` を再実行してください（冪等・上書き）。
 > ビルドスクリプトは内部で `setup` を呼ぶので、スクリプト経由なら再実行は自動です。
@@ -91,6 +97,13 @@ design-doc-quarto-template/
 
 # 静的 HTML（社内レビュー用・章ごとに分割）
 ./template/build-html.sh docs     # → docs/_book/index.html
+```
+
+Windows の cmd では、同じ引数で `.bat` 版を使います（出力先は `.sh` 版と同じ）:
+
+```bat
+template\build-qmd.bat docs
+template\build-html.bat docs
 ```
 
 - 末尾の `docs` は執筆フォルダ名（省略時 `docs`）。フォルダを改名したらその名前を渡します。
@@ -115,8 +128,21 @@ git mv docs 設計書              # 例: docs → 設計書
 
 ### mermaid を使う場合
 
-`docs/chapters/**.qmd` の ` ```mermaid ` フェンスはビルド時に mermaid-cli で SVG 化されます。
-この機能を使うときだけ、mermaid-cli の依存が要ります。
+`docs/chapters/**.qmd` に ` ```mermaid ` フェンスで図を書きます。出力先で処理が変わります。
+
+- **執筆者のプレビュー（`quarto preview` / VSCode 拡張の HTML）** … Quarto 同梱の mermaid
+  でブラウザ内描画されます。**node も npm も Chrome/Edge 設定も不要**で、図を編集すれば
+  即プレビューに反映されます。執筆者はこのまま書くだけです。
+- **納品 PDF と配布 HTML（`build-qmd.sh` / `build-html.sh`）** … mermaid-cli でベクター SVG に
+  焼き、PDF と HTML で図を一致させます。**この経路だけ** node と Chrome/Edge が要ります
+  （＝下記は PDF/配布 HTML を作る係だけの手順）。
+
+> プレビューの図は Quarto 標準テーマで描かれるため、最終成果物（`htmlLabels:false` の SVG）
+> とは見た目が少し異なることがあります。内容確認には十分です。
+
+#### PDF・配布 HTML を作る係だけが入れるもの
+
+納品 PDF・配布 HTML を出す環境にだけ、mermaid-cli（node）と Chrome/Edge を用意します。
 
 ```bash
 cd template
@@ -134,9 +160,45 @@ SVG 化には **Chrome か Edge**（Chromium 系ブラウザ）が1つあれば�
 EXECUTABLE_BROWSER="/path/to/chrome-or-msedge" ./template/setup.sh docs
 ```
 
+Windows の cmd はインライン指定ができないので、`set` してから実行します:
+
+```bat
+set "EXECUTABLE_BROWSER=C:\Program Files\Google\Chrome\Application\chrome.exe"
+template\setup.bat docs
+```
+
 Chrome/Edge がまったく無い環境や、`--no-sandbox` 等の追加オプションが要る場合は
 `template/puppeteer.json` を直接編集できます。SVG は `docs/diagrams/` に内容ハッシュ名で
 キャッシュされ、同じ図は再変換されません（＝図を新規に書かなければ Chrome/Edge は不要）。
 
 `diagrams/order-flow.svg` のように qmd から直接参照している静的図を更新したいときは、
 `docs/diagrams/*.mmd` を編集して `./template/render-diagrams.sh docs` を実行します。
+
+### 環境変数
+
+ビルドの挙動は次の環境変数で調整できます。**通常は何も設定する必要はありません**
+（ビルドスクリプト／`.bat` が必要なものを自動で設定し、`design-doc.lua` は
+プロジェクト位置を自力で解決します）。
+
+| 変数 | 効果 | 既定 / 設定者 |
+|---|---|---|
+| `MERMAID_SVG` | `1` のとき **HTML でも** mermaid をベクター SVG に焼く（PDF と図を一致させ、図表採番に載せる）。未設定なら Quarto 同梱 mermaid でクライアント描画＝**node 不要**。 | `build-html.sh`/`.bat` が内部で `1` を設定。執筆者の `quarto preview` は未設定 |
+| `EXECUTABLE_BROWSER` | mermaid の SVG 化に使う Chrome/Edge の実行ファイルを明示する。`setup` の自動検出が外れる環境で使う。 | 未設定（`setup` が `template/puppeteer.json` に自動記録） |
+| `PUPPETEER_SKIP_DOWNLOAD` | `true` で `npm ci` 時に Chromium をダウンロードしない（手元の Chrome/Edge を使うため）。 | 手動（依存導入時のみ） |
+| `DOC_ROOT` / `TEMPLATE_ROOT` | （上級）フィルタが自力解決する執筆フォルダ / `template/` の場所を明示的に上書きする。拡張や特殊な配置で必要なときだけ。 | 未設定（自己解決） |
+
+- **執筆者は基本的に無関係です。** `MERMAID_SVG` はビルド係向けで、執筆者が
+  `quarto preview` するときは未設定のまま＝ブラウザ内描画（node 不要）になります。
+- **設定の仕方（cmd と bash で書式が違う）**: cmd は `VAR=値 コマンド` のインライン指定が
+  できません。`set` で先に定義してから実行します（`setlocal` 内なら以降のプロセスに継承）。
+
+```bash
+# bash（その1コマンドにだけ効かせる）
+MERMAID_SVG=1 quarto render --to html
+```
+
+```bat
+:: Windows cmd（set してから実行）
+set "MERMAID_SVG=1"
+quarto render --to html
+```

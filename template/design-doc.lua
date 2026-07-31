@@ -1,9 +1,11 @@
 -- ============================================================
 --  設計書様式用 Quarto/Pandoc フィルタ（typst 出力用）
 --  執筆者が qmd で使える記法を lib.typ の様式機能に対応付ける:
---   1) ```mermaid フェンス → mermaid-cli で SVG 化して画像に置換
---      （diagrams/ に内容ハッシュでキャッシュ。ブラウザは setup 生成の
---       template/puppeteer.json、または EXECUTABLE_BROWSER で指定した Chrome/Edge）
+--   1) ```mermaid フェンス → 出力先で振る舞いを変える:
+--        - PDF(typst) と 配布 HTML(MERMAID_SVG=1) … mermaid-cli で SVG 化して画像に
+--          置換（diagrams/ に内容ハッシュでキャッシュ。ブラウザは setup 生成の
+--          template/puppeteer.json、または EXECUTABLE_BROWSER の Chrome/Edge。node 要）
+--        - 執筆者プレビュー HTML(既定) … Quarto 同梱 mermaid でクライアント描画（node 不要）
 --   2) ::: {.landscape} div → #landscape[...]（横向きページ）
 --   3) ::: {.ipo} div → #ipo(...)（IPO図。最初の見出し = 機能名 / 処理名、
 --      入力/処理/出力（Input/Process/Output 可）の見出しで3列に分割）
@@ -84,11 +86,37 @@ local function render_mermaid(code)
   return rel
 end
 
+-- mermaid をベクター SVG に焼くのは PDF(typst) と、配布 HTML（build-html.sh が
+-- MERMAID_SVG=1 を渡す）。図を PDF と一致させ、Quarto の figure 採番に載せるため。
+-- 既定の HTML（＝執筆者の quarto preview）は node を使わずクライアント描画にする。
+local WANT_SVG = (FORMAT == 'typst') or (os.getenv('MERMAID_SVG') == '1')
+
+-- クライアント描画用に、Quarto 同梱の mermaid ランタイム（native ```{mermaid} と
+-- 同じ mermaid.min.js / init / css）を一度だけ注入する。QUARTO_SHARE_PATH は
+-- Quarto が render 時にフィルタへ渡す。init は pre.mermaid-js を拾って SVG 化する。
+local mermaid_runtime_injected = false
+local function inject_mermaid_runtime()
+  if mermaid_runtime_injected then return end
+  mermaid_runtime_injected = true
+  local base = _norm(os.getenv('QUARTO_SHARE_PATH')) .. '/formats/html/mermaid/'
+  quarto.doc.add_html_dependency({
+    name = 'quarto-diagram',
+    scripts = { base .. 'mermaid.min.js', base .. 'mermaid-init.js' },
+    stylesheets = { base .. 'mermaid.css' },
+  })
+end
+
 function CodeBlock(el)
   if el.classes:includes('mermaid') then
-    local svg = render_mermaid(el.text)
-    local img = pandoc.Image({}, svg, '', pandoc.Attr('', {}, { { 'width', '90%' } }))
-    return pandoc.Para({ img })
+    if WANT_SVG then
+      local svg = render_mermaid(el.text)
+      local img = pandoc.Image({}, svg, '', pandoc.Attr('', {}, { { 'width', '90%' } }))
+      return pandoc.Para({ img })
+    end
+    -- 執筆者プレビュー: Quarto native と同じ <pre class="mermaid mermaid-js"> を出す。
+    inject_mermaid_runtime()
+    return pandoc.RawBlock('html',
+      '<pre class="mermaid mermaid-js">\n' .. el.text .. '\n</pre>')
   end
 end
 

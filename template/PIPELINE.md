@@ -253,11 +253,36 @@ HTML では div 構造として組み立て直している。
 
 | 記法 | typst 出力 | html 出力 |
 |---|---|---|
-| ` ```mermaid ` | SVG 化して `image()` | 同左（同じ SVG を使う） |
+| ` ```mermaid ` | SVG 化して `image()` | **`MERMAID_SVG=1` 時**は同左（同じ SVG）／**既定**は `<pre class="mermaid mermaid-js">` を出しクライアント描画（§5.1） |
 | `::: {.landscape}` | `#landscape[...]` | div のまま（CSS で横スクロール） |
 | `::: {.ipo}` | `#ipo(...)` | `.ipo` div 構造 |
 | `::: {.merge-rows}` | 縦に連続する同値セルを rowspan 結合 | 同左 |
 | すべての表 | 列幅を本文幅いっぱいに正規化 | CSS の `width: 100%` |
+
+### 5.1 mermaid の2モード（執筆者は node 不要）
+
+執筆者は多数・PDF/配布 HTML を作るのは少数、という運用に合わせ、mermaid の変換先を
+**出力とフラグで切り替える**。`WANT_SVG = (FORMAT == 'typst') or (MERMAID_SVG == '1')`。
+
+| 実行者 | 経路 | mermaid の扱い | node |
+|---|---|---|---|
+| 執筆者 | `quarto preview`（HTML, env なし） | `<pre class="mermaid mermaid-js">` を出し、Quarto 同梱ランタイムでブラウザ内描画 | **不要** |
+| ビルド係 | `build-html.sh`（`MERMAID_SVG=1`） | mermaid-cli でベクター SVG 化して `image()` | 要 |
+| ビルド係 | `build-qmd.sh`（typst/PDF） | 同上 | 要 |
+
+- **クライアント描画の仕組み**: Quarto native の ` ```{mermaid} ` は typst では
+  フィルタが走る前に PNG へラスタライズされ、自前のベクター SVG に差し替えられない
+  （実測）。そこで執筆者記法は ` ```mermaid `（プレーン）に統一し、HTML 既定では
+  フィルタが `<pre class="mermaid mermaid-js">` を出す。描画に要る 3 ファイル
+  （`mermaid.min.js` / `mermaid-init.js` / `mermaid.css`）は `QUARTO_SHARE_PATH`
+  （Quarto が render 時にフィルタへ渡す）配下 `formats/html/mermaid/` から
+  `quarto.doc.add_html_dependency` で一度だけ注入する。`mermaid-init.js` は
+  `pre.mermaid-js` を拾って SVG 化するので、native ` ```{mermaid} ` と等価に描ける。
+- **なぜフラグで分けるか**: 配布 HTML は PDF と図を一致させたい（`htmlLabels:false` の
+  同一 SVG）ので `MERMAID_SVG=1` で従来の SVG 経路に載せ、`postprocess-html.mjs` の
+  figure 採番にも乗せる。プレビューの見た目は Quarto 標準テーマになるが内容確認には十分。
+- **注意**: プレビューでは mermaid をベクター SVG 化しないため `diagrams/mmd-*.svg` は
+  増えない（＝執筆者は Chrome/Edge も node_modules も要らない）。
 
 ### book 特有の注意（パスまわり）
 

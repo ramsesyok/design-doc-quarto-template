@@ -28,7 +28,9 @@ CONTENT_ROOT="$(cd "$CONTENT_DIR" && pwd)"
 "$TEMPLATE_ROOT/setup.sh" "$CONTENT_DIR"
 
 cd "$CONTENT_ROOT"
-quarto render --to html
+# 配布 HTML は mermaid を PDF と同じベクター SVG に焼く（執筆者プレビューだけは
+# MERMAID_SVG を渡さず Quarto 同梱 mermaid でクライアント描画＝node 不要）。
+MERMAID_SVG=1 quarto render --to html
 node "$TEMPLATE_ROOT/postprocess-html.mjs" _book
 
 echo "OK -> $CONTENT_DIR/_book/index.html （ブラウザで開く）"
