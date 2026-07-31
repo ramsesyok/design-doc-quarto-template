@@ -39,8 +39,14 @@ if (order.length === 0) {
 }
 
 const SP = String.raw`(?:\s|&nbsp;)*`;
-const HEAD = /<h[1-6][^>]*\bdata-number="([\d.]+)"/g;
-const CAP = new RegExp(String.raw`<figcaption[^>]*\bid="((?:fig|tbl)-[^"]*?)-caption-[^"]*"[^>]*>${SP}(図|表)${SP}[\d.]+:${SP}`, 'g');
+// 章番号は本文の章タイトル <h1 class="title"><span class="chapter-number">3</span>…
+// から取る。data-number は節見出し（h2 以降）にしか付かないため、章直下（節なし）の
+// 図表では章番号が拾えず 0 になってしまう。サイドバー／パンくずにも chapter-number は
+// あるが、それらは <h1 class="title"> に包まれないので誤って拾うことはない。
+// 番号なし章（{.unnumbered}）は chapter-number を持たず、章番号 0（例 図 0-1）になる。
+const CHAP = String.raw`<h1 class="title">(?:<span class="chapter-number">(\d+)</span>)?`;
+const HEAD = String.raw`<h[2-6][^>]*\bdata-number="([\d.]+)"`;
+const CAP = String.raw`<figcaption[^>]*\bid="((?:fig|tbl)-[^"]*?)-caption-[^"]*"[^>]*>${SP}(図|表)${SP}[\d.]+:${SP}`;
 const CAP_TAIL = new RegExp(String.raw`(図|表)${SP}[\d.]+:${SP}$`);
 
 const numberOf = new Map();   // floatId -> "図 3.3-1"
@@ -50,24 +56,31 @@ const staged = new Map();     // file -> { html, repl }
 for (const rel of order) {
   const file = path.join(root, rel);
   const html = fs.readFileSync(file, 'utf8');
-  const scan = new RegExp(`${HEAD.source}|${CAP.source}`, 'g');
+  const scan = new RegExp(`${CHAP}|${HEAD}|${CAP}`, 'g');
   let chap = 0;
   let sec = 0;
   const seq = new Map();      // "図|3.3" -> 連番
   const repl = [];            // [start, end, 置換文字列]
 
   for (let m; (m = scan.exec(html)) !== null; ) {
-    if (m[1]) {                                 // 見出し
-      const parts = m[1].split('.').map(Number);
+    if (m[0].startsWith('<h1')) {               // 章タイトル（章番号を確定・節を戻す）
+      chap = Number(m[1]) || 0;
+      sec = 0;
+      continue;
+    }
+    if (m[2]) {                                 // 節見出し
+      const parts = m[2].split('.').map(Number);
       chap = parts[0] || 0;
       sec = parts[1] || 0;
       continue;
     }
-    const [floatId, kind] = [m[2], m[3]];
+    const [floatId, kind] = [m[3], m[4]];
     const key = `${kind}|${chap}.${sec}`;
     const n = (seq.get(key) || 0) + 1;
     seq.set(key, n);
-    const label = `${kind} ${chap}.${sec}-${n}`;
+    // 節なし（章直下 = h1）は「3.0」ではなく「3」にする（表3-1 のように）
+    const prefix = sec === 0 ? `${chap}` : `${chap}.${sec}`;
+    const label = `${kind} ${prefix}-${n}`;
     numberOf.set(floatId, label);
     // マッチした「図&nbsp;1.1: 」の部分だけを差し替える（キャプション本文は残す）
     repl.push([m.index, m.index + m[0].length, m[0].replace(CAP_TAIL, `${label}　`)]);

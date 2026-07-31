@@ -18,6 +18,12 @@
 
 body { font-family: "Noto Sans CJK JP", "Yu Gothic", sans-serif; }
 
+/* 見出しレベル1（章）の番号を PDF と同じ「1.」表記にする。
+   Quarto は HTML では章番号を末尾ピリオドなし（1）で出すため CSS で補う。
+   .chapter-number は本文見出し・サイドバー・目次すべてで使われるので一律で付く。
+   節（h2 以降）は data-number 由来で 1.1 表記のまま（PDF と一致）。 */
+.chapter-number::after { content: "."; }
+
 /* 表は本文幅いっぱい（PDF 側の列幅正規化と見た目を揃える） */
 table { width: 100%; border-collapse: collapse; }
 th, td { border: 1px solid #b0b0b0; padding: .35em .6em; }
