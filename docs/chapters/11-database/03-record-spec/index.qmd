@@ -1,0 +1,7 @@
+## レコード仕様
+
+レコード（テーブル）ごとに、構成するデータ項目を記述する。
+
+{{< include 03-record-spec/01-order-record.qmd >}}
+
+{{< include 03-record-spec/02-stock-record.qmd >}}

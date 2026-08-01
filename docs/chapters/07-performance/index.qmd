@@ -1,0 +1,7 @@
+# 性能
+
+処理速度・応答時間・スループットについて、目標値・許容範囲と設定理由を記述する。
+
+{{< include 01-targets.qmd >}}
+
+{{< include 02-rationale.qmd >}}

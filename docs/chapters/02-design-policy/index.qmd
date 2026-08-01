@@ -1,0 +1,10 @@
+# 設計方針
+
+プログラムの基本設計を行う上での基本的な考え方及び方針を、方針ごとに標題を付けて
+記述する。各方針には設定した理由を併記する。
+
+{{< include 01-availability.qmd >}}
+
+{{< include 02-auto-alloc.qmd >}}
+
+{{< include 03-loose-coupling.qmd >}}

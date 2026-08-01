@@ -1,0 +1,5 @@
+## ハードウェア環境
+
+{{< include 01-hardware/01-config.qmd >}}
+
+{{< include 01-hardware/02-spec.qmd >}}

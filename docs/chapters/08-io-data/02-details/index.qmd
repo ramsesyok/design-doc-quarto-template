@@ -1,0 +1,7 @@
+## 入出力データ詳細
+
+データごとにデータ項目・レイアウトを記述する。
+
+{{< include 02-details/01-order-data.qmd >}}
+
+{{< include 02-details/02-sales-data.qmd >}}
