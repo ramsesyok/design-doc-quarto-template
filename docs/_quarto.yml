@@ -49,6 +49,7 @@ company-ja: ソフト開発株式会社   # スペック様式フッターの会
 company-en: Soft Development Co., Ltd.   # スペック様式フッターの会社名（英語）
 
 toc: true
+toc-location: left     # ページ内目次を右マージンから左へ移す（本文を広く取る）
 toc-title: 目 次
 toc-depth: 3
 
@@ -71,12 +72,14 @@ format:
     css: design-doc.css
     embed-resources: false
     # 画面幅の基準を 1920px にする（Quarto 既定は sidebar 250 + body 800 +
-    # margin 250 ≒ 1280px）。左ペインは「章番号 + 見出し15文字」が折り返さずに
-    # 収まる幅。合計 300 + 1380 + 240 = 1920px。
+    # margin 250 ≒ 1280px）。左ペイン（sidebar）は「章番号 + 見出し15文字」＋
+    # ページ内目次（toc-location: left で左に移動）が折り返さずに収まる幅。
+    # ページ内目次を左へ寄せたぶん右マージンは詰め、本文を広く取る。
+    # 合計 300 + 1560 + 60 = 1920px。
     grid:
       sidebar-width: 300px
-      body-width: 1380px
-      margin-width: 240px
+      body-width: 1560px
+      margin-width: 60px
 
 filters:
   - ../template/design-doc.lua

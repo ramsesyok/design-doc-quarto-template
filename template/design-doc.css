@@ -24,9 +24,28 @@ body { font-family: "Noto Sans CJK JP", "Yu Gothic", sans-serif; }
    節（h2 以降）は data-number 由来で 1.1 表記のまま（PDF と一致）。 */
 .chapter-number::after { content: "."; }
 
+/* 縦方向を詰めて 1 画面に多く表示する（社内レビュー用 HTML）。
+   段落間隔・行間・見出し前後の余白を控えめにする。左ペイン（目次・章ナビ）は
+   触らず本文だけを対象にする。PDF には影響しない。 */
+body { line-height: 1.45; }
+main { margin-top: 4px !important; margin-bottom: 4px !important; }
+#title-block-header { margin-bottom: .4rem !important; }
+#quarto-document-content { padding-top: .2rem; }
+#quarto-document-content p,
+#quarto-document-content ul,
+#quarto-document-content ol { margin-bottom: .7em; }
+#quarto-document-content li { margin-bottom: .15em; }
+#quarto-document-content h1:not(.title),
+#quarto-document-content h2 { margin-top: 1em; margin-bottom: .35em; }
+#quarto-document-content h3,
+#quarto-document-content h4 { margin-top: .8em; margin-bottom: .25em; }
+#quarto-document-content figure,
+#quarto-document-content .quarto-figure { margin-top: .4em; margin-bottom: .6em; }
+#quarto-document-content figcaption { margin-bottom: .2em; }
+
 /* 表は本文幅いっぱい（PDF 側の列幅正規化と見た目を揃える） */
 table { width: 100%; border-collapse: collapse; }
-th, td { border: 1px solid #b0b0b0; padding: .35em .6em; }
+th, td { border: 1px solid #b0b0b0; padding: .2em .6em; }
 th { background: #f0f0f0; }
 td[rowspan], th[rowspan] { vertical-align: middle; }
 
