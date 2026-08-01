@@ -1,0 +1,7 @@
+## 画面詳細
+
+画面ごとにレイアウト・データ項目・操作内容を記述する。
+
+{{< include 02-details/01-order-screen.qmd >}}
+
+{{< include 02-details/02-shipping-screen.qmd >}}

@@ -1,0 +1,7 @@
+# 設計内容の評価
+
+プログラム基本設計の設計内容を、規格が定める観点について評価し、結果を記述する。
+
+{{< include 01-criteria.qmd >}}
+
+{{< include 02-traceability.qmd >}}

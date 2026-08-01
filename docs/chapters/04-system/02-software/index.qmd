@@ -1,0 +1,7 @@
+## ソフトウェア環境
+
+{{< include 02-software/01-config.qmd >}}
+
+{{< include 02-software/02-spec.qmd >}}
+
+{{< include 02-software/03-params.qmd >}}

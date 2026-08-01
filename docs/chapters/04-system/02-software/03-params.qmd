@@ -1,0 +1,12 @@
+### ソフトウェア設定パラメータ
+
+市販ソフトウェアで設定が必要な主なパラメータを @tbl-swparam に示す。
+
+| ソフトウェア | パラメータ         | 設定値 |
+|--------------|--------------------|--------|
+| Tomcat       | maxThreads         | 200    |
+| Tomcat       | connectionTimeout  | 20000  |
+| PostgreSQL   | max_connections    | 200    |
+| PostgreSQL   | shared_buffers     | 32 GB  |
+
+: ソフトウェア設定パラメータ {#tbl-swparam}

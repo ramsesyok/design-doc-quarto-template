@@ -1,0 +1,11 @@
+# 障害対策
+
+プログラムの障害への対策について、機能・ファイル・データベース・その他の観点で記述する。
+
+{{< include 01-function.qmd >}}
+
+{{< include 02-file.qmd >}}
+
+{{< include 03-database.qmd >}}
+
+{{< include 04-other.qmd >}}

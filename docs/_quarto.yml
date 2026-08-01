@@ -27,19 +27,19 @@ book:
   author: 設計チーム
   chapters:
     - index.qmd
-    - chapters/01-overview/_chapter.qmd
-    - chapters/02-design-policy.qmd
+    - chapters/01-overview/index.qmd
+    - chapters/02-design-policy/index.qmd
     - chapters/03-design-conditions.qmd
-    - chapters/04-system/_chapter.qmd
+    - chapters/04-system/index.qmd
     - chapters/05-requirements.qmd
-    - chapters/06-functions/_chapter.qmd
-    - chapters/07-performance.qmd
-    - chapters/08-io-data/_chapter.qmd
-    - chapters/09-screens/_chapter.qmd
-    - chapters/10-files.qmd
-    - chapters/11-database/_chapter.qmd
-    - chapters/12-fault.qmd
-    - chapters/13-evaluation.qmd
+    - chapters/06-functions/index.qmd
+    - chapters/07-performance/index.qmd
+    - chapters/08-io-data/index.qmd
+    - chapters/09-screens/index.qmd
+    - chapters/10-files/index.qmd
+    - chapters/11-database/index.qmd
+    - chapters/12-fault/index.qmd
+    - chapters/13-evaluation/index.qmd
 
 lang: ja
 doc-number: SD-2026-001
