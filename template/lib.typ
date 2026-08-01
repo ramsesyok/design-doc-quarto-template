@@ -446,6 +446,9 @@
   // 図表カウンタのリセットは h1/h2 だけに掛ける（h3 以降で戻すと
   // 「章.節-連番」の連番が節の途中で 1 に戻ってしまう）。
   show heading.where(level: 1): it => {
+    // 見出しレベル1（章）は常に新しいページから始める。weak: true でページ先頭では
+    // 改ページせず、先頭章・目次直後などに空白ページが入らない（PDF のみ）。
+    pagebreak(weak: true)
     reset-floats()
     _sec-indent.update(0)
     set text(size: HEAD-SIZES.at(0), weight: "bold")
