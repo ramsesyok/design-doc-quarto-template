@@ -29,9 +29,9 @@ book:
     - index.qmd
     - chapters/01-overview/index.qmd
     - chapters/02-design-policy/index.qmd
-    - chapters/03-design-conditions.qmd
+    - chapters/03-design-conditions/index.qmd
     - chapters/04-system/index.qmd
-    - chapters/05-requirements.qmd
+    - chapters/05-requirements/index.qmd
     - chapters/06-functions/index.qmd
     - chapters/07-performance/index.qmd
     - chapters/08-io-data/index.qmd

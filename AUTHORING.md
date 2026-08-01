@@ -53,7 +53,7 @@ book:
   chapters:                             # 章の並び（3章参照）
     - index.qmd
     - chapters/01-overview/index.qmd
-    - chapters/03-design-conditions.qmd
+    - chapters/03-design-conditions/index.qmd
 
 lang: ja
 doc-number: SD-2026-001   # 資料番号（各ページ右上・横ページ右端に出る）
@@ -109,12 +109,11 @@ toc-depth: 3              # 目次に載せる見出しの深さ
 
 **分割の規約**（サンプル `docs/chapters/` がこの規約の実例）:
 
-- **子見出しを持つ階層はフォルダにする**。フォルダのラッパーは常に `index.qmd`。
+- **章（L1）は必ずフォルダにする**（節が無くても）。ラッパーは `index.qmd`。
+- **節（L2）・項（L3）は、子見出しを持つときだけフォルダにする**。ラッパーは常に `index.qmd`。
   `index.qmd` にその階層の見出し（`#`/`##`/`###`）と、子を取り込む `{{< include >}}` を書く。
-- **子見出しを持たない階層（リーフ）はファイルのまま**（`NN-name.qmd`）。
-- **章（L1）・節（L2）・項（L3）まで**をこの方式で分ける。**目（L4）・5段目（L5）は
-  分けず**、親ファイルの中にそのまま書く。
-- 子のない章（節を持たない章）は、フォルダにせず1ファイル（`NN-name.qmd`）でよい。
+- **子見出しを持たない節・項（リーフ）はファイルのまま**（`NN-name.qmd`）。
+- **目（L4）・5段目（L5）は分けず**、親ファイルの中にそのまま書く。
 
 ```text
 chapters/
@@ -128,7 +127,8 @@ chapters/
       index.qmd           #     → ## ハードウェア環境 ＋ include
       01-config.qmd       #     項(L3)・子なし＝ファイル → ### ハードウェア構成
       02-spec.qmd
-  05-requirements.qmd     # 章(L1)・節なし＝1ファイル
+  05-requirements/        # 章(L1)・節なしでもフォルダにする
+    index.qmd             #   → # プログラムに対する要求分析（節が無ければ本文も index に）
 ```
 
 > **重要1**: 各階層の見出し（`#`/`##`/`###`）は、その階層の `index.qmd`（フォルダの
