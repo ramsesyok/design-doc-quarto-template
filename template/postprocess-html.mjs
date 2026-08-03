@@ -48,6 +48,10 @@ const CHAP = String.raw`<h1 class="title">(?:<span class="chapter-number">(\d+)<
 const HEAD = String.raw`<h[2-6][^>]*\bdata-number="([\d.]+)"`;
 const CAP = String.raw`<figcaption[^>]*\bid="((?:fig|tbl)-[^"]*?)-caption-[^"]*"[^>]*>${SP}(図|表)${SP}[\d.]+:${SP}`;
 const CAP_TAIL = new RegExp(String.raw`(図|表)${SP}[\d.]+:${SP}$`);
+// 分割表(.split-table)のキャプション div（design-doc.lua が各パートの上に置く）。
+// 先頭パート(data-split-first)で1つの表番号を確定し、続くパートも同じ番号を共有する。
+// 番号は本文の表と同じ連番列に載せる（走査順に採番）。
+const SPLIT = String.raw`<div class="split-caption"([^>]*)>([\s\S]*?)</div>`;
 
 const numberOf = new Map();   // floatId -> "図 3.3-1"
 const staged = new Map();     // file -> { html, repl }
@@ -56,11 +60,12 @@ const staged = new Map();     // file -> { html, repl }
 for (const rel of order) {
   const file = path.join(root, rel);
   const html = fs.readFileSync(file, 'utf8');
-  const scan = new RegExp(`${CHAP}|${HEAD}|${CAP}`, 'g');
+  const scan = new RegExp(`${CHAP}|${HEAD}|${CAP}|${SPLIT}`, 'g');
   let chap = 0;
   let sec = 0;
   const seq = new Map();      // "図|3.3" -> 連番
   const repl = [];            // [start, end, 置換文字列]
+  let splitLabel = '';        // いま処理中の分割表グループの共有ラベル
 
   for (let m; (m = scan.exec(html)) !== null; ) {
     if (m[0].startsWith('<h1')) {               // 章タイトル（章番号を確定・節を戻す）
@@ -72,6 +77,23 @@ for (const rel of order) {
       const parts = m[2].split('.').map(Number);
       chap = parts[0] || 0;
       sec = parts[1] || 0;
+      continue;
+    }
+    if (m[5] !== undefined) {                   // 分割表のキャプション div
+      const attrs = m[5];
+      const inner = m[6];
+      if (/data-split-first="true"/.test(attrs)) {
+        // 先頭パート = ここで表番号を1つ確定（本文の表と同じ「表」列の連番）
+        const key = `表|${chap}.${sec}`;
+        const n = (seq.get(key) || 0) + 1;
+        seq.set(key, n);
+        const prefix = sec === 0 ? `${chap}` : `${chap}.${sec}`;
+        splitLabel = `表 ${prefix}-${n}`;
+      }
+      // 続くパートも先頭と同じ番号。キャプション先頭に前置する（本文「（i／M）…」は残す）。
+      const label = splitLabel || '表 ?';
+      repl.push([m.index, m.index + m[0].length,
+        `<div class="split-caption"${attrs}>${label}　${inner}</div>`]);
       continue;
     }
     const [floatId, kind] = [m[3], m[4]];
