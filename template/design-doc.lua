@@ -204,6 +204,35 @@ local function html_cell(cls, text)
   return html_div(cls, { pandoc.Plain({ pandoc.Str(text) }) })
 end
 
+-- 表の列幅計算に使う表示幅（全角=2 / 半角=1）。split-table の幅統一と Table() で共用する。
+local function disp_width(s)
+  local w = 0
+  for _, cp in utf8.codes(s) do w = w + ((cp > 0x2E7F) and 2 or 1) end
+  return w
+end
+
+local function cell_width(cell)
+  return disp_width(pandoc.utils.stringify(pandoc.Div(cell.contents)))
+end
+
+-- 表 t の各列の最大表示幅を maxw（1始まり）へ集める。結合セル（col_span>1）は根拠にしない。
+local function scan_table_widths(t, ncol, maxw)
+  local function scan(rows)
+    for _, row in ipairs(rows) do
+      local c = 1
+      for _, cell in ipairs(row.cells) do
+        if cell.col_span == 1 and c <= ncol then
+          local w = cell_width(cell)
+          if w > maxw[c] then maxw[c] = w end
+        end
+        c = c + cell.col_span
+      end
+    end
+  end
+  for _, r in ipairs(t.head.rows) do scan({ r }) end
+  for _, b in ipairs(t.bodies) do scan(b.body) end
+end
+
 function Div(el)
   if el.classes:includes('merge-rows') then
     -- div 自体は残さない（block が挟まると図表の中央寄せが崩れるため）
@@ -211,6 +240,86 @@ function Div(el)
       for _, b in ipairs(t.bodies) do merge_body(b.body) end
       return t
     end }).content
+  end
+
+  if el.classes:includes('split-table') then
+    -- ::: {.split-table caption="…"} … 空行区切りの複数パイプ表 … :::
+    -- 大きな表を複数パートに割り、同じ表番号を共有しつつキャプションに「（i／M）」を
+    -- 付ける。列幅は全パート横断で統一する。M（分割総数）= 内包する表の数。
+    --
+    -- なぜクラス div（#tbl- を付けない）か:
+    --   Quarto は #tbl- 付きの表を、ユーザ Lua フィルタより前に独自ノード
+    --   （FloatRefTarget）へ変換してしまい、ここへは届かない。そこで ipo/landscape/
+    --   merge-rows と同じくクラス div で受け、採番も自前で行う（ipo と同じ流儀）。
+    --   反面、Quarto の図表フロートに載らないため相互参照 @tbl- の対象にはできない
+    --   （番号は本文の表と連続する。参照が要る表は分割しない運用）。
+    local parts = {}
+    for _, b in ipairs(el.content) do
+      if b.t == 'Table' then parts[#parts + 1] = b end
+    end
+    local M = #parts
+    if M == 0 then return el.content end
+    local caption = el.attributes.caption or ''
+
+    -- 全パート横断で列幅を統一（列数が揃っているときだけ。ずれていたら警告して個別幅のまま）。
+    local ncol = #parts[1].colspecs
+    local same = ncol > 0
+    for _, t in ipairs(parts) do if #t.colspecs ~= ncol then same = false end end
+    if same then
+      local maxw = {}
+      for c = 1, ncol do maxw[c] = 1 end
+      for _, t in ipairs(parts) do scan_table_widths(t, ncol, maxw) end
+      local total = 0
+      for c = 1, ncol do
+        if maxw[c] > 40 then maxw[c] = 40 end
+        if maxw[c] < 4 then maxw[c] = 4 end
+        total = total + maxw[c]
+      end
+      for _, t in ipairs(parts) do
+        for c = 1, ncol do t.colspecs[c] = { t.colspecs[c][1], maxw[c] / total } end
+      end
+    else
+      io.stderr:write('[design-doc] 警告: split-table 内の表で列数が一致しません。' ..
+        '列幅の統一をスキップします。\n')
+    end
+
+    -- 「（i／M）　」。M==1 のときは付けない（通常の1枚表として扱う）。
+    local function tag(i)
+      if M < 2 then return '' end
+      return '（' .. i .. '／' .. M .. '）　'
+    end
+    -- typst 文字列（"…"）へ入れるキャプションのエスケープ。
+    local function tcap(i)
+      return (tag(i) .. caption):gsub('\\', '\\\\'):gsub('"', '\\"')
+    end
+
+    local out = pandoc.Blocks({})
+    local TBLC = 'counter(figure.where(kind: "quarto-float-tbl"))'
+    for i = 1, M do
+      if IS_HTML then
+        -- HTML: 採番用キャプション div を各パートの上に置く。番号は
+        -- postprocess-html.mjs が本文の表と同じ連番で採番し、先頭に前置する。
+        -- 先頭パートに data-split-first を付け、そこで1つの表番号を確定させる。
+        local first = (i == 1) and ' data-split-first="true"' or ''
+        local body = (tag(i) .. caption):gsub('&', '&amp;'):gsub('<', '&lt;'):gsub('>', '&gt;')
+        out:insert(pandoc.RawBlock('html', '<div class="split-caption"' .. first ..
+          ' data-part="' .. i .. '" data-total="' .. M .. '">' .. body .. '</div>'))
+      elseif i == 1 then
+        -- PDF: 先頭で採番カウンタを1つ進め、全パートが同じ番号を表示する（ipo と同じ手法）。
+        -- step はカウンタ更新、番号表示は別 context の get で行う（同一 context 内で
+        -- step 直後に get すると値が確定しないため、位置的に後段の context で読む）。
+        out:insert(pandoc.RawBlock('typst', '#{\n  ' .. TBLC .. '.step()\n  ' ..
+          'context align(center, text(font: JP-SANS, size: BODY-SIZE)[表 ' ..
+          '#_section-prefix(here())-#' .. TBLC .. '.get().first()　#("' .. tcap(i) .. '")])\n}'))
+      else
+        out:insert(pandoc.RawBlock('typst', '#pagebreak(weak: true)'))
+        out:insert(pandoc.RawBlock('typst',
+          '#context align(center, text(font: JP-SANS, size: BODY-SIZE)[表 ' ..
+          '#_section-prefix(here())-#' .. TBLC .. '.get().first()　#("' .. tcap(i) .. '")])'))
+      end
+      out:insert(parts[i])
+    end
+    return out
   end
 
   if el.classes:includes('landscape') then
@@ -316,15 +425,7 @@ end
 --  「必須」のような短い列が広くなりすぎるため。
 -- ============================================================
 
-local function disp_width(s)
-  local w = 0
-  for _, cp in utf8.codes(s) do w = w + ((cp > 0x2E7F) and 2 or 1) end
-  return w
-end
-
-local function cell_width(cell)
-  return disp_width(pandoc.utils.stringify(pandoc.Div(cell.contents)))
-end
+-- disp_width / cell_width は Div より前（split-table と共用）へ移動済み。
 
 function Table(t)
   local ncol = #t.colspecs

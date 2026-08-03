@@ -53,6 +53,10 @@ td[rowspan], th[rowspan] { vertical-align: middle; }
 .landscape { overflow-x: auto; }
 .landscape > table { min-width: 40em; }
 
+/* 分割表(.split-table)の2枚目以降のキャプション。1枚目の figcaption と体裁を揃える
+   （中央寄せ・表の直上）。番号は postprocess-html.mjs が先頭に前置する。 */
+.split-caption { text-align: center; margin: .4em 0 .2em; }
+
 /* ============================================================
    IPO図（機能名/処理名 + 入力/処理/出力）
    PDF の定型枠を画面向けに再現する。DOM 構造は design-doc.lua が組む:

@@ -5,3 +5,5 @@
 {{< include 03-record-spec/01-order-record.qmd >}}
 
 {{< include 03-record-spec/02-stock-record.qmd >}}
+
+{{< include 03-record-spec/03-shipping-record.qmd >}}
