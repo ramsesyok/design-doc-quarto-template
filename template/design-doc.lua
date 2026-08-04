@@ -234,16 +234,13 @@ local function scan_table_widths(t, ncol, maxw)
 end
 
 function Div(el)
-  if el.classes:includes('merge-rows') then
-    -- div 自体は残さない（block が挟まると図表の中央寄せが崩れるため）
-    return pandoc.walk_block(el, { Table = function(t)
-      for _, b in ipairs(t.bodies) do merge_body(b.body) end
-      return t
-    end }).content
-  end
+  local is_split = el.classes:includes('split-table')
+  local is_merge = el.classes:includes('merge-rows')
 
-  if el.classes:includes('split-table') then
-    -- ::: {.split-table caption="…"} … 空行区切りの複数パイプ表 … :::
+  if is_split then
+    -- ::: {.split-table caption="…" label="tbl-x"} … 空行区切りの複数パイプ表 … :::
+    -- （.merge-rows を併記すると各パートを rowspan 結合する＝分割＋セル結合の合成）
+    --
     -- 大きな表を複数パートに割り、同じ表番号を共有しつつキャプションに「（i／M）」を
     -- 付ける。列幅は全パート横断で統一する。M（分割総数）= 内包する表の数。
     --
@@ -251,8 +248,12 @@ function Div(el)
     --   Quarto は #tbl- 付きの表を、ユーザ Lua フィルタより前に独自ノード
     --   （FloatRefTarget）へ変換してしまい、ここへは届かない。そこで ipo/landscape/
     --   merge-rows と同じくクラス div で受け、採番も自前で行う（ipo と同じ流儀）。
-    --   反面、Quarto の図表フロートに載らないため相互参照 @tbl- の対象にはできない
-    --   （番号は本文の表と連続する。参照が要る表は分割しない運用）。
+    --   反面 Quarto の図表フロートに載らないため、相互参照は Quarto の crossref では
+    --   解決できない。そこで label="tbl-x" で参照 id を受け取り、自前チャネルで解決する:
+    --     typst … 採番位置に <sn-tbl-x> ラベルを置き、参照側（Cite）は #_xref に置換
+    --             （lib.typ の _xref がこの location で図表カウンタを読み同じ番号を出す）。
+    --     HTML … 先頭パートに data-ref を付け、番号は postprocess-html.mjs が numberOf に
+    --            登録して参照アンカーを解決する。
     local parts = {}
     for _, b in ipairs(el.content) do
       if b.t == 'Table' then parts[#parts + 1] = b end
@@ -261,7 +262,17 @@ function Div(el)
     if M == 0 then return el.content end
     local caption = el.attributes.caption or ''
 
+    -- 参照 id（label="tbl-x"）。本文では @tbl-x で参照するので tbl- 始まりを要求する。
+    local ref = el.attributes.label
+    if ref ~= nil and not ref:match('^tbl%-') then
+      io.stderr:write('[design-doc] 警告: split-table の label="' .. ref ..
+        '" は tbl- で始まりません。相互参照を無効にします。\n')
+      ref = nil
+    end
+
     -- 全パート横断で列幅を統一（列数が揃っているときだけ。ずれていたら警告して個別幅のまま）。
+    -- 結合（.merge-rows）より前＝素のグリッドで幅を測る（結合後は下段の欠けた行で
+    -- 列位置がずれ、幅計測を誤るため）。
     local ncol = #parts[1].colspecs
     local same = ncol > 0
     for _, t in ipairs(parts) do if #t.colspecs ~= ncol then same = false end end
@@ -283,14 +294,22 @@ function Div(el)
         '列幅の統一をスキップします。\n')
     end
 
-    -- 「（i／M）　」。M==1 のときは付けない（通常の1枚表として扱う）。
-    local function tag(i)
+    -- .merge-rows 併記なら、幅を測ったあとに各パートを rowspan 結合する。
+    if is_merge then
+      for _, t in ipairs(parts) do
+        for _, b in ipairs(t.bodies) do merge_body(b.body) end
+      end
+    end
+
+    -- キャプション後ろに付く「（i／M）」。M==1 のときは付けない（通常の1枚表として扱う）。
+    -- 表番号の後ろは「キャプション（i／M）」の順（例: 表 2.1-1　ユーザ属性一覧（1／3））。
+    local function suffix(i)
       if M < 2 then return '' end
-      return '（' .. i .. '／' .. M .. '）　'
+      return '（' .. i .. '／' .. M .. '）'
     end
     -- typst 文字列（"…"）へ入れるキャプションのエスケープ。
     local function tcap(i)
-      return (tag(i) .. caption):gsub('\\', '\\\\'):gsub('"', '\\"')
+      return (caption .. suffix(i)):gsub('\\', '\\\\'):gsub('"', '\\"')
     end
 
     local out = pandoc.Blocks({})
@@ -300,9 +319,11 @@ function Div(el)
         -- HTML: 採番用キャプション div を各パートの上に置く。番号は
         -- postprocess-html.mjs が本文の表と同じ連番で採番し、先頭に前置する。
         -- 先頭パートに data-split-first を付け、そこで1つの表番号を確定させる。
+        -- ref があれば data-ref を付け、postprocess が numberOf に登録して参照を解決する。
         local first = (i == 1) and ' data-split-first="true"' or ''
-        local body = (tag(i) .. caption):gsub('&', '&amp;'):gsub('<', '&lt;'):gsub('>', '&gt;')
-        out:insert(pandoc.RawBlock('html', '<div class="split-caption"' .. first ..
+        local dref = (i == 1 and ref) and (' data-ref="' .. ref .. '"') or ''
+        local body = (caption .. suffix(i)):gsub('&', '&amp;'):gsub('<', '&lt;'):gsub('>', '&gt;')
+        out:insert(pandoc.RawBlock('html', '<div class="split-caption"' .. first .. dref ..
           ' data-part="' .. i .. '" data-total="' .. M .. '">' .. body .. '</div>'))
       elseif i == 1 then
         -- PDF: 先頭で採番カウンタを1つ進め、全パートが同じ番号を表示する（ipo と同じ手法）。
@@ -311,6 +332,11 @@ function Div(el)
         out:insert(pandoc.RawBlock('typst', '#{\n  ' .. TBLC .. '.step()\n  ' ..
           'context align(center, text(font: JP-SANS, size: BODY-SIZE)[表 ' ..
           '#_section-prefix(here())-#' .. TBLC .. '.get().first()　#("' .. tcap(i) .. '")])\n}'))
+        -- 採番位置（step 済み・以降このグループでは step しない）に参照ラベルを置く。
+        -- _xref がこの location で図表カウンタを読み、キャプションと同じ番号を解決する。
+        if ref then
+          out:insert(pandoc.RawBlock('typst', '#metadata(none)#label("sn-' .. ref .. '")'))
+        end
       else
         out:insert(pandoc.RawBlock('typst', '#pagebreak(weak: true)'))
         out:insert(pandoc.RawBlock('typst',
@@ -320,6 +346,16 @@ function Div(el)
       out:insert(parts[i])
     end
     return out
+  end
+
+  if is_merge then
+    -- 非分割の .merge-rows: 単一フロートのまま縦連続の同値セルを rowspan 結合する。
+    -- #tbl-x を付ければ Quarto の crossref がそのまま効く（div 自体は残さない。
+    -- block が挟まると図表の中央寄せが崩れるため）。
+    return pandoc.walk_block(el, { Table = function(t)
+      for _, b in ipairs(t.bodies) do merge_body(b.body) end
+      return t
+    end }).content
   end
 
   if el.classes:includes('landscape') then
@@ -461,4 +497,28 @@ function Table(t)
     t.colspecs[c] = { t.colspecs[c][1], maxw[c] / total }
   end
   return t
+end
+
+-- ============================================================
+--  @tbl- 相互参照の先回り解決。
+--
+--  Quarto の crossref は全 Lua フィルタより後段で走り、フロート（#tbl-x）しか
+--  解決しない。自前採番の表（.split-table / 分割 merge-rows）への @tbl-x は
+--  未解決＝「?」になってしまう。そこで参照（Cite）をこの段階で置換し、解決を
+--  自前チャネルに載せる（採番はすでに typst カウンタ／postprocess で自前に持っている）:
+--    - typst: #_xref("tbl-x")（lib.typ）。<sn-tbl-x> があれば分割表番号、
+--      なければ Quarto が付けた <tbl-x> へ ref 委譲（通常表・merge-rows は従来どおり）。
+--    - HTML: 自前アンカー。番号は postprocess-html.mjs が numberOf から確定する
+--      （通常表 id も numberOf に載るので、通常表の参照も同じ経路で解決される）。
+--  fig- 参照は Quarto ネイティブのまま（図は常にフロートで従来どおり効くため触らない）。
+--  複数引用（[@tbl-a; @tbl-b]）は Quarto に委ねる（自前採番表を group 参照する運用は無い）。
+function Cite(el)
+  if #el.citations ~= 1 then return nil end
+  local id = el.citations[1].id
+  if not id:match('^tbl%-') then return nil end
+  if IS_HTML then
+    return pandoc.RawInline('html', '<a href="#' .. id .. '" class="quarto-xref">?</a>')
+  else
+    return pandoc.RawInline('typst', '#_xref("' .. id .. '")')
+  end
 end
