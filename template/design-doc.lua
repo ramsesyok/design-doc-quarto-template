@@ -306,14 +306,18 @@ local function scan_table_widths(t, ncol, maxw)
 end
 
 function Div(el)
-  local is_split = el.classes:includes('split-table')
+  -- 統一テーブル: .tbl（.split-table は後方互換エイリアス）。1つのクラスで
+  -- 通常表・分割・セル結合・列幅・相互参照をすべて賄う。
+  local is_tbl = el.classes:includes('tbl') or el.classes:includes('split-table')
   local is_merge = el.classes:includes('merge-rows')
-  -- 結合対象列の明示指定（例 merge-cols="2,3"）。省略時は nil（全列を左から階層）。
-  local mcols = parse_merge_cols(el.attributes['merge-cols'])
+  local mcols_attr = el.attributes['merge-cols']
 
-  if is_split then
-    -- ::: {.split-table caption="…" label="tbl-x"} … 空行区切りの複数パイプ表 … :::
-    -- （.merge-rows を併記すると各パートを rowspan 結合する＝分割＋セル結合の合成）
+  if is_tbl then
+    -- ::: {.tbl caption="…" label="tbl-x" widths="…" merge-cols="…"} … 1つ以上のパイプ表 … :::
+    --   ・表が1つ … 通常表（caption/label が無ければ採番もしない素の表）
+    --   ・表が複数（空行区切り）… 分割表（同じ番号＋「（i／M）」）
+    --   ・merge-cols="2,3"（or "all"、または .merge-rows 併記）… セル結合
+    --   ・widths="…" … 列幅の明示指定
     --
     -- 大きな表を複数パートに割り、同じ表番号を共有しつつキャプションに「（i／M）」を
     -- 付ける。列幅は全パート横断で統一する。M（分割総数）= 内包する表の数。
@@ -339,9 +343,28 @@ function Div(el)
     -- 参照 id（label="tbl-x"）。本文では @tbl-x で参照するので tbl- 始まりを要求する。
     local ref = el.attributes.label
     if ref ~= nil and not ref:match('^tbl%-') then
-      io.stderr:write('[design-doc] 警告: split-table の label="' .. ref ..
+      io.stderr:write('[design-doc] 警告: .tbl の label="' .. ref ..
         '" は tbl- で始まりません。相互参照を無効にします。\n')
       ref = nil
+    end
+
+    -- 結合するか＆対象列。.merge-rows 併記、または merge-cols 属性で発火する。
+    --   merge-cols="2,3" … 2,3列目を階層結合／ merge-cols="all"（or .merge-rows）… 全列を左から結合。
+    local do_merge, mcols = false, nil
+    if is_merge then
+      do_merge, mcols = true, parse_merge_cols(mcols_attr)   -- mcols=nil は全列
+    elseif mcols_attr and mcols_attr ~= '' then
+      if mcols_attr == 'all' then
+        do_merge, mcols = true, nil
+      else
+        mcols = parse_merge_cols(mcols_attr)
+        if mcols then
+          do_merge = true
+        else
+          io.stderr:write('[design-doc] 警告: merge-cols="' .. mcols_attr ..
+            '" を解釈できません。結合しません。\n')
+        end
+      end
     end
 
     -- 全パート横断で列幅を統一（列数が揃っているときだけ。ずれていたら警告して個別幅のまま）。
@@ -353,11 +376,11 @@ function Div(el)
     -- widths="…" があれば全パートにその相対幅を割り当てる（無ければ内容量から自動算出）。
     local widths = same and parse_widths(el.attributes.widths, ncol) or nil
     if el.attributes.widths and same and not widths then
-      io.stderr:write('[design-doc] 警告: split-table の widths の個数が列数(' .. ncol ..
+      io.stderr:write('[design-doc] 警告: .tbl の widths の個数が列数(' .. ncol ..
         ')と一致しません。自動幅にします。\n')
     end
     if not same then
-      io.stderr:write('[design-doc] 警告: split-table 内の表で列数が一致しません。' ..
+      io.stderr:write('[design-doc] 警告: .tbl 内の表で列数が一致しません。' ..
         '列幅の統一をスキップします。\n')
     elseif widths then
       for _, t in ipairs(parts) do
@@ -378,8 +401,8 @@ function Div(el)
       end
     end
 
-    -- .merge-rows 併記なら、幅を測ったあとに各パートを rowspan 結合する。
-    if is_merge then
+    -- 結合するなら、幅を測ったあと（素のグリッドで測るため）に各パートを rowspan 結合する。
+    if do_merge then
       for _, t in ipairs(parts) do
         for _, b in ipairs(t.bodies) do merge_body(b.body, mcols) end
       end
@@ -396,6 +419,13 @@ function Div(el)
       return (caption .. suffix(i)):gsub('\\', '\\\\'):gsub('"', '\\"')
     end
 
+    -- caption も label も無い1枚表は採番しない（幅・結合だけ適用した素の表にする）。
+    -- 分割（M>1）や caption/label があるものは採番する。
+    local numbered = (M > 1) or (caption ~= '') or (ref ~= nil)
+    if not numbered then
+      return pandoc.Blocks(parts)
+    end
+
     local out = pandoc.Blocks({})
     local TBLC = 'counter(figure.where(kind: "quarto-float-tbl"))'
     for i = 1, M do
@@ -403,11 +433,13 @@ function Div(el)
         -- HTML: 採番用キャプション div を各パートの上に置く。番号は
         -- postprocess-html.mjs が本文の表と同じ連番で採番し、先頭に前置する。
         -- 先頭パートに data-split-first を付け、そこで1つの表番号を確定させる。
-        -- ref があれば data-ref を付け、postprocess が numberOf に登録して参照を解決する。
+        -- ref があれば data-ref（postprocess が numberOf 登録）と id（HTML の参照リンクの
+        -- 飛び先。自前採番の表は Quarto フロートでないため自分で id を出す）を付ける。
         local first = (i == 1) and ' data-split-first="true"' or ''
         local dref = (i == 1 and ref) and (' data-ref="' .. ref .. '"') or ''
+        local idattr = (i == 1 and ref) and (' id="' .. ref .. '"') or ''
         local body = (caption .. suffix(i)):gsub('&', '&amp;'):gsub('<', '&lt;'):gsub('>', '&gt;')
-        out:insert(pandoc.RawBlock('html', '<div class="split-caption"' .. first .. dref ..
+        out:insert(pandoc.RawBlock('html', '<div class="split-caption"' .. first .. idattr .. dref ..
           ' data-part="' .. i .. '" data-total="' .. M .. '">' .. body .. '</div>'))
       elseif i == 1 then
         -- PDF: 先頭で採番カウンタを1つ進め、全パートが同じ番号を表示する（ipo と同じ手法）。
@@ -433,9 +465,10 @@ function Div(el)
   end
 
   if is_merge then
-    -- 非分割の .merge-rows: 単一フロートのまま縦連続の同値セルを rowspan 結合する。
-    -- #tbl-x を付ければ Quarto の crossref がそのまま効く（div 自体は残さない。
-    -- block が挟まると図表の中央寄せが崩れるため）。
+    -- 非分割の .merge-rows（後方互換）: 単一フロートのまま縦連続の同値セルを rowspan
+    -- 結合する。#tbl-x を付ければ Quarto の crossref がそのまま効く（div 自体は残さない。
+    -- block が挟まると図表の中央寄せが崩れるため）。新規は .tbl merge-cols=… を推奨。
+    local mcols = parse_merge_cols(el.attributes['merge-cols'])
     return pandoc.walk_block(el, { Table = function(t)
       for _, b in ipairs(t.bodies) do merge_body(b.body, mcols) end
       apply_widths(t, el.attributes.widths, 'merge-rows')
