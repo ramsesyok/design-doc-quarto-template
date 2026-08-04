@@ -123,9 +123,15 @@ end
 -- ============================================================
 --  {.merge-rows}: 縦に連続する同じ値のセルを rowspan で結合する。
 --
---  結合するのは「その列が上の行と同じ値」かつ「左側の列がすべて結合済み」の
+--  結合するのは「その列が上の行と同じ値」かつ「（階層上の）左側の列が結合済み」の
 --  ときだけ。大分類→中分類→小分類の階層に一致し、「必須」列の ○ が偶然
 --  続いただけ、のような意図しない結合を防ぐ。
+--
+--  既定は全列を左から順に階層とみなす。先頭に連番列があるなど、左端を階層に
+--  含めたくないときは merge-cols 属性で対象列を明示する:
+--    ::: {.merge-rows merge-cols="2,3"}   （2列目=大分類, 3列目=中分類。1列目の連番は除外）
+--  指定した列だけが対象で、指定順が階層の左→右になる（対象外の列は結合されず、
+--  連鎖も断たない）。分割表と併用（.split-table .merge-rows）するときも同じ属性が効く。
 --
 --  キャプション行の属性（: cap {#tbl-x .merge-rows}）は Quarto 本体が先に
 --  消費してしまい pre-quarto フィルタでも Table に届かないため、
@@ -143,11 +149,45 @@ local function is_plain_grid(rows, ncol)
   return true
 end
 
-local function merge_body(rows)
+-- merge-cols 属性（"2,3" のような列番号の並び）を 1 始まりの列リストへ。
+-- 空・不正は nil（＝既定動作: 全列 1..ncol を左から階層とみなす）を返す。
+local function parse_merge_cols(s)
+  if s == nil or s == '' then return nil end
+  local cols = {}
+  for num in s:gmatch('%d+') do cols[#cols + 1] = tonumber(num) end
+  if #cols == 0 then return nil end
+  return cols
+end
+
+-- cols: 結合対象列（1始まり・階層の左→右順）。nil なら全列 1..ncol（従来動作）。
+local function merge_body(rows, cols)
   local n = #rows
   if n == 0 then return end
   local ncol = #rows[1].cells
   if not is_plain_grid(rows, ncol) then return end
+
+  -- 結合対象列 eligible と、その「階層内で直前の対象列」prevcol を決める。
+  -- 既定（cols==nil）は全列を左から順に階層とみなすため prevcol[c] = c-1（従来と一致）。
+  -- merge-cols 指定時は、指定された列だけが対象で、指定順が階層の左→右になる。
+  -- 例 {2,3}: 2列目は単独判定で結合、3列目は「2列目が結合済み」のときだけ結合。
+  -- 1列目（連番など）や対象外の末尾列（必須・説明など）は結合されず、連鎖も断たない。
+  local eligible = {}
+  local prevcol = {}
+  do
+    local order = cols
+    if order == nil then
+      order = {}
+      for c = 1, ncol do order[c] = c end
+    end
+    local prev = nil
+    for _, c in ipairs(order) do
+      if c >= 1 and c <= ncol and not eligible[c] then
+        eligible[c] = true
+        prevcol[c] = prev
+        prev = c
+      end
+    end
+  end
 
   -- セル内容を文字列化（書式の違いは無視し、見た目のテキストで判定する）
   local txt = {}
@@ -163,10 +203,12 @@ local function merge_body(rows)
   for i = 1, n do
     merged[i] = {}
     for c = 1, ncol do
-      merged[i][c] = i > 1
+      local p = prevcol[c]
+      merged[i][c] = eligible[c]
+        and i > 1
         and txt[i][c] ~= ''            -- 空セルは結合しない
         and txt[i][c] == txt[i - 1][c]
-        and (c == 1 or merged[i][c - 1])
+        and (p == nil or merged[i][p])  -- 階層上位（直前の対象列）が結合済みのときだけ
     end
   end
 
@@ -236,6 +278,8 @@ end
 function Div(el)
   local is_split = el.classes:includes('split-table')
   local is_merge = el.classes:includes('merge-rows')
+  -- 結合対象列の明示指定（例 merge-cols="2,3"）。省略時は nil（全列を左から階層）。
+  local mcols = parse_merge_cols(el.attributes['merge-cols'])
 
   if is_split then
     -- ::: {.split-table caption="…" label="tbl-x"} … 空行区切りの複数パイプ表 … :::
@@ -297,7 +341,7 @@ function Div(el)
     -- .merge-rows 併記なら、幅を測ったあとに各パートを rowspan 結合する。
     if is_merge then
       for _, t in ipairs(parts) do
-        for _, b in ipairs(t.bodies) do merge_body(b.body) end
+        for _, b in ipairs(t.bodies) do merge_body(b.body, mcols) end
       end
     end
 
@@ -353,7 +397,7 @@ function Div(el)
     -- #tbl-x を付ければ Quarto の crossref がそのまま効く（div 自体は残さない。
     -- block が挟まると図表の中央寄せが崩れるため）。
     return pandoc.walk_block(el, { Table = function(t)
-      for _, b in ipairs(t.bodies) do merge_body(b.body) end
+      for _, b in ipairs(t.bodies) do merge_body(b.body, mcols) end
       return t
     end }).content
   end
