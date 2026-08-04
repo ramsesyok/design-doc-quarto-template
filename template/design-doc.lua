@@ -159,36 +159,6 @@ local function parse_merge_cols(s)
   return cols
 end
 
--- widths 属性（"20,30,10,40" や "2,3,1,4"）を ncol 個の相対幅（合計1）へ正規化する。
--- ％でも比率でも同じ結果。個数が ncol と違う／合計0以下なら nil を返す（呼び出し側で
--- 警告して自動幅にフォールバック）。第2戻り値に見つかった個数を返す（警告用）。
-local function parse_widths(s, ncol)
-  if s == nil or s == '' then return nil end
-  local vals = {}
-  for num in s:gmatch('[%d%.]+') do vals[#vals + 1] = tonumber(num) end
-  if #vals ~= ncol then return nil, #vals end
-  local total = 0
-  for _, v in ipairs(vals) do total = total + v end
-  if total <= 0 then return nil, #vals end
-  local fr = {}
-  for c = 1, ncol do fr[c] = vals[c] / total end
-  return fr, #vals
-end
-
--- 表 t に widths 属性 s の相対幅を割り当てる（Table() が付けた自動幅を上書き）。
--- 個数が列数と合わなければ警告して何もしない（自動幅のまま）。where は警告メッセージ用。
-local function apply_widths(t, s, where)
-  if s == nil or s == '' then return end
-  local ncol = #t.colspecs
-  local w, found = parse_widths(s, ncol)
-  if not w then
-    io.stderr:write('[design-doc] 警告: ' .. where .. ' の widths の個数(' .. tostring(found) ..
-      ')が列数(' .. ncol .. ')と一致しません。自動幅にします。\n')
-    return
-  end
-  for c = 1, ncol do t.colspecs[c] = { t.colspecs[c][1], w[c] } end
-end
-
 -- cols: 結合対象列（1始まり・階層の左→右順）。nil なら全列 1..ncol（従来動作）。
 local function merge_body(rows, cols)
   local n = #rows
@@ -350,20 +320,7 @@ function Div(el)
     local ncol = #parts[1].colspecs
     local same = ncol > 0
     for _, t in ipairs(parts) do if #t.colspecs ~= ncol then same = false end end
-    -- widths="…" があれば全パートにその相対幅を割り当てる（無ければ内容量から自動算出）。
-    local widths = same and parse_widths(el.attributes.widths, ncol) or nil
-    if el.attributes.widths and same and not widths then
-      io.stderr:write('[design-doc] 警告: split-table の widths の個数が列数(' .. ncol ..
-        ')と一致しません。自動幅にします。\n')
-    end
-    if not same then
-      io.stderr:write('[design-doc] 警告: split-table 内の表で列数が一致しません。' ..
-        '列幅の統一をスキップします。\n')
-    elseif widths then
-      for _, t in ipairs(parts) do
-        for c = 1, ncol do t.colspecs[c] = { t.colspecs[c][1], widths[c] } end
-      end
-    else
+    if same then
       local maxw = {}
       for c = 1, ncol do maxw[c] = 1 end
       for _, t in ipairs(parts) do scan_table_widths(t, ncol, maxw) end
@@ -376,6 +333,9 @@ function Div(el)
       for _, t in ipairs(parts) do
         for c = 1, ncol do t.colspecs[c] = { t.colspecs[c][1], maxw[c] / total } end
       end
+    else
+      io.stderr:write('[design-doc] 警告: split-table 内の表で列数が一致しません。' ..
+        '列幅の統一をスキップします。\n')
     end
 
     -- .merge-rows 併記なら、幅を測ったあとに各パートを rowspan 結合する。
@@ -438,7 +398,6 @@ function Div(el)
     -- block が挟まると図表の中央寄せが崩れるため）。
     return pandoc.walk_block(el, { Table = function(t)
       for _, b in ipairs(t.bodies) do merge_body(b.body, mcols) end
-      apply_widths(t, el.attributes.widths, 'merge-rows')
       return t
     end }).content
   end
@@ -530,16 +489,6 @@ function Div(el)
     out:extend(cols.output)
     out:insert(pandoc.RawBlock('typst', '],\n)'))
     return out
-  end
-
-  -- 素の表の列幅だけを指定するラッパ: ::: {widths="20,30,10,40"} … 表 … :::
-  -- （split-table/merge-rows/landscape/ipo は上で処理済み。ここへ来るのは幅指定のみ
-  --   の div。div 自体は残さず中身を返す＝図表の中央寄せを崩さない）。
-  if el.attributes.widths and el.attributes.widths ~= '' then
-    return pandoc.walk_block(el, { Table = function(t)
-      apply_widths(t, el.attributes.widths, 'widths ラッパ')
-      return t
-    end }).content
   end
 end
 
