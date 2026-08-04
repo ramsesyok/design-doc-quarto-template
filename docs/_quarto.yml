@@ -40,6 +40,7 @@ book:
     - chapters/11-database/index.qmd
     - chapters/12-fault/index.qmd
     - chapters/13-evaluation/index.qmd
+    - chapters/14-tbl-examples/index.qmd
 
 lang: ja
 doc-number: SD-2026-001
