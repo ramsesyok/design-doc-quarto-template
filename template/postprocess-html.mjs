@@ -89,6 +89,10 @@ for (const rel of order) {
         seq.set(key, n);
         const prefix = sec === 0 ? `${chap}` : `${chap}.${sec}`;
         splitLabel = `表 ${prefix}-${n}`;
+        // data-ref があれば id→番号を登録し、@tbl-x の参照（design-doc.lua が
+        // 出す <a class="quarto-xref">）を pass2 で本文の表と同じ経路で解決させる。
+        const refm = attrs.match(/data-ref="([^"]+)"/);
+        if (refm) numberOf.set(refm[1], splitLabel);
       }
       // 続くパートも先頭と同じ番号。キャプション先頭に前置する（本文「（i／M）…」は残す）。
       const label = splitLabel || '表 ?';

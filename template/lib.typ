@@ -292,6 +292,27 @@
   else { numbering("1.1", heads.at(0, default: 0), sec) }
 }
 
+// 自前採番の表（分割表・分割 merge-rows）を @tbl- で相互参照するためのヘルパ。
+// design-doc.lua が @tbl- 参照を #_xref("tbl-x") に置換して呼ぶ（Quarto の crossref は
+// フロートにしか効かず、自前採番の表は未解決＝「?」になってしまうため先回りする）。
+//   - 分割表: 採番位置に置いた <sn-tbl-x> ラベルの location で図表カウンタを読み、
+//     キャプションと同じ「表 章.節-連番」を出す（接頭辞は _section-prefix と共有）。
+//   - 通常表・非分割 merge-rows: Quarto が付ける <tbl-x> へ ref で委譲し、既存の
+//     show ref フック（design-doc 内）が同じ番号を出す（従来と同じ挙動）。
+//   - どちらのラベルも無い（綴り違い等）: build を壊さず赤い「?」を出す。
+#let _xref(name) = context {
+  let sn = query(label("sn-" + name))
+  if sn.len() > 0 {
+    let loc = sn.first().location()
+    let n = counter(figure.where(kind: "quarto-float-tbl")).at(loc).first()
+    link(loc, [表 #_section-prefix(loc)-#n])
+  } else if query(label(name)).len() > 0 {
+    ref(label(name))
+  } else {
+    text(fill: red)[?#name]
+  }
+}
+
 // ---- 横向きページの様式（枠・資料番号を 90°回転で配置） ----
 // 縦綴じのまま用紙を回して読む配置なので、資料番号を右端に縦置きする。
 // 資料番号の枠は外枠の右辺に接する（原紙準拠）ため、x は
