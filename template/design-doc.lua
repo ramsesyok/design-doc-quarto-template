@@ -650,3 +650,16 @@ function Cite(el)
     return pandoc.RawInline('typst', '#_xref("' .. id .. '")')
   end
 end
+
+-- ============================================================
+--  セル内・段落内の改行 <br> / <br/> を、フォーマット非依存の LineBreak にする。
+--
+--  Pandoc は生 HTML の <br> を typst 出力では捨てるため、そのままだと HTML では
+--  改行するが PDF(typst) では改行しない。LineBreak に変換すると typst=linebreak /
+--  HTML=<br> の両方に描画され、パイプ表・グリッド表のどちらのセルでも効く。
+-- ============================================================
+function RawInline(el)
+  if el.format == 'html' and el.text:match('^<[bB][rR]%s*/?>$') then
+    return pandoc.LineBreak()
+  end
+end
