@@ -509,6 +509,14 @@
       let loc = el.location()
       let n = counter(figure.where(kind: el.kind)).at(loc).first()
       link(loc, [#el.supplement #_section-prefix(loc)-#n])
+    } else if el != none and el.func() == heading {
+      // 見出し参照(@sec-x): レベル1 = 「5章」、レベル2以降 = 「5.3節」。
+      // Quarto 既定の「チャプター 5 / セクション 5.3」を、番号＋章/節の後置表記に替える。
+      let loc = el.location()
+      let nums = counter(heading).at(loc).slice(0, el.level)
+      let s = nums.map(n => str(n)).join(".")
+      let suffix = if el.level == 1 { "章" } else { "節" }
+      link(loc, [#s#suffix])
     } else { it }
   }
 

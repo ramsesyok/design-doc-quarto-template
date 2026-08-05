@@ -134,6 +134,16 @@ for (const [file, { html, repl }] of staged) {
       refCount += 1;
       return `${open}${label}${close}`;
     });
+  // 見出し参照(@sec-x): Quarto 既定の「チャプター 5 / セクション 5.3」を、番号＋章/節の
+  // 後置表記へ。番号にドットが無い（＝章）→「5章」、ドットあり（＝節以下）→「5.3節」。
+  // 言語に依存しないよう、番号の前の語（チャプター/セクション等）は捨てて番号だけ使う。
+  out = out.replace(
+    /(<a href="[^"]*#sec-[^"]+"[^>]*class="[^"]*quarto-xref[^"]*"[^>]*>)<span>[^0-9<]*([\d.]+)<\/span>(<\/a>)/g,
+    (whole, open, num, close) => {
+      const suffix = num.includes('.') ? '節' : '章';
+      refCount += 1;
+      return `${open}<span>${num}${suffix}</span>${close}`;
+    });
   fs.writeFileSync(file, out);
 }
 
