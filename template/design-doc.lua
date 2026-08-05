@@ -340,10 +340,26 @@ function Div(el)
     if M == 0 then return el.content end
     local caption = el.attributes.caption or ''
 
+    -- 警告メッセージで表を特定する手がかり。caption 優先、無ければ label、
+    -- どちらも無ければ先頭表の先頭セルのテキストを使う（どの .tbl か探せるように）。
+    local hint = 'caption/label なし'
+    if caption ~= '' then
+      hint = 'caption="' .. caption .. '"'
+    elseif el.attributes.label then
+      hint = 'label="' .. el.attributes.label .. '"'
+    else
+      local t = parts[1]
+      local row = (t.head and t.head.rows[1]) or (t.bodies[1] and t.bodies[1].body[1])
+      if row and #row.cells > 0 then
+        local fc = pandoc.utils.stringify(pandoc.Div(row.cells[1].contents))
+        if fc ~= '' then hint = '先頭セル「' .. fc .. '」' end
+      end
+    end
+
     -- 参照 id（label="tbl-x"）。本文では @tbl-x で参照するので tbl- 始まりを要求する。
     local ref = el.attributes.label
     if ref ~= nil and not ref:match('^tbl%-') then
-      io.stderr:write('[design-doc] 警告: .tbl の label="' .. ref ..
+      io.stderr:write('[design-doc] 警告: .tbl（' .. hint .. '）の label="' .. ref ..
         '" は tbl- で始まりません。相互参照を無効にします。\n')
       ref = nil
     end
@@ -361,7 +377,7 @@ function Div(el)
         if mcols then
           do_merge = true
         else
-          io.stderr:write('[design-doc] 警告: merge-cols="' .. mcols_attr ..
+          io.stderr:write('[design-doc] 警告: .tbl（' .. hint .. '）の merge-cols="' .. mcols_attr ..
             '" を解釈できません。結合しません。\n')
         end
       end
@@ -376,11 +392,11 @@ function Div(el)
     -- widths="…" があれば全パートにその相対幅を割り当てる（無ければ内容量から自動算出）。
     local widths = same and parse_widths(el.attributes.widths, ncol) or nil
     if el.attributes.widths and same and not widths then
-      io.stderr:write('[design-doc] 警告: .tbl の widths の個数が列数(' .. ncol ..
+      io.stderr:write('[design-doc] 警告: .tbl（' .. hint .. '）の widths の個数が列数(' .. ncol ..
         ')と一致しません。自動幅にします。\n')
     end
     if not same then
-      io.stderr:write('[design-doc] 警告: .tbl 内の表で列数が一致しません。' ..
+      io.stderr:write('[design-doc] 警告: .tbl（' .. hint .. '）内の表で列数が一致しません。' ..
         '列幅の統一をスキップします。\n')
     elseif widths then
       for _, t in ipairs(parts) do
