@@ -35,10 +35,10 @@ flowchart TD
 
 #### 各細部機能の説明
 
-受注登録の入力・処理・出力を次の IPO 図に示す。認証は社内 SSO を
+受注登録の入力・処理・出力を @tbl-order-ipo に示す。認証は社内 SSO を
 利用し、その状態遷移を @fig-order-auth に示す。
 
-::: {.ipo module="受注登録" caption="受注登録処理"}
+::: {.ipo module="受注登録" caption="受注登録処理" label="tbl-order-ipo"}
 ## 受注登録
 
 ### 入力

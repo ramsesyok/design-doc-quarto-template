@@ -612,11 +612,24 @@
 //  qmd から使うときは design-doc.lua が ::: {.ipo} div をこの呼び出しに変換する。
 //  執筆者がこの関数を直接書くのは素の Typst（main.typ）のときだけ。
 // ============================================================
+//  分割（複数パート）: parts に複数の (input:, process:, output:, cap:) を渡すと、
+//  同じ表番号を共有したまま横向きページを M 枚出す（パート間は改ページ）。表番号は
+//  先頭パートで1回だけ step し、全パートが同じ番号を表示する（表の分割 .tbl と同流儀）。
+//  相互参照: ref="tbl-x" を渡すと採番位置に <sn-tbl-x> ラベルを置き、本文 @tbl-x
+//  （design-doc.lua が #_xref に置換）から番号を解決できる。
+//  parts 省略時は単一パート（後方互換。素の Typst で書くときの input/process/output）。
 #let ipo(
   function-name: "", process-name: "",
   caption: "",                       // 表番号の右に付けるタイトル（機能名/処理名とは別）
+  ref: "",                           // 相互参照 id（"tbl-x"）。空なら参照ラベルなし
   input: [], process: [], output: [],
+  parts: none,                       // ((input:, process:, output:, cap:), …) 各要素=1パート
 ) = context {
+  // parts 省略時は input/process/output を単一パートとして扱う（cap = caption）。
+  let parts = if parts == none {
+    ((input: input, process: process, output: output, cap: caption),)
+  } else { parts }
+  let M = parts.len()
   // IPO 内の入力/処理/出力欄は横向き定型枠であり、本文の見出しレベル字下げ
   // （_sec-indent に基づく show par/list/enum の左パディング）を持ち込まない。
   // IPO 本体を描く間だけ _sec-indent を 0 に落とし、描画後に元の値へ戻す。
@@ -634,8 +647,38 @@
   let head(t) = align(center + horizon,
     text(weight: "bold", tracking: IPO-HEAD-TRACKING, t))
   // この IPO を「表」として採番する（図ではなく表。ドキュメントの表と同じ連番列に載る）。
-  // step は表番号の位置で行い、その位置の値を表示する。
+  // step は先頭パートの表番号の位置で1回だけ行い、その位置の値を全パートが表示する。
   let tblc = counter(figure.where(kind: "quarto-float-tbl"))
+  // 表番号 + タイトル欄。i==0（先頭パート）だけカウンタを step し、ref があれば
+  // 採番位置に <sn-ref> ラベルを置く（_xref がこの location で番号を読む）。
+  let num-block(i, p) = block(width: 100%, height: IPO-NUM-ROW, {
+    if i == 0 {
+      tblc.step()
+      if ref != "" [#metadata(none)#label("sn-" + ref)]
+    }
+    align(center + top, context text(size: IPO-NUM-SIZE, top-edge: "cap-height")[
+      表 #_ipo-prefix(here())-#tblc.get().first()#if p.cap != "" [　#p.cap]
+    ])
+  })
+  // IPO 本体（2つの table を罫線1本ぶん重ねて接続）
+  let body-block(p) = stack(spacing: IPO-STACK-OVERLAP,
+    // 上段: 機能名 / 処理名
+    table(
+      columns: IPO-TITLE-COLS, rows: IPO-TITLE-ROW,
+      stroke: RULE, inset: (x: 2mm, y: 0pt),
+      head("機能名"), align(horizon, function-name),
+      head("処理名"), align(horizon, process-name),
+    ),
+    // 下段: 入力 / 処理 / 出力（見出しセルだけ inset 0 で中央揃えを効かせる）
+    table(
+      columns: IPO-COLS, rows: (IPO-HEAD-ROW, IPO-BODY-ROW),
+      stroke: RULE, inset: IPO-INSET,
+      table.cell(inset: 0pt, head("入力")),
+      table.cell(inset: 0pt, head("処理")),
+      table.cell(inset: 0pt, head("出力")),
+      align(top, p.input), align(top, p.process), align(top, p.output),
+    ),
+  )
   // ここから IPO 本体。入出力欄のリスト/段落に見出しレベル字下げを効かせない。
   // さらに入出力欄は定型枠を広く使うため、箇条書きを記号なし・字下げなしで詰める
   // （_ipo-tight を立てると _list-pad が字下げを抜く。marker: none で「-」記号も消す。
@@ -644,35 +687,11 @@
   _ipo-tight.update(true)
   set list(marker: none, indent: 0pt, body-indent: 0pt)
   set enum(indent: 0pt)
-  stack(dir: ttb, spacing: 0pt,
-    // 表番号 + タイトル: 枠なしで IPO 表の外（上）に、左右中央・上寄せで記載。
-    // 上寄せにするのは、本文上マージン（外枠の内側5mm）にテキスト上端を合わせるため。
-    block(width: 100%, height: IPO-NUM-ROW, {
-      tblc.step()
-      align(center + top, context text(size: IPO-NUM-SIZE, top-edge: "cap-height")[
-        表 #_ipo-prefix(here())-#tblc.get().first()#if caption != "" [　#caption]
-      ])
-    }),
-    // IPO 本体（2つの table を罫線1本ぶん重ねて接続）
-    stack(spacing: IPO-STACK-OVERLAP,
-      // 上段: 機能名 / 処理名
-      table(
-        columns: IPO-TITLE-COLS, rows: IPO-TITLE-ROW,
-        stroke: RULE, inset: (x: 2mm, y: 0pt),
-        head("機能名"), align(horizon, function-name),
-        head("処理名"), align(horizon, process-name),
-      ),
-      // 下段: 入力 / 処理 / 出力（見出しセルだけ inset 0 で中央揃えを効かせる）
-      table(
-        columns: IPO-COLS, rows: (IPO-HEAD-ROW, IPO-BODY-ROW),
-        stroke: RULE, inset: IPO-INSET,
-        table.cell(inset: 0pt, head("入力")),
-        table.cell(inset: 0pt, head("処理")),
-        table.cell(inset: 0pt, head("出力")),
-        align(top, input), align(top, process), align(top, output),
-      ),
-    ),
-  )
+  // 各パートを1ページずつ描画。2枚目以降は改ページで新しい横向きページに載せる。
+  for (i, p) in parts.enumerate() {
+    if i > 0 { pagebreak(weak: true) }
+    stack(dir: ttb, spacing: 0pt, num-block(i, p), body-block(p))
+  }
   // IPO 本体を抜けたので、周囲の見出しレベル字下げ・箇条書き設定を元に戻す。
   _ipo-tight.update(false)
   _sec-indent.update(prev-sec-indent)
