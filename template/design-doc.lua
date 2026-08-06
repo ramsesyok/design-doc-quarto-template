@@ -504,27 +504,45 @@ function Div(el)
 
   if el.classes:includes('ipo') then
     -- 記法（div 属性で指定。機能名/処理名/タイトルを別々に扱う）:
-    --   ::: {.ipo module="受注管理" caption="受注処理の流れ"}
-    --   ## 受注登録        ← 見出し = 処理名
+    --   ::: {.ipo module="受注管理" caption="受注処理の流れ" label="tbl-x"}
+    --   ## 受注登録              ← 見出し = 処理名
+    --   ### 入力 … / ### 処理 … / ### 出力 …
     -- 機能名 = module 属性、処理名 = 最初の見出し、タイトル = caption 属性。
     -- module 省略時は旧記法として見出しを「機能名 / 処理名」で分割する（後方互換）。
+    --
+    -- 分割（複数パート）: 入力/処理/出力 の見出しセットが繰り返し現れたら、各セットを
+    --   1パートとして扱い、同じ表番号を共有しつつキャプションに「（i／M）」を付ける
+    --   （表の分割 .tbl と同じ流儀）。パートは {{< include >}} でファイル分割してもよい
+    --   （Quarto が Lua フィルタより前に展開するため、フィルタからは透過）。
+    -- 相互参照: label="tbl-x" を付けると本文 @tbl-x で参照できる。採番・参照解決は
+    --   .tbl（自前採番の表）と同じ自前チャネル（typst=<sn-tbl-x>+#_xref／HTML=data-ref）。
     local cap = el.attributes.caption or ''
     local func = el.attributes.module
     local hasModule = (func ~= nil)
     if not hasModule then func = '' end
     local proc = ''
     local titleSeen = false
-    local cols = {
-      input = pandoc.Blocks({}),
-      process = pandoc.Blocks({}),
-      output = pandoc.Blocks({}),
-    }
+
+    -- 入力/処理/出力 の1セット = 1パート。「内容のある現パート」の後に入力見出しが
+    -- 再度来たら次パートを開始する（include で分けてもベタ書きでも結果は同じ）。
+    local parts = {}
+    local function new_part()
+      return {
+        input = pandoc.Blocks({}), process = pandoc.Blocks({}),
+        output = pandoc.Blocks({}), filled = false,
+      }
+    end
+    local part = new_part()
     local cur = nil
     for _, b in ipairs(el.content) do
       if b.t == 'Header' then
         local txt = pandoc.utils.stringify(b.content):gsub('／', '/')
         local key = COLKEY[txt:lower()]
         if key then
+          if key == 'input' and part.filled then
+            parts[#parts + 1] = part                    -- 前パートを確定し次パートへ
+            part = new_part()
+          end
           cur = key
         elseif not titleSeen then
           if hasModule then
@@ -536,48 +554,99 @@ function Div(el)
           titleSeen = true
         end
       elseif cur then
-        cols[cur]:insert(b)
+        part[cur]:insert(b)
+        part.filled = true
       end
     end
-    -- HTML: 紙面の定型枠を div 構造で組み立てる（CSS 側で3列に配置）
-    if IS_HTML then
-      return pandoc.Div({
-        pandoc.Div({
-          html_cell('ipo-title-label', '機能名'),
-          html_cell('ipo-title-value', func),
-          html_cell('ipo-title-label', '処理名'),
-          html_cell('ipo-title-value', proc),
-        }, pandoc.Attr('', { 'ipo-title' })),
-        pandoc.Div({
-          html_cell('ipo-head', '入力'),
-          html_cell('ipo-head', '処理'),
-          html_cell('ipo-head', '出力'),
-          html_div('ipo-col', cols.input),
-          html_div('ipo-col', cols.process),
-          html_div('ipo-col', cols.output),
-        }, pandoc.Attr('', { 'ipo-frame' })),
-      }, pandoc.Attr('', { 'ipo' }))
+    if part.filled then parts[#parts + 1] = part end
+    local M = #parts
+    if M == 0 then return el.content end                -- 入出力の無い .ipo は素通し
+
+    -- 参照 id（label="tbl-x"）。@tbl-x で参照するので tbl- 始まりを要求する（.tbl と同じ）。
+    local hint = (cap ~= '' and 'caption="' .. cap .. '"')
+      or (el.attributes.module and 'module="' .. el.attributes.module .. '"')
+      or (proc ~= '' and '処理名「' .. proc .. '」') or 'IPO'
+    local ref = el.attributes.label
+    if ref ~= nil and not ref:match('^tbl%-') then
+      io.stderr:write('[design-doc] 警告: .ipo（' .. hint .. '）の label="' .. ref ..
+        '" は tbl- で始まりません。相互参照を無効にします。\n')
+      ref = nil
     end
 
-    -- 列の中身が図1枚だけなら欄いっぱいに収める（Typst のみ）
-    for k, blocks in pairs(cols) do
-      if #blocks == 1 and blocks[1].t == 'Para' and #blocks[1].content == 1
-          and blocks[1].content[1].t == 'Image' then
-        cols[k] = pandoc.Blocks({ pandoc.RawBlock('typst',
-          '#align(center, image("' .. blocks[1].content[1].src ..
-          '", width: 100%, height: 138mm, fit: "contain"))') })
+    -- キャプション後ろに付く「（i／M）」。M==1（分割しない）のときは付けない。
+    local function suffix(i)
+      if M < 2 then return '' end
+      return '（' .. i .. '／' .. M .. '）'
+    end
+
+    -- HTML: パートごとに「採番キャプション div + IPO 定型枠 div」を出す。表番号は
+    --   postprocess-html.mjs が本文の表と同じ連番で採番して前置する（.tbl と同じ経路）。
+    --   先頭パートに data-split-first、ref があれば id（参照リンクの飛び先）と data-ref
+    --   （番号を numberOf に登録）を付ける。M==1 でも採番する（PDF は常に採番＝挙動を揃え、
+    --   IPO を含む文書で PDF/HTML の表番号がずれる従来の不整合も解消する）。
+    if IS_HTML then
+      local out = pandoc.Blocks({})
+      for i = 1, M do
+        local first = (i == 1) and ' data-split-first="true"' or ''
+        local idattr = (i == 1 and ref) and (' id="' .. ref .. '"') or ''
+        local dref = (i == 1 and ref) and (' data-ref="' .. ref .. '"') or ''
+        local body = (cap .. suffix(i)):gsub('&', '&amp;'):gsub('<', '&lt;'):gsub('>', '&gt;')
+        out:insert(pandoc.RawBlock('html', '<div class="split-caption"' .. first .. idattr .. dref ..
+          ' data-part="' .. i .. '" data-total="' .. M .. '">' .. body .. '</div>'))
+        out:insert(pandoc.Div({
+          pandoc.Div({
+            html_cell('ipo-title-label', '機能名'),
+            html_cell('ipo-title-value', func),
+            html_cell('ipo-title-label', '処理名'),
+            html_cell('ipo-title-value', proc),
+          }, pandoc.Attr('', { 'ipo-title' })),
+          pandoc.Div({
+            html_cell('ipo-head', '入力'),
+            html_cell('ipo-head', '処理'),
+            html_cell('ipo-head', '出力'),
+            html_div('ipo-col', parts[i].input),
+            html_div('ipo-col', parts[i].process),
+            html_div('ipo-col', parts[i].output),
+          }, pandoc.Attr('', { 'ipo-frame' })),
+        }, pandoc.Attr('', { 'ipo' })))
+      end
+      return out
+    end
+
+    -- 列の中身が図1枚だけなら欄いっぱいに収める（Typst のみ）。パートごとに適用。
+    for _, p in ipairs(parts) do
+      for _, k in ipairs({ 'input', 'process', 'output' }) do
+        local blocks = p[k]
+        if #blocks == 1 and blocks[1].t == 'Para' and #blocks[1].content == 1
+            and blocks[1].content[1].t == 'Image' then
+          p[k] = pandoc.Blocks({ pandoc.RawBlock('typst',
+            '#align(center, image("' .. blocks[1].content[1].src ..
+            '", width: 100%, height: 138mm, fit: "contain"))') })
+        end
       end
     end
+
+    -- typst 文字列（"…"）へ入れる値のエスケープ。
+    local function tstr(s) return (s or ''):gsub('\\', '\\\\'):gsub('"', '\\"') end
+    local function tcap(i) return tstr(cap .. suffix(i)) end
+
+    -- #ipo(...) を組む。parts = ((input:[…], process:[…], output:[…], cap:"…（i／M）"), …)。
+    -- 先頭パートで表番号を1回だけ step し、全パートが同じ番号を表示する（採番と <sn-ref>
+    -- ラベル配置は lib.typ の ipo() が行う。パート間は改ページ、全体で横向き1様式。
+    local refarg = ref and ('  ref: "' .. ref .. '",\n') or ''
     local out = pandoc.Blocks({ pandoc.RawBlock('typst',
-      '#ipo(\n  function-name: "' .. func ..
-      '",\n  process-name: "' .. proc ..
-      '",\n  caption: "' .. cap .. '",\n  input: [') })
-    out:extend(cols.input)
-    out:insert(pandoc.RawBlock('typst', '],\n  process: ['))
-    out:extend(cols.process)
-    out:insert(pandoc.RawBlock('typst', '],\n  output: ['))
-    out:extend(cols.output)
-    out:insert(pandoc.RawBlock('typst', '],\n)'))
+      '#ipo(\n  function-name: "' .. tstr(func) ..
+      '",\n  process-name: "' .. tstr(proc) .. '",\n' .. refarg .. '  parts: (') })
+    for i = 1, M do
+      out:insert(pandoc.RawBlock('typst', '\n    (input: ['))
+      out:extend(parts[i].input)
+      out:insert(pandoc.RawBlock('typst', '],\n     process: ['))
+      out:extend(parts[i].process)
+      out:insert(pandoc.RawBlock('typst', '],\n     output: ['))
+      out:extend(parts[i].output)
+      out:insert(pandoc.RawBlock('typst', '],\n     cap: "' .. tcap(i) .. '"),'))
+    end
+    out:insert(pandoc.RawBlock('typst', '\n  ),\n)'))
     return out
   end
 
