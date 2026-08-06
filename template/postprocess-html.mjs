@@ -1,5 +1,6 @@
 // ============================================================
-//  book の各章 HTML の図表番号を PDF と同じ「章.節-連番」に振り直す。
+//  book の各章 HTML の図表番号を PDF と同じ「章.節.項…-連番」に振り直す。
+//  接頭辞は見出しの深さ（レベル1〜5）に追従する（例 図 3-1 / 図 3.2-1 / 図 3.2.1-1）。
 //
 //  なぜ後処理なのか:
 //    Quarto の図表採番（crossref）は **すべての Lua フィルタより後段**で走る。
@@ -64,21 +65,26 @@ for (const rel of order) {
   const html = fs.readFileSync(file, 'utf8');
   const scan = new RegExp(`${CHAP}|${HEAD}|${CAP}|${SPLIT}`, 'g');
   let chap = 0;
-  let sec = 0;
-  const seq = new Map();      // "図|3.3" -> 連番
+  // いま処理中の見出しの番号（data-number）。章直下（節なし）は空文字。
+  // 図表番号は PDF と同じく見出しの深さ「章.節.項…」（最大レベル5）に追従する。
+  let secKey = '';
+  const seq = new Map();      // "図|3.3.2" -> 連番
   const repl = [];            // [start, end, 置換文字列]
   let splitLabel = '';        // いま処理中の分割表グループの共有ラベル
+  // 図表番号の接頭辞: 節なし（章直下 = h1）は「3.0」ではなく章のみ「3」。
+  const prefixOf = () => (secKey === '' ? `${chap}` : secKey);
 
   for (let m; (m = scan.exec(html)) !== null; ) {
     if (m[0].startsWith('<h1')) {               // 章タイトル（章番号を確定・節を戻す）
       chap = Number(m[1]) || 0;
-      sec = 0;
+      secKey = '';
       continue;
     }
-    if (m[2]) {                                 // 節見出し
-      const parts = m[2].split('.').map(Number);
-      chap = parts[0] || 0;
-      sec = parts[1] || 0;
+    if (m[2]) {                                 // 節以下の見出し
+      // data-number="3.3.2" をそのまま接頭辞に使う（レベル5まで、以降は切る）。
+      const parts = m[2].split('.').slice(0, 5);
+      chap = Number(parts[0]) || 0;
+      secKey = parts.join('.');
       continue;
     }
     if (m[5] !== undefined) {                   // 分割表のキャプション div
@@ -86,10 +92,10 @@ for (const rel of order) {
       const inner = m[6];
       if (/data-split-first="true"/.test(attrs)) {
         // 先頭パート = ここで表番号を1つ確定（本文の表と同じ「表」列の連番）
-        const key = `表|${chap}.${sec}`;
+        const prefix = prefixOf();
+        const key = `表|${prefix}`;
         const n = (seq.get(key) || 0) + 1;
         seq.set(key, n);
-        const prefix = sec === 0 ? `${chap}` : `${chap}.${sec}`;
         splitLabel = `表 ${prefix}-${n}`;
         // data-ref があれば id→番号を登録し、@tbl-x の参照（design-doc.lua が
         // 出す <a class="quarto-xref">）を pass2 で本文の表と同じ経路で解決させる。
@@ -103,11 +109,10 @@ for (const rel of order) {
       continue;
     }
     const [floatId, kind] = [m[3], m[4]];
-    const key = `${kind}|${chap}.${sec}`;
+    const prefix = prefixOf();
+    const key = `${kind}|${prefix}`;
     const n = (seq.get(key) || 0) + 1;
     seq.set(key, n);
-    // 節なし（章直下 = h1）は「3.0」ではなく「3」にする（表3-1 のように）
-    const prefix = sec === 0 ? `${chap}` : `${chap}.${sec}`;
     const label = `${kind} ${prefix}-${n}`;
     numberOf.set(floatId, label);
     // マッチした「図&nbsp;1.1: 」の部分だけを差し替える（キャプション本文は残す）
@@ -147,7 +152,7 @@ for (const [file, { html, repl }] of staged) {
   fs.writeFileSync(file, out);
 }
 
-console.log(`OK -> ${root} (図表 ${numberOf.size} 件 / 参照 ${refCount} 件を章.節-連番に変換)`);
+console.log(`OK -> ${root} (図表 ${numberOf.size} 件 / 参照 ${refCount} 件を章.節.項…-連番に変換)`);
 if (missing > 0) {
   console.error(`警告: 解決できない相互参照が ${missing} 件あります（id の綴りを確認）`);
   process.exit(1);

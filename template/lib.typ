@@ -273,24 +273,28 @@
   text(company-ja); linebreak(); text(company-en)
 }))
 
-// 図表番号の接頭辞「章.節」を、指定位置の見出しカウンタから組み立てる。
+// 図表番号の接頭辞「章.節.項…」を、指定位置の見出しカウンタから組み立てる。
 // design-doc()（図表の採番・参照）と ipo()（表番号）で共用する。
+// 見出しはレベル1〜5まで採番している（heading numbering: 1.1.1.1）ので、
+// 図表番号もその深さに追従させる。例: 章直下=「3」、節=「3.2」、項=「3.2.1」…（最大レベル5）。
 #let _section-prefix(loc) = {
   let heads = counter(heading).at(loc)
-  let sec = heads.at(1, default: 0)
-  // 節がある = 章.節（例 3.2）、節なし（章直下 = h1）= 章のみ（例 3）。
-  // 「3.0」のような 0 の節番号を出さない（図表番号は 表3-1 のようになる）。
-  if sec == 0 { numbering("1", heads.at(0, default: 0)) }
-  else { numbering("1.1", heads.at(0, default: 0), sec) }
+  // 実際に番号が付いている最下位レベル（1〜5）を求める。下位の 0（未使用の
+  // レベル）は落とし、「3.2.0」のような 0 を含む番号を出さない。
+  let depth = 1
+  for i in range(calc.min(heads.len(), 5)) {
+    if heads.at(i, default: 0) != 0 { depth = i + 1 }
+  }
+  // 見出しより前（front matter 等）の図表でカウンタが空でも壊さない。
+  let nums = heads.slice(0, calc.min(depth, heads.len()))
+  if nums.len() == 0 { nums = (0,) }
+  // depth 個の "1" を "." で連結したパターン（例 depth=3 → "1.1.1"）で採番。
+  let pat = range(depth).map(_ => "1").join(".")
+  numbering(pat, ..nums)
 }
 
-// IPO の表番号用の接頭辞。節がある = 章.節（例 3.1）、節なし（章直下）= 章のみ（例 4）。
-#let _ipo-prefix(loc) = {
-  let heads = counter(heading).at(loc)
-  let sec = heads.at(1, default: 0)
-  if sec == 0 { numbering("1", heads.at(0, default: 0)) }
-  else { numbering("1.1", heads.at(0, default: 0), sec) }
-}
+// IPO の表番号用の接頭辞。図表番号と同じ「章.節.項…」（最大レベル5）を出す。
+#let _ipo-prefix(loc) = _section-prefix(loc)
 
 // 自前採番の表（分割表・分割 merge-rows）を @tbl- で相互参照するためのヘルパ。
 // design-doc.lua が @tbl- 参照を #_xref("tbl-x") に置換して呼ぶ（Quarto の crossref は
@@ -452,8 +456,8 @@
     if nums.len() == 1 { numbering("1.", nums.at(0)) }
     else { numbering("1.1.1.1", ..nums) }
   })
-  // 章（level 1）・節（level 2）の先頭で図表カウンタを 0 に戻す。
-  // → 図表番号は「章.節-連番」で、連番は節ごとにリセットされる。
+  // 各見出し（level 1〜5）の先頭で図表カウンタを 0 に戻す。
+  // → 図表番号は「章.節.項…-連番」で、連番はその見出し（節・項…）ごとにリセットされる。
   // （関数にして毎回新しい update を発行する。値を使い回すと1回しか発火しない）
   // 対象 kind: image/table は素の Typst（jp-figure/jp-table）、
   // quarto-float-* は Quarto qmd フローの図表。両フローで動くよう全て 0 に戻す。
@@ -464,8 +468,9 @@
   }
   // 見出しの体裁。サイズは HEAD-SIZES、前後の空きは下の above/below。
   // 左インセットで見出しをレベルごとに字下げ（L1=0, L2=1, L3=2 …段）。
-  // 図表カウンタのリセットは h1/h2 だけに掛ける（h3 以降で戻すと
-  // 「章.節-連番」の連番が節の途中で 1 に戻ってしまう）。
+  // 図表カウンタは各レベル（h1〜h5）の先頭でリセットする。図表番号の接頭辞
+  // （_section-prefix）がその見出しの深さ「章.節.項…」を出すので、連番も
+  // その見出しごとに 1 から振り直す。
   show heading.where(level: 1): it => {
     // 見出しレベル1（章）は常に新しいページから始める。weak: true でページ先頭では
     // 改ページせず、先頭章・目次直後などに空白ページが入らない（PDF のみ）。
@@ -482,16 +487,19 @@
     block(above: 1.1em, below: 0.6em, inset: (left: 1 * HEAD-INDENT-STEP), it)
   }
   show heading.where(level: 3): it => {
+    reset-floats()
     _sec-indent.update(2)
     set text(size: HEAD-SIZES.at(2), weight: "bold")
     block(above: 1em, below: 0.5em, inset: (left: 2 * HEAD-INDENT-STEP), it)
   }
   show heading.where(level: 4): it => {
+    reset-floats()
     _sec-indent.update(3)
     set text(size: HEAD-SIZES.at(3), weight: "bold")
     block(above: 0.9em, below: 0.4em, inset: (left: 3 * HEAD-INDENT-STEP), it)
   }
   show heading.where(level: 5): it => {
+    reset-floats()
     _sec-indent.update(4)
     set text(size: HEAD-SIZES.at(4), weight: "bold")
     block(above: 0.85em, below: 0.35em, inset: (left: 4 * HEAD-INDENT-STEP), it)
