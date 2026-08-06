@@ -207,6 +207,9 @@
 // 与え、入れ子は Typst 標準のネスト字下げに任せる（見出しレベルぶんを段ごとに
 // 重ね掛けして右へ流れるのを防ぐ）。list/enum 共通の1つの状態で管理する。
 #let _in-list = state("design-in-list", false)
+// IPO 図の入力/出力欄を描いている間だけ真。真のときリストは記号なし・字下げなしに
+// 詰める（定型枠を広く使う）。_list-pad が読み、ipo() が入出力描画区間で立てる。
+#let _ipo-tight = state("design-ipo-tight", false)
 
 // 数字の後ろに数字幅の空白（U+2007）を足して指定桁ぶんの幅に揃える（右空白詰め）。
 // ASCII 空白と違い Typst で連続空白が畳まれず、tabular 数字と組めば
@@ -438,7 +441,12 @@
   // _in-list は入れ子判定用の共有フラグ。update の順序（true → 中身 → false）で、
   // 中身のリストは _in-list=true を見て追加の pad を掛けない。
   let _list-pad(it) = context {
-    if _in-list.get() { it } else {
+    if _in-list.get() { it } else if _ipo-tight.get() {
+      // IPO の入出力欄では字下げせず左端から詰める（記号は ipo() 側で none）。
+      _in-list.update(true)
+      it
+      _in-list.update(false)
+    } else {
       _in-list.update(true)
       pad(left: _sec-indent.get() * HEAD-INDENT-STEP + LIST-INDENT, it)
       _in-list.update(false)
@@ -629,7 +637,13 @@
   // step は表番号の位置で行い、その位置の値を表示する。
   let tblc = counter(figure.where(kind: "quarto-float-tbl"))
   // ここから IPO 本体。入出力欄のリスト/段落に見出しレベル字下げを効かせない。
+  // さらに入出力欄は定型枠を広く使うため、箇条書きを記号なし・字下げなしで詰める
+  // （_ipo-tight を立てると _list-pad が字下げを抜く。marker: none で「-」記号も消す。
+  //  番号付き（enum）は番号を残し、字下げだけ _list-pad 側で詰める）。
   _sec-indent.update(0)
+  _ipo-tight.update(true)
+  set list(marker: none, indent: 0pt, body-indent: 0pt)
+  set enum(indent: 0pt)
   stack(dir: ttb, spacing: 0pt,
     // 表番号 + タイトル: 枠なしで IPO 表の外（上）に、左右中央・上寄せで記載。
     // 上寄せにするのは、本文上マージン（外枠の内側5mm）にテキスト上端を合わせるため。
@@ -659,7 +673,8 @@
       ),
     ),
   )
-  // IPO 本体を抜けたので、周囲の見出しレベル字下げを元に戻す。
+  // IPO 本体を抜けたので、周囲の見出しレベル字下げ・箇条書き設定を元に戻す。
+  _ipo-tight.update(false)
   _sec-indent.update(prev-sec-indent)
   set page(flipped: false)
 }

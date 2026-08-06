@@ -83,9 +83,13 @@ td[rowspan], th[rowspan] { vertical-align: middle; }
   background: #f7f7f7; border-bottom: 1px solid #000;
 }
 .ipo-head:not(:nth-child(3)) { border-right: 1px solid #000; }
-.ipo-col { padding: .7em; min-height: 8em; }
+.ipo-col { padding: .4em .5em; min-height: 8em; }
 .ipo-col:not(:last-child) { border-right: 1px solid #000; }
-.ipo-col ul, .ipo-col ol { margin: 0; padding-left: 1.3em; }
+/* 入力/出力欄は箇条書きだが、定型枠を広く使うため詰める（PDF 側は lib.typ の
+   _ipo-tight で同じ見た目にする）。無印リスト（-）は記号なし・字下げなし、
+   番号付きリストは番号を内側に置いて字下げを詰める。 */
+.ipo-col ul { margin: 0; padding-left: 0; list-style: none; }
+.ipo-col ol { margin: 0; padding-left: 0; list-style-position: inside; }
 .ipo-col img { max-width: 100%; height: auto; }
 
 /* 図（mermaid / 画像）は中央寄せ、はみ出さない。
