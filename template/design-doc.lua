@@ -357,7 +357,10 @@ function Div(el)
     end
 
     -- 参照 id（label="tbl-x"）。本文では @tbl-x で参照するので tbl- 始まりを要求する。
+    -- 図の #fig-x に引きずられて label="#tbl-x" と # を付けてしまっても通るよう、
+    -- 先頭の # は落とす（label は属性値なので # は本来不要。慣れの取りこぼしを防ぐ）。
     local ref = el.attributes.label
+    if ref ~= nil then ref = ref:gsub('^#+', '') end
     if ref ~= nil and not ref:match('^tbl%-') then
       io.stderr:write('[design-doc] 警告: .tbl（' .. hint .. '）の label="' .. ref ..
         '" は tbl- で始まりません。相互参照を無効にします。\n')
@@ -563,10 +566,12 @@ function Div(el)
     if M == 0 then return el.content end                -- 入出力の無い .ipo は素通し
 
     -- 参照 id（label="tbl-x"）。@tbl-x で参照するので tbl- 始まりを要求する（.tbl と同じ）。
+    -- label="#tbl-x" のように # を付けてしまっても通るよう、先頭の # は落とす（.tbl と同じ）。
     local hint = (cap ~= '' and 'caption="' .. cap .. '"')
       or (el.attributes.module and 'module="' .. el.attributes.module .. '"')
       or (proc ~= '' and '処理名「' .. proc .. '」') or 'IPO'
     local ref = el.attributes.label
+    if ref ~= nil then ref = ref:gsub('^#+', '') end
     if ref ~= nil and not ref:match('^tbl%-') then
       io.stderr:write('[design-doc] 警告: .ipo（' .. hint .. '）の label="' .. ref ..
         '" は tbl- で始まりません。相互参照を無効にします。\n')
