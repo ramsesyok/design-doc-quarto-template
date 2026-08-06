@@ -207,8 +207,9 @@
 // 与え、入れ子は Typst 標準のネスト字下げに任せる（見出しレベルぶんを段ごとに
 // 重ね掛けして右へ流れるのを防ぐ）。list/enum 共通の1つの状態で管理する。
 #let _in-list = state("design-in-list", false)
-// IPO 図の入力/出力欄を描いている間だけ真。真のときリストは記号なし・字下げなしに
-// 詰める（定型枠を広く使う）。_list-pad が読み、ipo() が入出力描画区間で立てる。
+// IPO 図の入力/出力欄を描いている間だけ真。真のとき箇条書きの追加字下げ（LIST-INDENT）
+// を抜いて左端から詰める（定型枠を広く使う。記号は残す）。_list-pad が読み、ipo() が
+// 入出力描画区間で立てる。
 #let _ipo-tight = state("design-ipo-tight", false)
 
 // 数字の後ろに数字幅の空白（U+2007）を足して指定桁ぶんの幅に揃える（右空白詰め）。
@@ -680,13 +681,12 @@
     ),
   )
   // ここから IPO 本体。入出力欄のリスト/段落に見出しレベル字下げを効かせない。
-  // さらに入出力欄は定型枠を広く使うため、箇条書きを記号なし・字下げなしで詰める
-  // （_ipo-tight を立てると _list-pad が字下げを抜く。marker: none で「-」記号も消す。
-  //  番号付き（enum）は番号を残し、字下げだけ _list-pad 側で詰める）。
+  // さらに入出力欄は定型枠を広く使うため、箇条書きの追加字下げ（LIST-INDENT）を抜いて
+  // 左端から詰める（_ipo-tight を立てると _list-pad が字下げを抜く）。ただし記号は残す
+  // （複数行に折り返したとき項目の区切りが分かるように。折り返し本文は body-indent の
+  //  ぶんだけぶら下がる）。
   _sec-indent.update(0)
   _ipo-tight.update(true)
-  set list(marker: none, indent: 0pt, body-indent: 0pt)
-  set enum(indent: 0pt)
   // 各パートを1ページずつ描画。2枚目以降は改ページで新しい横向きページに載せる。
   for (i, p) in parts.enumerate() {
     if i > 0 { pagebreak(weak: true) }
