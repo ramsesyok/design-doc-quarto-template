@@ -367,6 +367,16 @@ function Div(el)
       ref = nil
     end
 
+    -- .unnumbered: 表番号を付けずキャプションだけ出す。{.unnumbered} な章・節で使うと
+    -- 接頭辞が 0 になり「表 0-1」になってしまうのを避けるための逃げ道。採番しない＝
+    -- カウンタも進めず、@tbl-x での参照もできない（番号が無いため）。ref 併記は無効化。
+    local no_number = el.classes:includes('unnumbered')
+    if no_number and ref then
+      io.stderr:write('[design-doc] 警告: .tbl（' .. hint .. '）は .unnumbered なので番号が付きません。' ..
+        'label="' .. ref .. '"（@' .. ref .. ' 参照）は無効です。\n')
+      ref = nil
+    end
+
     -- 結合するか＆対象列。.merge-rows 併記、または merge-cols 属性で発火する。
     --   merge-cols="2,3" … 2,3列目を階層結合／ merge-cols="all"（or .merge-rows）… 全列を左から結合。
     local do_merge, mcols = false, nil
@@ -448,7 +458,25 @@ function Div(el)
     local out = pandoc.Blocks({})
     local TBLC = 'counter(figure.where(kind: "quarto-float-tbl"))'
     for i = 1, M do
-      if IS_HTML then
+      if no_number then
+        -- 番号なし: 「表 章-連番」を付けず、キャプション（＋分割なら（i／M））だけを
+        -- 中央寄せで出す。カウンタは進めない。キャプションが空なら表だけ出す。
+        local shown = caption .. suffix(i)
+        if IS_HTML then
+          -- postprocess は data-unnumbered="true" を見て前置・連番消費をスキップする。
+          if shown ~= '' then
+            local body = shown:gsub('&', '&amp;'):gsub('<', '&lt;'):gsub('>', '&gt;')
+            out:insert(pandoc.RawBlock('html',
+              '<div class="split-caption" data-unnumbered="true">' .. body .. '</div>'))
+          end
+        else
+          if i > 1 then out:insert(pandoc.RawBlock('typst', '#pagebreak(weak: true)')) end
+          if shown ~= '' then
+            out:insert(pandoc.RawBlock('typst',
+              '#context align(center, text(font: JP-SANS, size: BODY-SIZE)[#("' .. tcap(i) .. '")])'))
+          end
+        end
+      elseif IS_HTML then
         -- HTML: 採番用キャプション div を各パートの上に置く。番号は
         -- postprocess-html.mjs が本文の表と同じ連番で採番し、先頭に前置する。
         -- 先頭パートに data-split-first を付け、そこで1つの表番号を確定させる。
