@@ -468,6 +468,13 @@
   // 各見出し（level 1〜5）の先頭で図表カウンタを 0 に戻す。
   // → 図表番号は「章.節.項…-連番」で、連番はその見出し（節・項…）ごとにリセットされる。
   // （関数にして毎回新しい update を発行する。値を使い回すと1回しか発火しない）
+  //
+  // ただし番号なし見出し（{.unnumbered} = heading(numbering: none)）ではリセットしない。
+  // 番号なし見出しは counter(heading) を進めないので接頭辞（_section-prefix）が親のまま。
+  // ここでリセットすると「接頭辞は同じ・連番だけ 1 に戻る」＝直前の番号と重複する
+  // （例: 章直下 表 1-1 の後に ## 付録 {.unnumbered} を挟むと次表も 表 1-1）。
+  // 各 show ルールでは `if it.numbering != none` で番号あり見出しのときだけリセットする
+  // （HTML 側は接頭辞キーで連番を持つため元々継続する。これで PDF と挙動が揃う）。
   // 対象 kind: image/table は素の Typst（jp-figure/jp-table）、
   // quarto-float-* は Quarto qmd フローの図表。両フローで動くよう全て 0 に戻す。
   let reset-floats() = {
@@ -484,31 +491,31 @@
     // 見出しレベル1（章）は常に新しいページから始める。weak: true でページ先頭では
     // 改ページせず、先頭章・目次直後などに空白ページが入らない（PDF のみ）。
     pagebreak(weak: true)
-    reset-floats()
+    if it.numbering != none { reset-floats() }
     _sec-indent.update(0)
     set text(size: HEAD-SIZES.at(0), weight: "bold")
     block(above: 1.4em, below: 0.8em, inset: (left: 0 * HEAD-INDENT-STEP), it)
   }
   show heading.where(level: 2): it => {
-    reset-floats()
+    if it.numbering != none { reset-floats() }
     _sec-indent.update(1)
     set text(size: HEAD-SIZES.at(1), weight: "bold")
     block(above: 1.1em, below: 0.6em, inset: (left: 1 * HEAD-INDENT-STEP), it)
   }
   show heading.where(level: 3): it => {
-    reset-floats()
+    if it.numbering != none { reset-floats() }
     _sec-indent.update(2)
     set text(size: HEAD-SIZES.at(2), weight: "bold")
     block(above: 1em, below: 0.5em, inset: (left: 2 * HEAD-INDENT-STEP), it)
   }
   show heading.where(level: 4): it => {
-    reset-floats()
+    if it.numbering != none { reset-floats() }
     _sec-indent.update(3)
     set text(size: HEAD-SIZES.at(3), weight: "bold")
     block(above: 0.9em, below: 0.4em, inset: (left: 3 * HEAD-INDENT-STEP), it)
   }
   show heading.where(level: 5): it => {
-    reset-floats()
+    if it.numbering != none { reset-floats() }
     _sec-indent.update(4)
     set text(size: HEAD-SIZES.at(4), weight: "bold")
     block(above: 0.85em, below: 0.35em, inset: (left: 4 * HEAD-INDENT-STEP), it)
