@@ -90,6 +90,8 @@ for (const rel of order) {
     if (m[5] !== undefined) {                   // 分割表のキャプション div
       const attrs = m[5];
       const inner = m[6];
+      // .unnumbered な .tbl は番号を付けない。前置も連番の消費もせず素通し。
+      if (/data-unnumbered="true"/.test(attrs)) continue;
       if (/data-split-first="true"/.test(attrs)) {
         // 先頭パート = ここで表番号を1つ確定（本文の表と同じ「表」列の連番）
         const prefix = prefixOf();
