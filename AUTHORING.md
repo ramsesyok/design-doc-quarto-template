@@ -641,7 +641,7 @@ Quarto のコールアウトも使えます。
 | 章名にファイル名が出る | 章の h1（`#`）を include 先だけに書いている。**章ファイル側**に h1 を置く |
 | 図表番号が 0 になる | 採番されない章（`{.unnumbered}`）にキャプション付き図表を置いている |
 | 相互参照が「?」のまま | ID（`#fig-x` / `#tbl-x`）と参照（`@fig-x` / `@tbl-x`）の綴りが不一致 |
-| mermaid が画像にならない | mermaid を使う初回のみ準備が必要（[README.md](README.md) の「mermaid を使う場合」参照） |
+| mermaid が画像にならない | mermaid を使う初回のみ準備が必要（[ADVANCED.md「mermaid を使う場合」](ADVANCED.md#4-mermaid-を使う場合)参照） |
 
 ---
 
