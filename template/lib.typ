@@ -300,13 +300,13 @@
 // IPO の表番号用の接頭辞。図表番号と同じ「章.節.項…」（最大レベル5）を出す。
 #let _ipo-prefix(loc) = _section-prefix(loc)
 
-// 自前採番の表（分割表・分割 merge-rows）を @tbl- で相互参照するためのヘルパ。
+// 自前採番の表（.tbl・.ipo）を @tbl- で相互参照するためのヘルパ。
 // design-doc.lua が @tbl- 参照を #_xref("tbl-x") に置換して呼ぶ（Quarto の crossref は
 // フロートにしか効かず、自前採番の表は未解決＝「?」になってしまうため先回りする）。
-//   - 分割表: 採番位置に置いた <sn-tbl-x> ラベルの location で図表カウンタを読み、
+//   - .tbl / .ipo: 採番位置に置いた <sn-tbl-x> ラベルの location で図表カウンタを読み、
 //     キャプションと同じ「表 章.節-連番」を出す（接頭辞は _section-prefix と共有）。
-//   - 通常表・非分割 merge-rows: Quarto が付ける <tbl-x> へ ref で委譲し、既存の
-//     show ref フック（design-doc 内）が同じ番号を出す（従来と同じ挙動）。
+//   - 通常のフロート表（`: cap {#tbl-x}`）: Quarto が付ける <tbl-x> へ ref で委譲し、
+//     既存の show ref フック（design-doc 内）が同じ番号を出す。
 //   - どちらのラベルも無い（綴り違い等）: build を壊さず赤い「?」を出す。
 #let _xref(name) = context {
   let sn = query(label("sn-" + name))

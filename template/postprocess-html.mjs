@@ -49,7 +49,7 @@ const CHAP = String.raw`<h1 class="title">(?:<span class="chapter-number">(\d+)<
 const HEAD = String.raw`<h[2-6][^>]*\bdata-number="([\d.]+)"`;
 const CAP = String.raw`<figcaption[^>]*\bid="((?:fig|tbl)-[^"]*?)-caption-[^"]*"[^>]*>${SP}(図|表)${SP}[\d.]+:${SP}`;
 const CAP_TAIL = new RegExp(String.raw`(図|表)${SP}[\d.]+:${SP}$`);
-// 分割表(.tbl/.split-table)のキャプション div（design-doc.lua が各パートの上に置く）。
+// 自前採番の表(.tbl/.ipo)のキャプション div（design-doc.lua が各パートの上に置く）。
 // 先頭パート(data-split-first)で1つの表番号を確定し、続くパートも同じ番号を共有する。
 // 番号は本文の表と同じ連番列に載せる（走査順に採番）。
 // class は "split-caption" の後ろに Quarto が id 付き要素へ付与する " anchored" 等が
