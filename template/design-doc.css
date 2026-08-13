@@ -49,6 +49,21 @@ th, td { border: 1px solid #b0b0b0; padding: .2em .6em; }
 th { background: #f0f0f0; }
 td[rowspan], th[rowspan] { vertical-align: middle; }
 
+/* セル内の箇条書き・番号付きリスト（グリッド表のセルはブロック要素を持てる）。
+   ブラウザ／Bootstrap 既定の左インデント（2rem）とリスト下の余白はセルには広すぎるので
+   詰め、PDF（lib.typ の LIST-INDENT = 1文字ぶん）と見た目を揃える。数字は記号より
+   幅を食うので ol だけ少し広く取る（.ipo-col と同じ値）。
+   #quarto-document-content を前置しているのは、上の ul/ol の margin-bottom 指定より
+   詳細度を高くして打ち消すため。入れ子のリストにも同じ字下げが効く。 */
+#quarto-document-content th ul,
+#quarto-document-content td ul { margin: 0; padding-left: 1.2em; }
+#quarto-document-content th ol,
+#quarto-document-content td ol { margin: 0; padding-left: 1.4em; }
+/* セル内の最後のブロック（段落＋箇条書きを混ぜたときの末尾）の余白は落とす。
+   残すとセル下端だけ間延びして、上下の行と高さが揃わない。 */
+#quarto-document-content th > :last-child,
+#quarto-document-content td > :last-child { margin-bottom: 0; }
+
 /* 幅広の表は紙のように横向きにできないので、はみ出す分をスクロールさせる */
 .landscape { overflow-x: auto; }
 .landscape > table { min-width: 40em; }

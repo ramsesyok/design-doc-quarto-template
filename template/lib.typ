@@ -255,11 +255,16 @@
   let left-w = width - SPEC-LABEL-W - SPEC-VALUE-W
   // 中央ラベルの2行は、タイトル(スペック/SPECIFICATION)より行間を詰めて 7mm 枠に収める。
   let lbl(a, b) = { set par(leading: SPEC-LABEL-LEADING); text(size: SPEC-LABEL-SIZE)[#a\ #b] }
-  table(
+  // table ではなく grid で組む。表題欄は「様式の部品」であって表データではないうえ、
+  // ここは set page(background:) の中＝レイアウト中に何度も評価される場所なので、
+  // 本文用の show table（セル内リストの字下げを外すため state を更新する）を
+  // 巻き込むと state が自分自身を更新し続けて "layout did not converge" になる。
+  // grid は罫線・inset・整列をすべて明示しているので見た目は table と同じ。
+  grid(
     columns: (left-w, SPEC-LABEL-W, SPEC-VALUE-W),
     rows: (SPEC-ROW, SPEC-ROW),
     stroke: RULE, inset: (x: 1.5mm, y: 0pt), align: center + horizon,
-    table.cell(rowspan: 2, {
+    grid.cell(rowspan: 2, {
       text(size: SPEC-TITLE-SIZE)[スペック]
       linebreak()
       text(size: SPEC-SUB-SIZE)[SPECIFICATION]
@@ -455,6 +460,18 @@
   }
   show list: it => _list-pad(it)
   show enum: it => _list-pad(it)
+  // 表のセル内のリストには見出しレベルの字下げを効かせない。セルは本文の字下げ体系と
+  // 無関係で、見出しが深いほど右へ流れて狭いセルを圧迫するため（IPO の入出力欄と同じ
+  // 考え方）。追加字下げ（LIST-INDENT = 1文字ぶん）だけ残し、HTML 側の
+  // 「td/th の中の ul/ol は padding-left: 1.2em」（design-doc.css）と見た目を揃える。
+  // 段落（show par）は元から top-level だけに掛かるのでセル内は影響を受けない。
+  // ipo() は自前で _sec-indent を 0 にしてから table を組むので、ここは素通りになる。
+  show table: it => context {
+    let prev = _sec-indent.get()
+    _sec-indent.update(0)
+    it
+    _sec-indent.update(prev)
+  }
   // 番号付きリストの採番を規格 表Ｂ.４ の細別番号（深さ連動）にする。
   set enum(full: true, numbering: ENUM-NUMBERING)
 
