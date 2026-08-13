@@ -114,6 +114,31 @@ template\build-html.bat docs
 - HTML は `docs/_book/` 一式で自己完結します（CSS を同梱）。閲覧は `index.html` を開くか、
   `cd docs/_book && python -m http.server` で配信、共有は `_book/` を zip すればよいです。
 
+### PDF は必ず `quarto render` 経由で作る（`typst compile` 直叩きは不可）
+
+callout（`::: {.callout-note}` など）のアイコンは **Font Awesome** の字形です。実体は
+Quarto 同梱の `<Quarto>/share/formats/typst/fonts/`（`Font Awesome 6 Free-Solid-900.otf` ほか）
+にあり、**`quarto render` が Typst に `--font-path` で渡すことで初めて見つかります**。
+OS にインストールされているフォントではありません。
+
+そのため、中間生成物の `.typ` を取り出して素の `typst compile` に掛けると、アイコンが
+すべて豆腐（□）になります。ビルドは必ず `template/build-qmd.sh`（＝内部で `quarto render`）
+か VSCode の Quarto 拡張から行ってください。
+
+どうしても `typst compile` を直接使って様式を試したいときは、フォントの場所を明示します:
+
+```bash
+quarto typst compile index.typ out.pdf --font-path "/c/Program Files/Quarto/share/formats/typst/fonts"
+```
+
+```bat
+:: Windows cmd
+quarto typst compile index.typ out.pdf --font-path "C:\Program Files\Quarto\share\formats\typst\fonts"
+```
+
+> 出来上がった PDF にアイコンが載ったかは、埋め込みフォントに
+> `FontAwesome6Free-Solid` が含まれるかで確認できます。
+
 ### 執筆フォルダ（docs）を改名したいとき
 
 `docs/` は**リポジトリ直下・`template/` と兄弟**である限り、自由に改名できます。
