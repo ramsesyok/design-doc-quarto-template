@@ -89,6 +89,32 @@ design-doc-quarto-template/
 > `template/lib.typ` や `design-doc.css` を改修したら `setup` を再実行してください（冪等・上書き）。
 > ビルドスクリプトは内部で `setup` を呼ぶので、スクリプト経由なら再実行は自動です。
 
+### VSCode の推奨設定（表を書くなら日本語も等幅にする）
+
+Windows の VSCode の既定のエディタフォントは Consolas で、**日本語の字形が含まれません**。
+日本語は OS のフォールバックフォントで表示されるため、日本語の文字幅が半角の2倍ちょうどに
+ならず、**パイプ表やグリッド表の罫線が画面上で揃わなくなります**（表だけ極端に書きづらいのは
+これが原因です）。
+
+日本語も等幅になるフォント（`BIZ UDゴシック` など。日本語環境の Windows 10/11 に標準で
+入っています）を `editor.fontFamily` の**先頭**に指定してください。リポジトリ内の
+`.vscode/settings.json` に書けばこの設計書を開いたときだけ効きます（環境全体に効かせたい
+ならユーザー設定に書きます）。
+
+```json
+{
+  "editor.fontFamily": "'BIZ UDゴシック', Consolas, monospace"
+}
+```
+
+> 表を書くときだけ効かせたい場合は、言語ごとの設定にもできます:
+> `"[quarto]": { "editor.fontFamily": "'BIZ UDゴシック', Consolas, monospace" }`
+
+これは**エディタの表示だけ**の設定で、PDF・HTML の出力フォントには影響しません
+（出力側の書体は `template/lib.typ` が決めます）。列幅も罫線の文字数ではなく
+セルの内容量から自動計算されるため、画面上で罫線が揃っていなくても出力は崩れません
+（→ [AUTHORING.md「表」](AUTHORING.md#6-表)）。
+
 ## ビルド
 
 ```bash
