@@ -21,6 +21,7 @@ design-doc-quarto-template/
 ├── ADVANCED.md              … このファイル
 ├── .gitignore
 ├── .gitattributes           … 改行コードの固定（*.sh=LF / *.bat=CRLF）
+├── .vscode/settings.json    … 執筆者向けのサンプル設定（日本語を等幅にする）
 │
 ├── docs/                     … 執筆フォルダ（このフォルダ名は変更可。§2 参照）
 │   ├── _quarto.yml           … book 設定（章の並び・出力形式・doc-number）
