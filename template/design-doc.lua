@@ -9,7 +9,7 @@
 --   2) ::: {.landscape} div → #landscape[...]（横向きページ）
 --   3) ::: {.ipo} div → #ipo(...)（IPO図。最初の見出し = 機能名 / 処理名、
 --      入力/処理/出力（Input/Process/Output 可）の見出しで3列に分割）
---   4) ::: {.merge-rows} div → 中の表で縦に連続する同じ値のセルを rowspan 結合
+--   4) ::: {.tbl} div → 統一テーブル（採番・分割・セル結合・列幅・相互参照）
 --   5) すべての表の列幅を本文幅いっぱいに正規化（内容量に比例して配分）
 -- ============================================================
 
@@ -121,21 +121,21 @@ function CodeBlock(el)
 end
 
 -- ============================================================
---  {.merge-rows}: 縦に連続する同じ値のセルを rowspan で結合する。
+--  セル結合（.tbl の merge-cols 属性）: 縦に連続する同じ値のセルを rowspan で結合する。
 --
 --  結合するのは「その列が上の行と同じ値」かつ「（階層上の）左側の列が結合済み」の
 --  ときだけ。大分類→中分類→小分類の階層に一致し、「必須」列の ○ が偶然
 --  続いただけ、のような意図しない結合を防ぐ。
 --
---  既定は全列を左から順に階層とみなす。先頭に連番列があるなど、左端を階層に
---  含めたくないときは merge-cols 属性で対象列を明示する:
---    ::: {.merge-rows merge-cols="2,3"}   （2列目=大分類, 3列目=中分類。1列目の連番は除外）
+--  対象列は merge-cols 属性で決める:
+--    ::: {.tbl merge-cols="2,3"}   （2列目=大分類, 3列目=中分類。1列目の連番は除外）
+--    ::: {.tbl merge-cols="all"}   （全列を左から順に階層とみなす）
 --  指定した列だけが対象で、指定順が階層の左→右になる（対象外の列は結合されず、
---  連鎖も断たない）。分割表と併用（.split-table .merge-rows）するときも同じ属性が効く。
+--  連鎖も断たない）。分割（空行区切りで複数の表）でも同じ属性が各パートに効く。
 --
---  キャプション行の属性（: cap {#tbl-x .merge-rows}）は Quarto 本体が先に
---  消費してしまい pre-quarto フィルタでも Table に届かないため、
---  .landscape / .ipo と同じく div で囲む方式にしている。
+--  キャプション行の属性（: cap {#tbl-x}）は Quarto 本体が先に消費してしまい
+--  pre-quarto フィルタでも Table に届かないため、.landscape / .ipo と同じく
+--  div で囲む方式にしている。
 -- ============================================================
 
 -- 既に結合のある表・行ごとに列数が違う表は触らない（安全側に倒す）
@@ -276,7 +276,7 @@ local function html_cell(cls, text)
   return html_div(cls, { pandoc.Plain({ pandoc.Str(text) }) })
 end
 
--- 表の列幅計算に使う表示幅（全角=2 / 半角=1）。split-table の幅統一と Table() で共用する。
+-- 表の列幅計算に使う表示幅（全角=2 / 半角=1）。.tbl の幅統一と Table() で共用する。
 local function disp_width(s)
   local w = 0
   for _, cp in utf8.codes(s) do w = w + ((cp > 0x2E7F) and 2 or 1) end
@@ -306,17 +306,12 @@ local function scan_table_widths(t, ncol, maxw)
 end
 
 function Div(el)
-  -- 統一テーブル: .tbl（.split-table は後方互換エイリアス）。1つのクラスで
-  -- 通常表・分割・セル結合・列幅・相互参照をすべて賄う。
-  local is_tbl = el.classes:includes('tbl') or el.classes:includes('split-table')
-  local is_merge = el.classes:includes('merge-rows')
-  local mcols_attr = el.attributes['merge-cols']
-
-  if is_tbl then
+  -- 統一テーブル: .tbl。1つのクラスで通常表・分割・セル結合・列幅・相互参照を賄う。
+  if el.classes:includes('tbl') then
     -- ::: {.tbl caption="…" label="tbl-x" widths="…" merge-cols="…"} … 1つ以上のパイプ表 … :::
     --   ・表が1つ … 通常表（caption/label が無ければ採番もしない素の表）
     --   ・表が複数（空行区切り）… 分割表（同じ番号＋「（i／M）」）
-    --   ・merge-cols="2,3"（or "all"、または .merge-rows 併記）… セル結合
+    --   ・merge-cols="2,3"（or "all"）… セル結合
     --   ・widths="…" … 列幅の明示指定
     --
     -- 大きな表を複数パートに割り、同じ表番号を共有しつつキャプションに「（i／M）」を
@@ -324,8 +319,8 @@ function Div(el)
     --
     -- なぜクラス div（#tbl- を付けない）か:
     --   Quarto は #tbl- 付きの表を、ユーザ Lua フィルタより前に独自ノード
-    --   （FloatRefTarget）へ変換してしまい、ここへは届かない。そこで ipo/landscape/
-    --   merge-rows と同じくクラス div で受け、採番も自前で行う（ipo と同じ流儀）。
+    --   （FloatRefTarget）へ変換してしまい、ここへは届かない。そこで ipo/landscape と
+    --   同じくクラス div で受け、採番も自前で行う（ipo と同じ流儀）。
     --   反面 Quarto の図表フロートに載らないため、相互参照は Quarto の crossref では
     --   解決できない。そこで label="tbl-x" で参照 id を受け取り、自前チャネルで解決する:
     --     typst … 採番位置に <sn-tbl-x> ラベルを置き、参照側（Cite）は #_xref に置換
@@ -377,12 +372,11 @@ function Div(el)
       ref = nil
     end
 
-    -- 結合するか＆対象列。.merge-rows 併記、または merge-cols 属性で発火する。
-    --   merge-cols="2,3" … 2,3列目を階層結合／ merge-cols="all"（or .merge-rows）… 全列を左から結合。
+    -- 結合するか＆対象列。merge-cols 属性で発火する。
+    --   merge-cols="2,3" … 2,3列目を階層結合／ merge-cols="all" … 全列を左から結合。
     local do_merge, mcols = false, nil
-    if is_merge then
-      do_merge, mcols = true, parse_merge_cols(mcols_attr)   -- mcols=nil は全列
-    elseif mcols_attr and mcols_attr ~= '' then
+    local mcols_attr = el.attributes['merge-cols']
+    if mcols_attr and mcols_attr ~= '' then
       if mcols_attr == 'all' then
         do_merge, mcols = true, nil
       else
@@ -397,7 +391,7 @@ function Div(el)
     end
 
     -- 全パート横断で列幅を統一（列数が揃っているときだけ。ずれていたら警告して個別幅のまま）。
-    -- 結合（.merge-rows）より前＝素のグリッドで幅を測る（結合後は下段の欠けた行で
+    -- セル結合より前＝素のグリッドで幅を測る（結合後は下段の欠けた行で
     -- 列位置がずれ、幅計測を誤るため）。
     local ncol = #parts[1].colspecs
     local same = ncol > 0
@@ -509,18 +503,6 @@ function Div(el)
       out:insert(parts[i])
     end
     return out
-  end
-
-  if is_merge then
-    -- 非分割の .merge-rows（後方互換）: 単一フロートのまま縦連続の同値セルを rowspan
-    -- 結合する。#tbl-x を付ければ Quarto の crossref がそのまま効く（div 自体は残さない。
-    -- block が挟まると図表の中央寄せが崩れるため）。新規は .tbl merge-cols=… を推奨。
-    local mcols = parse_merge_cols(el.attributes['merge-cols'])
-    return pandoc.walk_block(el, { Table = function(t)
-      for _, b in ipairs(t.bodies) do merge_body(b.body, mcols) end
-      apply_widths(t, el.attributes.widths, 'merge-rows')
-      return t
-    end }).content
   end
 
   if el.classes:includes('landscape') then
@@ -684,7 +666,7 @@ function Div(el)
   end
 
   -- 素の表の列幅だけを指定するラッパ: ::: {widths="20,30,10,40"} … 表 … :::
-  -- （split-table/merge-rows/landscape/ipo は上で処理済み。ここへ来るのは幅指定のみ
+  -- （.tbl / .landscape / .ipo は上で処理済み。ここへ来るのは幅指定のみ
   --   の div。div 自体は残さず中身を返す＝図表の中央寄せを崩さない）。
   if el.attributes.widths and el.attributes.widths ~= '' then
     return pandoc.walk_block(el, { Table = function(t)
@@ -707,7 +689,7 @@ end
 --  「必須」のような短い列が広くなりすぎるため。
 -- ============================================================
 
--- disp_width / cell_width は Div より前（split-table と共用）へ移動済み。
+-- disp_width / cell_width は Div より前（.tbl と共用）へ移動済み。
 
 function Table(t)
   local ncol = #t.colspecs
@@ -749,11 +731,11 @@ end
 --  @tbl- 相互参照の先回り解決。
 --
 --  Quarto の crossref は全 Lua フィルタより後段で走り、フロート（#tbl-x）しか
---  解決しない。自前採番の表（.split-table / 分割 merge-rows）への @tbl-x は
+--  解決しない。自前採番の表（.tbl / .ipo）への @tbl-x は
 --  未解決＝「?」になってしまう。そこで参照（Cite）をこの段階で置換し、解決を
 --  自前チャネルに載せる（採番はすでに typst カウンタ／postprocess で自前に持っている）:
---    - typst: #_xref("tbl-x")（lib.typ）。<sn-tbl-x> があれば分割表番号、
---      なければ Quarto が付けた <tbl-x> へ ref 委譲（通常表・merge-rows は従来どおり）。
+--    - typst: #_xref("tbl-x")（lib.typ）。<sn-tbl-x> があれば自前採番の番号、
+--      なければ Quarto が付けた <tbl-x> へ ref 委譲（通常のフロート表は従来どおり）。
 --    - HTML: 自前アンカー。番号は postprocess-html.mjs が numberOf から確定する
 --      （通常表 id も numberOf に載るので、通常表の参照も同じ経路で解決される）。
 --  fig- 参照は Quarto ネイティブのまま（図は常にフロートで従来どおり効くため触らない）。

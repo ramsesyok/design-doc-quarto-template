@@ -256,7 +256,7 @@ HTML では div 構造として組み立て直している。
 | ` ```mermaid ` | SVG 化して `image()` | **`MERMAID_SVG=1` 時**は同左（同じ SVG）／**既定**は `<pre class="mermaid mermaid-js">` を出しクライアント描画（§5.1） |
 | `::: {.landscape}` | `#landscape[...]` | div のまま（CSS で横スクロール） |
 | `::: {.ipo}` | `#ipo(...)` | `.ipo` div 構造 |
-| `::: {.merge-rows}` | 縦に連続する同値セルを rowspan 結合 | 同左 |
+| `::: {.tbl}` | 自前採番のキャプション＋表（分割は `#pagebreak`、`merge-cols=` で rowspan 結合） | `<div class="split-caption">` ＋表（採番は postprocess、結合は同左） |
 | すべての表 | 列幅を本文幅いっぱいに正規化 | CSS の `width: 100%` |
 
 ### 5.1 mermaid の2モード（執筆者は node 不要）
