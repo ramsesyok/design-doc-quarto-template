@@ -704,3 +704,54 @@
   _sec-indent.update(prev-sec-indent)
   set page(flipped: false)
 }
+
+// ============================================================
+//  【6】callout（.callout-note 等）のアイコンを HTML 版に寄せる
+//
+//  Quarto が Typst に渡すアイコンは HTML 版と絵柄が違い、とくに
+//    note      → fa-info        = 丸の無い裸の "i"
+//    important → fa-exclamation = 裸の "!"（実体は ASCII の U+0021）
+//  が「ただの文字」に見えて浮く。HTML 側は丸付き（ⓘ / 丸に !）なので、
+//  丸付きの字形へ差し替えて PDF と HTML の見た目を揃える。
+//  warning / caution / tip は既定でも HTML とほぼ同じ絵柄なので、
+//  塗り（solid）だけ HTML に合わせる。
+//  ※ caution の HTML アイコンは三角コーンだが Font Awesome Free に無い
+//    （Pro 限定）ため、炎のままとする。
+//
+//  仕組み: Quarto は
+//    #callout(..., icon: fa-info(), icon_color: rgb("#0758E5"), ...)
+//  の形で呼ぶ。icon から種別は判らないが icon_color が種別ごとに固有
+//  （下の CALLOUT-ICONS のキー = quarto の callouts.lua の kColor*）なので、
+//  そこから引き当てて icon だけ差し替え、あとは Quarto 既定の callout に
+//  委譲する。ブロック構造を変えないので、相互参照付き callout を分解する
+//  Quarto 側の show rule もそのまま動く。
+//
+//  差し替えの適用は typst-template.typ 側で
+//    #let callout = with-html-callout-icons(callout)
+//  と1行書いて行う。Quarto 既定の callout は definitions.typ で定義され、
+//  別モジュールであるこの lib.typ からは見えないため、ここでは「包む関数」
+//  だけを提供し、束ね直しは lib.typ を import した先で行う。
+//
+//  fontawesome の import を関数の中に置いているのは、この lib.typ 単体では
+//  外部パッケージに依存しないでおくため（typst の import は遅延評価で、
+//  callout を1つも使わない文書ではパッケージを要求しない）。
+// ============================================================
+#let with-html-callout-icons(base-callout) = (icon: none, icon_color: black, ..args) => {
+  // 取り込む名前は1行に並べる（typst の import リストは行を折り返せない）。
+  import "@preview/fontawesome:0.5.0": fa-circle-info, fa-circle-exclamation, fa-triangle-exclamation, fa-fire, fa-lightbulb
+  let CALLOUT-ICONS = (
+    "#0758e5": fa-circle-info(),          // note
+    "#cc1914": fa-circle-exclamation(),   // important
+    "#eb9113": fa-triangle-exclamation(), // warning
+    "#fc5300": fa-fire(solid: true),      // caution
+    "#00a047": fa-lightbulb(solid: true), // tip
+  )
+  base-callout(
+    // icon: false 指定のとき Quarto は icon: none を渡す。そのまま無アイコンにする。
+    icon: if icon == none { none } else {
+      CALLOUT-ICONS.at(lower(icon_color.to-hex()), default: icon)
+    },
+    icon_color: icon_color,
+    ..args,
+  )
+}

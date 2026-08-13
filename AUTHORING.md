@@ -621,7 +621,17 @@ Quarto のコールアウトも使えます。
 :::
 ```
 
-（`callout-note` / `callout-warning` / `callout-tip` など。）
+種類は 5 つで、PDF・HTML とも同じ絵柄のアイコンが左上に付きます。
+
+| クラス | 見出し | アイコン |
+|---|---|---|
+| `.callout-note` | ノート | 〇に i（青） |
+| `.callout-tip` | ヒント | 電球（緑） |
+| `.callout-important` | 重要 | 〇に !（赤） |
+| `.callout-warning` | 警告 | △に !（橙） |
+| `.callout-caution` | 注意 | 炎（橙赤） |
+
+アイコンを消したいときは `::: {.callout-note icon=false}` とします。
 
 ---
 
