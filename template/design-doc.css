@@ -56,9 +56,12 @@ td[rowspan], th[rowspan] { vertical-align: middle; }
    #quarto-document-content を前置しているのは、上の ul/ol の margin-bottom 指定より
    詳細度を高くして打ち消すため。入れ子のリストにも同じ字下げが効く。 */
 #quarto-document-content th ul,
-#quarto-document-content td ul { margin: 0; padding-left: 1.2em; }
+#quarto-document-content td ul { margin: 0 0 .4em; padding-left: 1.2em; }
 #quarto-document-content th ol,
-#quarto-document-content td ol { margin: 0; padding-left: 1.4em; }
+#quarto-document-content td ol { margin: 0 0 .4em; padding-left: 1.4em; }
+/* 入れ子のリストは親項目の一部なので下余白を付けない（項目間が空いて見えるため） */
+#quarto-document-content th li > ul, #quarto-document-content th li > ol,
+#quarto-document-content td li > ul, #quarto-document-content td li > ol { margin-bottom: 0; }
 /* セル内の最後のブロック（段落＋箇条書きを混ぜたときの末尾）の余白は落とす。
    残すとセル下端だけ間延びして、上下の行と高さが揃わない。 */
 #quarto-document-content th > :last-child,
