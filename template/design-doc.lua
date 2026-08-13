@@ -691,9 +691,39 @@ end
 
 -- disp_width / cell_width は Div より前（.tbl と共用）へ移動済み。
 
+-- ============================================================
+--  セル先頭のリストを #block[…] で囲む（typst 出力のみ）。
+--
+--  Pandoc の typst 出力は、セルの最初のブロックだけを `[` の直後（＝行の途中）に置き、
+--  2つ目以降の行は自前のインデントで書く。そのためセルの先頭にリストがあると
+--  1項目目だけ桁が飛び抜けて大きくなり、typst は続く項目を「字下げが浅くなった」と
+--  読んで入れ子を平坦化してしまう（果物 > りんご が兄弟になる）。HTML は AST から
+--  直接組むので正しく、PDF だけが崩れる。
+--
+--  リストを Div（typst では #block[…]）で囲むと、リストは `[` の次の行から始まり
+--  全行が同じ基準で書かれるので、桁ずれが起きない。入れ子でないリストでも見た目は
+--  変わらないため、条件分岐せず一律に適用する（挙動を1つに保つ）。
+-- ============================================================
+local function wrap_leading_list(rows)
+  for _, row in ipairs(rows) do
+    for _, cell in ipairs(row.cells) do
+      local first = cell.contents[1]
+      if first and (first.t == 'BulletList' or first.t == 'OrderedList') then
+        cell.contents = pandoc.Blocks({ pandoc.Div(cell.contents) })
+      end
+    end
+  end
+end
+
 function Table(t)
   local ncol = #t.colspecs
   if ncol == 0 then return nil end
+
+  -- 列幅の計測より先でも後でもよいが、stringify で測るので結果は変わらない。
+  if not IS_HTML then
+    for _, r in ipairs(t.head.rows) do wrap_leading_list({ r }) end
+    for _, b in ipairs(t.bodies) do wrap_leading_list(b.body) end
+  end
 
   -- 各列の最大表示幅を集める（結合セルは列幅の根拠にしない）
   local maxw = {}
