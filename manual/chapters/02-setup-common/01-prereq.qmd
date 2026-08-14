@@ -1,0 +1,29 @@
+## 前提条件
+
+### 対応する環境
+
+| 項目 | 内容 |
+|------|------|
+| OS | Windows 10 / 11、macOS、Linux |
+| 必須ソフトウェア | Quarto（PDF 生成に使う Typst は同梱） |
+| 推奨エディタ | Visual Studio Code（以下 VSCode） |
+| 権限 | Quarto のインストールに管理者権限が要る場合がある |
+
+本書のコマンド例は Windows のコマンドプロンプト（`cmd`）を基準とする。
+macOS / Linux では拡張子を読み替える。
+
+| Windows | macOS / Linux |
+|---------|---------------|
+| `.\template\setup.bat docs` | `./template/setup.sh docs` |
+| `.\template\build-qmd.bat docs` | `./template/build-qmd.sh docs` |
+| `.\template\build-html.bat docs` | `./template/build-html.sh docs` |
+
+### 共通で入れるものは Quarto だけ
+
+::: {.callout-important}
+**この章で入れるのは Quarto ひとつだけ**である。PDF 組版に使う Typst は Quarto に
+同梱されているため、別途インストールする必要はない。TeX / LaTeX も不要である。
+:::
+
+node、npm、Chrome / Edge は**発行者だけ**が必要とする（mermaid 図を PDF・配布 HTML に
+焼き込むときに使う）。詳細は 11章に示す。執筆だけを行う端末には入れなくてよい。

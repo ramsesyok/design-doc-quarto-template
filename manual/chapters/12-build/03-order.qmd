@@ -1,0 +1,48 @@
+## 出力の順序に関する注意
+
+::: {.callout-important}
+**PDF と HTML は同じ作業フォルダ（`_book`）を使う。あとから実行したほうが、
+前の出力を消す。**
+
+両方を残したいときは、必ず **PDF → HTML の順**で実行すること。
+:::
+
+```bat
+:: 正しい順序
+.\template\build-qmd.bat docs
+.\template\build-html.bat docs
+```
+
+### なぜこの順序なのか
+
+`build-qmd`（PDF）は、生成した PDF を `_book` から
+`<執筆フォルダ>\design-doc.pdf` へ**取り出す**。したがって、あとから HTML を
+作って `_book` が上書きされても、**PDF 本体は残る**。
+
+逆の順序（HTML → PDF）にすると、`_book` の中身が PDF 生成時に置き換わり、
+**HTML は消える**。
+
+::: {.tbl caption="実行順序と残るもの" label="tbl-build-order" widths="30,35,35"}
+| 実行順序          | PDF                      | HTML                     |
+|-------------------|--------------------------|--------------------------|
+| PDF → HTML        | 残る（`design-doc.pdf`） | 残る（`_book`）          |
+| HTML → PDF        | 残る（`design-doc.pdf`） | **消える**               |
+| PDF のみ          | 残る                     | ―                       |
+| HTML のみ         | ―                       | 残る                     |
+:::
+
+### 症状から見分ける
+
+「PDF を作り直したら HTML が消えた」という現象は**仕様**である。
+PDF → HTML の順に作り直せばよい。
+
+### 手戻りを避けるには
+
+納品時のように両方を出すときは、順序を固定した手順書やバッチにしておくとよい。
+
+```bat
+@echo off
+call .\template\build-qmd.bat docs  || exit /b 1
+call .\template\build-html.bat docs || exit /b 1
+echo DONE: docs\design-doc.pdf and docs\_book\index.html
+```

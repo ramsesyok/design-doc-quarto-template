@@ -40,9 +40,20 @@ if errorlevel 1 (
 )
 
 rem Extract the deliverable PDF to the content dir root (_book\ is rebuilt next time).
-copy /Y "_book\*.pdf" "design-doc.pdf" >nul
-if errorlevel 1 (
+rem NOTE: resolve the name first and copy /B. `copy "_book\*.pdf" out.pdf` takes the
+rem       wildcard-to-single-file path, which cmd runs in ASCII concat mode: it stops
+rem       at the first 0x1A (Ctrl-Z) byte and silently writes a truncated, unreadable
+rem       PDF. Compressed PDF streams contain 0x1A regularly.
+set "PDF_SRC="
+for %%F in ("_book\*.pdf") do if not defined PDF_SRC set "PDF_SRC=%%~fF"
+if not defined PDF_SRC (
   echo ERROR: could not extract the PDF; _book\*.pdf not found. 1>&2
+  popd
+  exit /b 1
+)
+copy /B /Y "%PDF_SRC%" "design-doc.pdf" >nul
+if errorlevel 1 (
+  echo ERROR: could not extract the PDF. 1>&2
   popd
   exit /b 1
 )

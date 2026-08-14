@@ -1,0 +1,30 @@
+# 表
+
+設計書でもっとも多く使う要素が表である。本テンプレートは、採番・相互参照・
+セル結合・ページ分割・列幅指定を**すべて統一テーブル `.tbl` 1つ**で扱えるようにしてある。
+
+本章の構成を次に示す。
+
+| 節 | 内容 |
+|----|------|
+| @sec-tbl-choice | どの書き方を選ぶか（最初に読む） |
+| @sec-tbl-unified | 統一テーブル `.tbl`（推奨する書き方） |
+| @sec-tbl-pipe | パイプ表の書き方 |
+| @sec-tbl-grid | グリッド表の書き方 |
+| @sec-tbl-merge | セル結合 |
+| @sec-tbl-split | 大きな表のページ分割 |
+| @sec-tbl-widths | 列幅の指定 |
+
+{{< include 01-choice.qmd >}}
+
+{{< include 02-tbl.qmd >}}
+
+{{< include 03-pipe.qmd >}}
+
+{{< include 04-grid.qmd >}}
+
+{{< include 05-merge.qmd >}}
+
+{{< include 06-split.qmd >}}
+
+{{< include 07-widths.qmd >}}

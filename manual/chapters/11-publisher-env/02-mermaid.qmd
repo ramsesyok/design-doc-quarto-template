@@ -1,0 +1,81 @@
+## mermaid を PDF に載せる準備
+
+mermaid 図を含む文書の PDF・配布 HTML を作るには、**mermaid-cli と Chrome / Edge**が
+要る。図をベクター SVG に焼き込み、PDF と HTML で図を一致させるためである。
+
+### 手順
+
+リポジトリのルートで次を実行する。
+
+```bat
+cd template
+set "PUPPETEER_SKIP_DOWNLOAD=true"
+npm ci
+cd ..
+.\template\setup.bat docs
+```
+
+| 行 | 意味 |
+|----|------|
+| `PUPPETEER_SKIP_DOWNLOAD=true` | Chromium をダウンロードしない（手元の Chrome / Edge を使う） |
+| `npm ci` | mermaid-cli を `template/node_modules` に導入する |
+| `setup` | Chrome / Edge を検出し `template/puppeteer.json` に記録する |
+
+bash（macOS / Linux / Git Bash）では次のとおりである。
+
+```bash
+cd template
+PUPPETEER_SKIP_DOWNLOAD=true npm ci
+cd ..
+./template/setup.sh docs
+```
+
+### Chromium をダウンロードしない理由
+
+SVG 化には **Chrome か Edge**（Chromium 系ブラウザ）が1つあれば十分である。
+Chromium 自体をダウンロードしないのは、npm とは別の Google 配信のため、
+**閉域網では失敗しやすい**ためである。
+
+`setup` が手元の Chrome / Edge を自動検出して `template/puppeteer.json` に記録し、
+変換処理がそれを参照する。
+
+### 自動検出できないとき
+
+`setup` の実行時に次の警告が出た場合、ブラウザのパスを明示して再実行する。
+
+```text
+WARNING: Chrome / Edge not found.
+```
+
+Windows のコマンドプロンプトは変数のインライン指定ができないため、
+`set` してから実行する。
+
+```bat
+set "EXECUTABLE_BROWSER=C:\Program Files\Google\Chrome\Application\chrome.exe"
+.\template\setup.bat docs
+```
+
+bash では1行で書ける。
+
+```bash
+EXECUTABLE_BROWSER="/path/to/chrome-or-msedge" ./template/setup.sh docs
+```
+
+### さらに細かい調整
+
+Chrome / Edge がまったく無い環境や、`--no-sandbox` 等の追加オプションが要る場合は
+`template/puppeteer.json` を直接編集できる。
+
+```json
+{"executablePath": "C:/Program Files/Google/Chrome/Application/chrome.exe", "args": ["--no-sandbox"]}
+```
+
+### SVG はキャッシュされる
+
+生成された SVG は `<執筆フォルダ>/diagrams/` に**内容ハッシュ名でキャッシュ**され、
+同じ図は再変換されない。
+
+::: {.callout-tip}
+このため、**図を新規に書き足さなければ Chrome / Edge が無くてもビルドできる**。
+図のキャッシュごと配布すれば、図の変換環境を持たない端末でも出力できる。
+:::

@@ -1,0 +1,37 @@
+## 執筆者に不要なもの {#sec-author-not-needed}
+
+執筆だけを行う端末には、次のものを**入れなくてよい**。
+
+::: {.tbl caption="執筆者に不要なソフトウェア" label="tbl-not-needed" widths="22,38,40"}
+| 不要なもの      | 何に使うものか                     | 誰が必要とするか                     |
+|-----------------|------------------------------------|--------------------------------------|
+| node / npm      | mermaid 図の SVG 化、HTML の後処理 | 発行者（11章）                       |
+| Chrome / Edge   | mermaid 図の SVG 化                | 発行者（11章）                       |
+| TeX / LaTeX     | ―（本テンプレートでは未使用）      | 誰も必要としない                     |
+| Typst 単体      | PDF 組版（Quarto に同梱）          | 誰も必要としない                     |
+:::
+
+### mermaid 図は執筆者の環境でも書ける
+
+mermaid（文字で書くフローチャート。8章参照）は、**執筆者のプレビューでは
+Quarto 同梱の機能がブラウザ内で描画する**。node も Chrome / Edge の設定も要らず、
+図を編集すれば即座にプレビューへ反映される。
+
+追加の準備が要るのは、**納品 PDF と配布 HTML を作る経路だけ**である。
+この経路では mermaid をベクター SVG に焼き込み、PDF と HTML で図を一致させている。
+
+::: {.callout-important}
+執筆者の端末で `.\template\build-qmd.bat` を実行すると、mermaid 図があるところで
+失敗することがある。これは**環境の不足**であって原稿の誤りではない。
+執筆者は 5章の方法で確認し、PDF の出力は発行者に依頼すればよい。
+:::
+
+### 執筆者が実行できること・できないこと
+
+| 操作 | 執筆者の環境で可能か |
+|------|----------------------|
+| VSCode でのプレビュー | 可能 |
+| `quarto render --to html`（確認用 HTML） | 可能 |
+| `.\template\build-qmd.bat`（PDF・mermaid なし） | 可能 |
+| `.\template\build-qmd.bat`（PDF・mermaid あり） | **不可**（node と Chrome / Edge が要る） |
+| `.\template\build-html.bat`（配布 HTML） | **不可**（node が要る） |

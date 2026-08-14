@@ -140,6 +140,7 @@ VSCode でこのフォルダを開けばそのまま効くので、**通常は�
 
 | ドキュメント | 内容 | 読む人 |
 |---|---|---|
+| [manual/](manual/) | **利用マニュアル**（役割別の環境構築・執筆・確認・出力・記法・制限事項）。本テンプレート自身で書かれており、`.\template\build-qmd.bat manual` で PDF になります | はじめて使う人・全員 |
 | [AUTHORING.md](AUTHORING.md) | 執筆の記法（表・図・相互参照・IPO図・改ページ・ファイル分割） | **設計書を書く人** |
 | [ADVANCED.md](ADVANCED.md) | リポジトリ構成、ビルドの詳細、mermaid の準備、環境変数 | ビルドを担当する人 |
 | [template/PIPELINE.md](template/PIPELINE.md) | 変換の内部と様式の調整箇所 | テンプレートを保守する人 |
