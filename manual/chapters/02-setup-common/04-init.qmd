@@ -1,0 +1,55 @@
+## 初期化（setup） {#sec-init}
+
+### 実行する
+
+VSCode でリポジトリのフォルダを開き、メニューの「ターミナル」→「新しいターミナル」で
+ターミナルを開く。**リポジトリのルート**にいることを確認して次を実行する。
+
+```bat
+.\template\setup.bat docs
+```
+
+末尾の `docs` は執筆フォルダ名である。本書（`manual`）を対象にするなら
+`.\template\setup.bat manual` とする。省略すると `docs` として扱われる。
+
+次のように表示されれば成功である。
+
+```text
+Placed: docs\lib.typ, docs\design-doc.css
+mermaid browser: C:/Program Files/Google/Chrome/Application/chrome.exe
+  recorded in ...\template\puppeteer.json
+OK: initialized "docs".
+```
+
+### setup が行うこと
+
+1. `template/lib.typ`（様式の本体）と `template/design-doc.css`（HTML の見た目）を
+   執筆フォルダへコピーする。
+2. mermaid の SVG 化に使う Chrome / Edge を検出し、`template/puppeteer.json` に記録する。
+
+::: {.callout-note}
+1 のコピーが必要なのは、Typst が「プロジェクトフォルダの外にあるファイルを読めない」
+制約を持つためである。コピーされた `lib.typ` と `design-doc.css` は生成物であり、
+バージョン管理の対象外（`.gitignore` 済み）である。**直接編集しても次の setup で
+上書きされる**ので注意すること。
+:::
+
+### 何度実行してもよい
+
+setup は**冪等**である。何度実行しても同じ結果になる。次の場合に再実行する。
+
+- 執筆フォルダを新しく作ったとき
+- テンプレート（`template/lib.typ` や `design-doc.css`）が更新されたとき
+- Chrome / Edge を後から入れたとき
+
+なお、ビルドスクリプト（`build-qmd` / `build-html`）は**内部で setup を呼ぶ**ため、
+2回目以降は明示的に実行しなくてもよい。
+
+### Chrome / Edge が見つからないと出る警告
+
+```text
+WARNING: Chrome / Edge not found.
+```
+
+この警告が出ても、**執筆とプレビューには影響しない**。mermaid 図を PDF・配布 HTML に
+焼き込むときにだけ必要になる。発行者の端末でこの警告が出た場合の対処は 11章に示す。

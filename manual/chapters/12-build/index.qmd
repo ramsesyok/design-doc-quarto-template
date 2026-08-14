@@ -1,0 +1,26 @@
+# PDF・HTML の出力
+
+本章では、成果物の出力手順と配布方法を述べる。発行者の作業である。
+
+出力はリポジトリのルートから実行する。
+
+```bat
+:: PDF（納品物）→ docs\design-doc.pdf
+.\template\build-qmd.bat docs
+
+:: HTML（社内レビュー用・章ごとのページ）→ docs\_book\index.html
+.\template\build-html.bat docs
+```
+
+末尾の `docs` は執筆フォルダ名である（省略時は `docs`）。フォルダを改名したら
+その名前を渡す。
+
+{{< include 01-pdf.qmd >}}
+
+{{< include 02-html.qmd >}}
+
+{{< include 03-order.qmd >}}
+
+{{< include 04-distribute.qmd >}}
+
+{{< include 05-env.qmd >}}

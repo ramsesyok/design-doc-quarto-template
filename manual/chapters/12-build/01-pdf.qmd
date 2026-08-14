@@ -1,0 +1,67 @@
+## PDF を出力する
+
+### 手順
+
+リポジトリのルートで次を実行する。
+
+```bat
+.\template\build-qmd.bat docs
+```
+
+次のように表示されれば成功である。
+
+```text
+OK -> docs\design-doc.pdf
+```
+
+初回は少し時間がかかる。2回目以降は図のキャッシュが効くため速くなる。
+
+### 何が行われるか
+
+1. `setup` が呼ばれ、`lib.typ` と `design-doc.css` が執筆フォルダへ配置される。
+2. Quarto が原稿を Typst 形式に変換し、PDF を組版する。
+   このとき mermaid 図はベクター SVG に焼き込まれる。
+3. できあがった PDF が `<執筆フォルダ>\design-doc.pdf` に取り出される。
+
+::: {.callout-note}
+ビルドスクリプトは先頭で `setup` を呼ぶため、単体で実行すれば初期化も済む。
+`setup` を明示的に実行する必要はない。
+:::
+
+### PDF は必ず `quarto render` 経由で作る
+
+::: {.callout-important}
+中間生成物の `.typ` を取り出して素の `typst compile` に掛けてはならない。
+コールアウトのアイコンがすべて豆腐（□）になる。
+
+アイコンの実体は Quarto 同梱の Font Awesome フォントであり、
+**`quarto render` が Typst に `--font-path` で渡すことで初めて見つかる**。
+OS にインストールされているフォントではない。
+:::
+
+ビルドは必ず `template/build-qmd.bat`（内部で `quarto render` を呼ぶ）か、
+VSCode の Quarto 拡張から行うこと。
+
+どうしても `typst compile` を直接使って様式を試したいときは、フォントの場所を
+明示する。
+
+```bat
+quarto typst compile index.typ out.pdf --font-path "C:\Program Files\Quarto\share\formats\typst\fonts"
+```
+
+出来上がった PDF にアイコンが載ったかは、埋め込みフォントに
+`FontAwesome6Free-Solid` が含まれるかで確認できる。
+
+### 出力を確認する
+
+PDF ができたら、次の点を確認する。
+
+| 観点 | 見るところ |
+|------|------------|
+| 外枠・資料番号 | 全ページに出ているか。番号が `_quarto.yml` の設定どおりか |
+| 目次 | ページ番号が本文と一致しているか |
+| 図表番号 | 飛び・重複がないか |
+| 相互参照 | 「?」が残っていないか |
+| 改ページ | 表や図が不自然に割れていないか |
+| 横向きページ | 向きと外枠が正しいか |
+| mermaid 図 | 図が画像として出ているか（抜けていないか） |
