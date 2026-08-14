@@ -2,6 +2,12 @@
 //  book の各章 HTML の図表番号を PDF と同じ「章.節.項…-連番」に振り直す。
 //  接頭辞は見出しの深さ（レベル1〜5）に追従する（例 図 3-1 / 図 3.2-1 / 図 3.2.1-1）。
 //
+//  実行のされ方:
+//    執筆フォルダの `_quarto.yml` の `project.post-render` に登録してあり、
+//    `quarto render` / `quarto preview` のたびに Quarto が呼ぶ。**Quarto 同梱の
+//    Deno で走るので node は要らない**（使うのは node:fs / node:path だけ）。
+//    手で走らせるときは `quarto run postprocess-html.js [出力ディレクトリ]`。
+//
 //  なぜ後処理なのか:
 //    Quarto の図表採番（crossref）は **すべての Lua フィルタより後段**で走る。
 //    pre-quarto / post-quarto のどちらで見ても、この時点では表に id も
@@ -21,11 +27,26 @@
 //  節番号は Quarto が見出しに付ける data-number="3.3.2" から取る。
 //  なお NBSP は book 出力では実体参照 &nbsp;、単一 HTML 出力では生の U+00A0 と
 //  形が違う。どちらでも拾えるように SP で両対応にしてある。
+//
+//  **冪等性（重要）**: `quarto preview` は保存のたびに post-render を呼び、その際
+//  再生成されるのは編集した章だけで、他章は前回処理済みの HTML が `_book/` に
+//  残っている。したがって「処理済みの HTML をもう一度読んでも同じ番号を導出し、
+//  同じ結果を書く」ことが必須になる。そのため:
+//    - キャプションの正規表現は未処理（図 1.1:）と処理済み（図 3.2-1　）の両方に一致する
+//    - 分割表のキャプションは、前回前置したラベルを剥がしてから前置し直す
+//  これを崩すと、プレビューのたびに「表 3-1　表 3-1　…」と番号が積み重なる。
 // ============================================================
 import fs from 'node:fs';
 import path from 'node:path';
 
-const root = process.argv[2] || '_book';
+// PDF(typst) を出すときも post-render は呼ばれる。出力に HTML が1つも無ければ
+// 何もせず正常終了する（QUARTO_PROJECT_OUTPUT_FILES は Quarto が渡す。
+// preview の初回だけ空になることがあるので「空＝HTML なし」とは見なさない）。
+const outFiles = (process.env.QUARTO_PROJECT_OUTPUT_FILES || '')
+  .split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+if (outFiles.length > 0 && !outFiles.some((f) => f.endsWith('.html'))) process.exit(0);
+
+const root = process.argv[2] || process.env.QUARTO_PROJECT_OUTPUT_DIR || '_book';
 
 // 章順は _quarto.yml の chapters をそのまま使う（並びを二重管理しない）。
 // chapters は「- パス.qmd」が1行1件で並ぶだけなので、簡易パースで足りる。
@@ -47,14 +68,19 @@ const SP = String.raw`(?:\s|&nbsp;)*`;
 // 番号なし章（{.unnumbered}）は chapter-number を持たず、章番号 0（例 図 0-1）になる。
 const CHAP = String.raw`<h1 class="title">(?:<span class="chapter-number">(\d+)</span>)?`;
 const HEAD = String.raw`<h[2-6][^>]*\bdata-number="([\d.]+)"`;
-const CAP = String.raw`<figcaption[^>]*\bid="((?:fig|tbl)-[^"]*?)-caption-[^"]*"[^>]*>${SP}(図|表)${SP}[\d.]+:${SP}`;
-const CAP_TAIL = new RegExp(String.raw`(図|表)${SP}[\d.]+:${SP}$`);
+// 「図 1.1: 」（Quarto 既定＝未処理）と「図 3.2-1　」（前回この後処理が書いた形）の
+// どちらにも一致させる（冪等性のため。ヘッダのコメント参照）。
+const NUM = String.raw`[\d.]+(?:-\d+)?(?::${SP}|　)`;
+const CAP = String.raw`<figcaption[^>]*\bid="((?:fig|tbl)-[^"]*?)-caption-[^"]*"[^>]*>${SP}(図|表)${SP}${NUM}`;
+const CAP_TAIL = new RegExp(String.raw`(図|表)${SP}${NUM}$`);
 // 自前採番の表(.tbl/.ipo)のキャプション div（design-doc.lua が各パートの上に置く）。
 // 先頭パート(data-split-first)で1つの表番号を確定し、続くパートも同じ番号を共有する。
 // 番号は本文の表と同じ連番列に載せる（走査順に採番）。
 // class は "split-caption" の後ろに Quarto が id 付き要素へ付与する " anchored" 等が
-// 続くことがあるので、追加クラスを許容する（class="split-caption …"）。
-const SPLIT = String.raw`<div class="split-caption[^"]*"([^>]*)>([\s\S]*?)</div>`;
+// 続くことがあるので、追加クラスを許容して**そのまま書き戻す**。
+const SPLIT = String.raw`<div class="(split-caption[^"]*)"([^>]*)>([\s\S]*?)</div>`;
+// 前回この後処理が前置したラベル（「表 3-1　」）。剥がしてから付け直す。
+const SPLIT_LABEL = /^(?:図|表)\s*[\d.]+-\d+　/;
 
 const numberOf = new Map();   // floatId -> "図 3.3-1"
 const staged = new Map();     // file -> { html, repl }
@@ -62,6 +88,8 @@ const staged = new Map();     // file -> { html, repl }
 // --- パス1: 章順に走査して番号を確定する ---
 for (const rel of order) {
   const file = path.join(root, rel);
+  // preview 中に章を増やした直後など、まだ出力の無い章は飛ばす。
+  if (!fs.existsSync(file)) continue;
   const html = fs.readFileSync(file, 'utf8');
   const scan = new RegExp(`${CHAP}|${HEAD}|${CAP}|${SPLIT}`, 'g');
   let chap = 0;
@@ -88,8 +116,10 @@ for (const rel of order) {
       continue;
     }
     if (m[5] !== undefined) {                   // 分割表のキャプション div
-      const attrs = m[5];
-      const inner = m[6];
+      const cls = m[5];
+      const attrs = m[6];
+      // 前回の実行で前置したラベルは剥がす（再実行で二重に積まないため）。
+      const inner = m[7].replace(SPLIT_LABEL, '');
       // .unnumbered な .tbl は番号を付けない。前置も連番の消費もせず素通し。
       if (/data-unnumbered="true"/.test(attrs)) continue;
       if (/data-split-first="true"/.test(attrs)) {
@@ -107,7 +137,7 @@ for (const rel of order) {
       // 続くパートも先頭と同じ番号。キャプション先頭に前置する（本文「（i／M）…」は残す）。
       const label = splitLabel || '表 ?';
       repl.push([m.index, m.index + m[0].length,
-        `<div class="split-caption"${attrs}>${label}　${inner}</div>`]);
+        `<div class="${cls}"${attrs}>${label}　${inner}</div>`]);
       continue;
     }
     const [floatId, kind] = [m[3], m[4]];
@@ -155,7 +185,9 @@ for (const [file, { html, repl }] of staged) {
 }
 
 console.log(`OK -> ${root} (図表 ${numberOf.size} 件 / 参照 ${refCount} 件を章.節.項…-連番に変換)`);
+// 解決できない参照があっても**異常終了しない**。post-render の失敗は
+// `quarto render` / `quarto preview` 全体の失敗になり、執筆が止まってしまう。
+// 綴り間違いは警告として出し、出力はそのまま残す。
 if (missing > 0) {
   console.error(`警告: 解決できない相互参照が ${missing} 件あります（id の綴りを確認）`);
-  process.exit(1);
 }

@@ -18,7 +18,10 @@
 -- 執筆フォルダ（プロジェクトルート）の絶対パスが要る。環境変数に依存せず自力で
 -- 求めるので、VSCode の Quarto 拡張や素の `quarto render` でもそのまま動く。
 --   ROOT  … 執筆フォルダ（プロジェクトルート）。図の出力先 diagrams/ の親。
---   TMPL  … template/。mermaid-cli（node_modules）・設定・ブラウザ設定の置き場。
+--   TMPL  … template/。mermaid-cli（node_modules）・ブラウザ設定の置き場。
+-- TMPL は SVG 化（発行者）にだけ要る。執筆者の環境には template/ が無いので、
+-- HTML プレビューの経路は TMPL を一切参照しない（mermaid の設定だけは執筆フォルダ
+-- 直下の mermaid-config.json を読む。mermaid_conf_path() 参照）。
 -- 解決の優先順位:
 --   ROOT: DOC_ROOT env → quarto.project.directory → QUARTO_PROJECT_DIR env → '.'
 --   TMPL: TEMPLATE_ROOT env → ROOT/../template
@@ -29,8 +32,13 @@ if ROOT == '' then ROOT = _norm(os.getenv('QUARTO_PROJECT_DIR')) end
 if ROOT == '' then ROOT = '.' end
 local TMPL = _norm(os.getenv('TEMPLATE_ROOT'))
 if TMPL == '' then TMPL = ROOT .. '/../template' end
+-- **パスに ASCII 以外の文字を使えない（Windows）**
+-- 執筆フォルダのパスに日本語が入っていると、Quarto から Lua フィルタへ渡る時点で
+-- 文字が U+FFFD に置換されて届く（実測。quarto.project.directory・環境変数のいずれも）。
+-- フィルタ側では復元できないため、SVG 化（mermaid-cli）の経路は成立しない。
+-- 執筆フォルダ名・その上のフォルダ名は ASCII にすること（例: docs / design-doc）。
+local ROOT_ASCII = (ROOT:find('[\128-\255]') == nil and ROOT:find('\239\191\189') == nil)
 local MMDC = TMPL .. '/node_modules/@mermaid-js/mermaid-cli/src/cli.js'
-local MMDC_CONF = TMPL .. '/mermaid-config.json'
 local DIAG = ROOT .. '/diagrams'
 
 -- SVG の実体は DIAG（絶対パス）に置くが、AST に載せるパスは章ファイルからの
@@ -49,7 +57,31 @@ local function file_exists(p)
   return false
 end
 
+local function read_file(p)
+  local f = io.open(p, 'r')
+  if not f then return nil end
+  local s = f:read('*a')
+  f:close()
+  return s
+end
+
+-- mermaid の設定（テーマ・htmlLabels・フォント）の単一ソース。
+-- 執筆フォルダ直下にあればそれを使い（doc リポジトリには template/ が無いため、
+-- 機構ファイルとして配布される）、無ければ template/ のものを使う。
+-- SVG 化（mermaid-cli）とプレビューのクライアント描画の**両方**がこれを読むので、
+-- 執筆者が見る図と発行版の図の設定が食い違わない。
+local function mermaid_conf_path()
+  local here = ROOT .. '/mermaid-config.json'
+  if file_exists(here) then return here end
+  return TMPL .. '/mermaid-config.json'
+end
+
 local function render_mermaid(code)
+  if not ROOT_ASCII then
+    error('執筆フォルダのパスに ASCII 以外の文字（日本語など）が含まれています:\n  ' ..
+      ROOT .. '\n  Windows では文字が壊れた状態でフィルタに渡るため、mermaid を' ..
+      'SVG 化できません。\n  フォルダ名を ASCII（例 docs / design-doc）にしてください。')
+  end
   local hash = pandoc.utils.sha1(code):sub(1, 8)
   local svg = DIAG .. '/mmd-' .. hash .. '.svg'
   local rel = diag_rel() .. '/mmd-' .. hash .. '.svg'
@@ -76,11 +108,11 @@ local function render_mermaid(code)
     local pf = assert(io.open(pp, 'w')); pf:write('{}'); pf:close()
   end
   os.execute('node "' .. MMDC .. '" -i "' .. mmd .. '" -o "' .. svg ..
-    '" -b transparent -c "' .. MMDC_CONF .. '" -p "' .. pp .. '"')
+    '" -b transparent -c "' .. mermaid_conf_path() .. '" -p "' .. pp .. '"')
   if not file_exists(svg) then
     error('mermaid の変換に失敗しました: ' .. mmd ..
       '\n  ブラウザ設定を確認してください（Chrome/Edge が必要）。' ..
-      '\n  ルートから `./template/setup.sh <執筆フォルダ>` を実行するか、' ..
+      '\n  `./template/setup.sh <執筆フォルダのパス>` を実行するか、' ..
       '\n  EXECUTABLE_BROWSER=<chrome/msedge の実行ファイル> を指定してください。')
   end
   return rel
@@ -104,6 +136,18 @@ local function inject_mermaid_runtime()
     scripts = { base .. 'mermaid.min.js', base .. 'mermaid-init.js' },
     stylesheets = { base .. 'mermaid.css' },
   })
+  -- 発行版（mermaid-cli の SVG）と同じ設定でブラウザにも描かせる。
+  -- mermaid-init.js は読み込まれた時点で mermaid.initialize() を呼び、Quarto 既定の
+  -- テーマ CSS を当ててしまうので、そのあと（after-body）で同じ設定を渡し直す。
+  -- 実際の描画は window の load で走るため、上書き後の設定が効く。
+  local conf = read_file(mermaid_conf_path())
+  if conf then
+    quarto.doc.include_text('after-body',
+      '<script>\n' ..
+      'if (window.mermaid) { mermaid.initialize(Object.assign({ startOnLoad: false }, ' ..
+      conf .. ')); }\n' ..
+      '</script>')
+  end
 end
 
 function CodeBlock(el)
