@@ -1,40 +1,40 @@
 ## 導入の確認
 
-環境が整ったことを、同梱のサンプル文書で確認する。
+環境が整ったことを確認する。
 
-### HTML で確認する
+### 執筆者: HTML が出れば完了
 
-執筆フォルダへ移動し、Quarto を直接呼ぶ。
+設計書リポジトリの執筆フォルダへ移動し、Quarto を呼ぶ。
 
 ```bat
-cd docs
-quarto render --to html
-cd ..
+cd order-design\docs
+quarto render
+cd ..\..
 ```
 
 `docs\_book\index.html` が生成される。ブラウザで開き、目次と本文が表示されれば
-共通の環境構築は完了である。
+執筆者の環境構築は完了である。
 
 ::: {.callout-note}
-ここで作られる HTML は**確認用**である。図表番号は Quarto 標準の付け方
-（図 1.1 など）のままで、社内配布用の「図 3.2-1」形式にはならない。
-配布用の HTML は発行者が `build-html` で作る（12章参照）。
+ここで作られる HTML は、**図表番号・相互参照まで発行版と同じ**である
+（`quarto render` のたびに後処理が自動で走るため）。HTML で確認できないのは
+改ページ・横向きページ・紙の様式だけで、それらは発行者が作る中間版 PDF で確認する
+（5章）。
 :::
 
-### PDF で確認する
+### 発行者: PDF が出れば完了
 
-続けて、リポジトリのルートから次を実行する。
+`template/` を置いたフォルダから次を実行する。
 
 ```bat
-.\template\build-qmd.bat docs
+.\template\build-qmd.bat ..\order-design\docs
 ```
 
-`OK -> docs\design-doc.pdf` と表示されれば PDF も出力できている。初回は少し時間がかかる。
+`OK -> ...\design-doc.pdf` と表示されれば PDF も出力できている。初回は少し時間がかかる。
 
 ::: {.callout-warning}
-サンプル文書には mermaid 図が含まれるため、**この PDF 出力には node と Chrome / Edge が
-必要**である。未導入の環境ではここで失敗するが、Quarto 自体の導入に問題があるわけでは
-ない。mermaid を含まない文書であれば node なしで PDF を出力できる。
+mermaid 図を含む文書では、**PDF 出力に node と Chrome / Edge が必要**である。
+未導入の環境ではここで失敗するが、Quarto 自体の導入に問題があるわけではない。
 準備の手順は 11章に示す。
 :::
 

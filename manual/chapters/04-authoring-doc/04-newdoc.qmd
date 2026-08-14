@@ -1,52 +1,58 @@
-## 自分の文書として使い始める
+## 新しい文書を作る・増やす
 
-同梱の `docs/` は**サンプル**（受注管理システムの基本設計書）である。実際の文書を
-作るときは、次のいずれかによる。
+**この節の作業は発行者が行う。** 執筆者は、できあがった設計書リポジトリを
+clone して書き始めればよい。
 
-### 方法1: サンプルを書き換える
+### 新しい設計書リポジトリを作る
 
-いちばん手軽な方法である。
+`init-doc` で雛形を作る（@sec-init）。作られるのは最小限の骨組み
+（`_quarto.yml`・前付け・1章分の雛形・図の置き場）だけなので、続けて章立てを整える。
 
-1. `_quarto.yml` の `title`・`doc-number`・`company-ja` などを自分の文書に合わせる
+```bat
+.\template\init-doc.bat ..\order-design
+```
+
+1. `_quarto.yml` の `title`・`doc-number`・`company-ja` などを文書に合わせる
    （@sec-quarto-yml）。
-2. `index.qmd`（前付け）の改訂履歴・用語を書き換える。
-3. `chapters/` の各章の中身を書き換える。不要な章はフォルダごと消し、
-   `_quarto.yml` の `chapters:` からも消す。
+2. `index.qmd`（前付け）の改正履歴・用語を書き換える。
+3. `chapters/` に章のフォルダを作り、`_quarto.yml` の `chapters:` に並べる
+   （@sec-chapters）。
 
-記法の実例を残しておきたいときは、サンプルの章をいくつか残したまま作業し、
-仕上げの段階で消せばよい。
+::: {.callout-tip}
+章立てはチームや文書の種類で決まっていることが多い。**発行者が最初に章の雛形まで
+作って共有する**と、執筆者は本文だけに集中できる。
+:::
 
-### 方法2: 執筆フォルダを新しく作る
+### 1つのリポジトリに文書を増やす
 
-サンプルを残したまま別の文書を作るときは、執筆フォルダをもう1つ作る。
-
-```bat
-xcopy /E /I docs 設計書
-.\template\setup.bat 設計書
-```
-
-`template/` と**兄弟の位置**にあれば、フォルダ名は自由である。ビルドは
-フォルダ名を渡すだけでよい。
+同じ設計書リポジトリに別の文書を足すときは、執筆フォルダをもう1つ作る。
+既存の執筆フォルダをコピーし、機構ファイルを配置し直せばよい。
 
 ```bat
-.\template\build-qmd.bat 設計書
+xcopy /E /I ..\order-design\docs ..\order-design\design-doc2
+.\template\update-doc.bat ..\order-design\design-doc2
 ```
 
-本書（`manual/`）も、この方法で追加された執筆フォルダの一つである。
+ビルドはフォルダのパスを渡すだけである。
+
+```bat
+.\template\build-qmd.bat ..\order-design\design-doc2
+```
 
 ### 執筆フォルダを改名する
 
-`docs/` は `template/` と兄弟である限り自由に改名できる。
+執筆フォルダの名前は自由である。
 
 ```bat
-git mv docs 設計書
-.\template\build-qmd.bat 設計書
+git mv docs design-doc
+.\template\build-qmd.bat ..\order-design\design-doc
 ```
 
-`_quarto.yml` は機構を `../template/...` で参照し、ビルドスクリプトは渡された
-フォルダ名を基準に動くため、**改名しても設定の書き換えは不要**である。
+`_quarto.yml` は機構ファイルを**同じフォルダ内の相対名**で参照し、ビルドスクリプトは
+渡されたパスを基準に動くため、**改名しても設定の書き換えは不要**である。
 
-::: {.callout-tip}
-1つのリポジトリに複数の執筆フォルダを置けるので、「設計書」「マニュアル」「議事録」を
-同じ様式で並べて管理できる。様式（`template/`）は共通のまま1か所で保守される。
+::: {.callout-warning}
+フォルダ名・パスは**英数字（ASCII）**にすること。日本語のフォルダ名にすると、
+Windows では mermaid 図のベクター化（PDF・配布 HTML）が失敗する
+（@sec-ascii-path）。
 :::

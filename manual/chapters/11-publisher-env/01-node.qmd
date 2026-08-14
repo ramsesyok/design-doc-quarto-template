@@ -1,5 +1,17 @@
 ## node の導入
 
+### いつ必要か
+
+node が要るのは、**mermaid 図をベクター SVG に焼き込むとき**だけである
+（PDF・配布 HTML の両方でこの処理が走る）。mermaid を含まない文書であれば、
+発行者も Quarto だけで出力できる。
+
+::: {.callout-note}
+以前は配布 HTML の図表番号の後処理にも node が必要だったが、現在は Quarto に
+同梱された実行環境（Deno）で動くため不要である。この変更により、執筆者の
+プレビューでも同じ後処理が自動で走るようになっている（5章）。
+:::
+
 ### インストール
 
 Node.js の公式サイト（<https://nodejs.org/>）から LTS 版のインストーラを
@@ -13,28 +25,4 @@ node --version
 
 バージョン番号（例: `v20.11.0`）が表示されればよい。
 
-### node だけで足りる場合
-
-**mermaid 図を含まない文書**であれば、node を入れるだけで PDF・HTML の両方を
-出力できる。mermaid-cli（`npm ci`）も Chrome / Edge の設定も要らない。
-
-自分が扱う文書に mermaid が含まれるかは、原稿を検索すれば分かる。
-
-```bat
-findstr /S /M "```mermaid" docs\chapters\*.qmd
-```
-
-何も表示されなければ mermaid は使われていない。
-
-### 何に使われるか
-
-配布 HTML の生成では、Quarto が出した HTML に対して
-`template/postprocess-html.mjs` を node で実行し、図表番号を「図 3.2-1」形式に
-振り直している。
-
-::: {.callout-note}
-この後処理が必要なのは、Quarto の図表採番がすべての変換処理より後段で走るため、
-変換の途中では番号を上書きできないという事情による。詳細は 17章に示す。
-:::
-
-このスクリプトは node の標準機能だけで動くため、**追加のパッケージ導入は不要**である。
+続けて mermaid-cli を導入する（@sec-mermaid-setup）。

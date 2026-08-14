@@ -60,24 +60,23 @@ stateDiagram-v2
 :::
 
 ::: {.callout-warning}
-**納品 PDF・配布 HTML を作るときだけ**、mermaid をベクター SVG に焼き込む処理が走り、
+**発行版 PDF・配布 HTML を作るときだけ**、mermaid をベクター SVG に焼き込む処理が走り、
 node と Chrome / Edge が必要になる。この処理は発行者の環境で行う（11章）。
-
-執筆者の端末で PDF を出そうとして mermaid のところで失敗する場合、原稿の誤りではなく
-環境の不足である。
 :::
 
-### プレビューと最終成果物で見た目が違う
+### プレビューと最終成果物の見た目
 
-プレビューの図は Quarto 標準テーマで描かれるため、最終成果物とは見た目が少し異なる。
-内容の確認には十分だが、**体裁の最終確認は PDF で行うこと**（@sec-preview-diff）。
+テーマ・フォント・ラベルの描き方は発行版と同じ設定（`mermaid-config.json`）を
+使うため、見た目はほぼ揃う。ただし**描画エンジンの版が違う**ため（プレビューは
+Quarto 同梱、発行版は mermaid-cli）、複雑な図ではまれに形が変わる。
+大きな図を書いたら中間版 PDF で確認するとよい（@sec-preview-diff）。
 
 ### 静的な図として持ちたいとき
 
 `diagrams/*.mmd` に mermaid のソースを置き、あらかじめ SVG に変換しておくこともできる。
 
 ```bash
-./template/render-diagrams.sh docs
+./template/render-diagrams.sh ../order-design/docs
 ```
 
 生成された SVG は通常の画像として `![…](/diagrams/xxx.svg)` で貼る。

@@ -2,19 +2,32 @@
 
 ### 全体像
 
-執筆フォルダ（既定名 `docs`）の中身を次に示す。
+設計書リポジトリと執筆フォルダ（既定名 `docs`）の中身を次に示す。
 
 ```text
-docs/
-├── _quarto.yml       … 文書の設定（表題・資料番号・章の並び）
-├── index.qmd         … 前付け（採番されない章）
-├── chapters/         … 本文。章＝フォルダ／節＝サブフォルダ／項＝ファイル
-├── diagrams/         … 図の置き場（SVG・mermaid のキャッシュ）
-├── lib.typ           … setup が置く生成物（触らない）
-├── design-doc.css    … setup が置く生成物（触らない）
-├── _book/            … 出力先（生成物）
-└── design-doc.pdf    … PDF 出力（生成物）
+order-design/              … 設計書リポジトリ（clone するのはここ）
+├── .gitignore, .gitattributes
+├── .vscode/settings.json  … 日本語を等幅で表示する設定
+├── README.md              … 執筆者向けの入口
+└── docs/                  … 執筆フォルダ
+    ├── _quarto.yml        … 文書の設定（表題・資料番号・章の並び）
+    ├── index.qmd          … 前付け（採番されない章）
+    ├── chapters/          … 本文。章＝フォルダ／節＝サブフォルダ／項＝ファイル
+    ├── diagrams/          … 図の置き場（SVG・mermaid のキャッシュ）
+    ├── design-doc.pdf     … 中間版 PDF（発行者が更新する）
+    ├── design-doc.lua     ┐
+    ├── design-doc.css     │ 機構ファイル（触らない）。
+    ├── postprocess-html.js│ 発行者が template から配置する
+    ├── mermaid-config.json│
+    ├── .template-version  ┘ 置かれたテンプレートの版
+    ├── lib.typ            … 発行者の setup が置く生成物（触らない）
+    ├── typst-*.typ        … 同上
+    ├── _quarto-publish.yml… 同上
+    └── _book/             … 出力先（生成物）
 ```
+
+`lib.typ`・`typst-*.typ`・`_quarto-publish.yml` は発行者の環境にだけ現れる
+（PDF を出すときに置かれる）。執筆者の手元には無い。
 
 ### 執筆者が触るもの
 
@@ -24,20 +37,31 @@ docs/
 | 本文を書く・直す                   | `chapters/` の中の `.qmd`            |
 | 章を増やす・減らす・並べ替える     | `_quarto.yml` の `chapters:`         |
 | 文書番号・表題・会社名を変える     | `_quarto.yml` の上のほう             |
-| 前付け（改訂履歴・用語）を書く     | `index.qmd`                          |
+| 前付け（改正履歴・用語）を書く     | `index.qmd`                          |
 | 図（画像ファイル）を追加する       | `diagrams/` に置く                   |
 :::
 
 これ以外のファイルは触らなくてよい。
 
 ::: {.callout-warning}
-`lib.typ` と `design-doc.css` は setup が `template/` からコピーする**生成物**である。
-直接編集しても、次のビルド（内部で setup を呼ぶ）で上書きされる。
-様式を変えたい場合は 17章を参照すること。
+機構ファイル（`design-doc.lua`・`design-doc.css`・`postprocess-html.js`・
+`mermaid-config.json`）は `template/` からコピーされた**写し**である。
+直接編集しても、発行者がテンプレートを更新（`update-doc`）したときや
+ビルドしたときに上書きされる。様式を変えたい場合は 17章を参照すること。
 :::
 
 ### 生成物とバージョン管理
 
-`_book/`、`design-doc.pdf`、`lib.typ`、`design-doc.css` は生成物であり、
-`.gitignore` によりバージョン管理の対象外としてある。原稿（`.qmd`）と `_quarto.yml`、
-`diagrams/` の図だけを管理すればよい。
+::: {.tbl caption="バージョン管理の対象" label="tbl-vcs" widths="40,20,40"}
+| ファイル | 管理する | 備考 |
+|---|---|---|
+| `_quarto.yml`・`index.qmd`・`chapters/`・`diagrams/` | ○ | 原稿そのもの |
+| 機構ファイル4点・`.template-version` | ○ | 発行者が置く。差分が出たら発行者がコミットする |
+| `design-doc.pdf` | ○ | **中間版**。発行者が定期的に更新してコミットする |
+| `_book/` | × | 出力先（生成物） |
+| `lib.typ`・`typst-*.typ`・`_quarto-publish.yml` | × | 発行者の setup が置く生成物 |
+| `diagrams/mmd-*.svg` | × | mermaid の変換キャッシュ |
+:::
+
+除外の設定は `init-doc` が置いた `.gitignore` に入っているので、執筆者が
+意識する必要はない。

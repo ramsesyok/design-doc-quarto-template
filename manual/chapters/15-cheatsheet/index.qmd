@@ -71,12 +71,16 @@
 
 ## コマンド
 
-::: {.tbl caption="主なコマンド" label="tbl-cs-cmd" widths="34,46,20"}
-| やりたいこと             | コマンド（リポジトリのルートから）        | 参照  |
-|--------------------------|-------------------------------------------|-------|
-| 初期化する               | `.\template\setup.bat docs`               | 2章   |
-| 確認用 HTML を出す       | `cd docs` ＋ `quarto render --to html`    | 5章   |
-| 納品 PDF を出す          | `.\template\build-qmd.bat docs`           | 12章  |
-| 配布 HTML を出す         | `.\template\build-html.bat docs`          | 12章  |
-| 両方出す                 | PDF → HTML の順に実行する                 | 12章  |
+::: {.tbl caption="主なコマンド" label="tbl-cs-cmd" widths="30,50,20"}
+| やりたいこと             | コマンド                                            | 参照  |
+|--------------------------|-----------------------------------------------------|-------|
+| 確認用 HTML を出す（執筆者） | `cd docs` ＋ `quarto render`                     | 5章   |
+| 設計書リポジトリを作る   | `.\template\init-doc.bat ..\order-design`           | 2章   |
+| 機構ファイルを更新する   | `.\template\update-doc.bat ..\order-design\docs`    | 2章   |
+| PDF を出す               | `.\template\build-qmd.bat ..\order-design\docs`     | 12章  |
+| 配布 HTML を出す         | `.\template\build-html.bat ..\order-design\docs`    | 12章  |
+| 両方出す                 | PDF → HTML の順に実行する                           | 12章  |
 :::
+
+上の4つは発行者の作業であり、`template/` を置いたフォルダから実行する
+（`..\order-design\docs` は執筆フォルダのパス）。

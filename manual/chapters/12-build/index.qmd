@@ -2,18 +2,17 @@
 
 本章では、成果物の出力手順と配布方法を述べる。発行者の作業である。
 
-出力はリポジトリのルートから実行する。
+出力は `template/` を置いたフォルダから、**執筆フォルダのパスを渡して**実行する。
 
 ```bat
-:: PDF（納品物）→ docs\design-doc.pdf
-.\template\build-qmd.bat docs
+:: PDF（発行版・中間版）→ <執筆フォルダ>\design-doc.pdf
+.\template\build-qmd.bat ..\order-design\docs
 
-:: HTML（社内レビュー用・章ごとのページ）→ docs\_book\index.html
-.\template\build-html.bat docs
+:: HTML（配布用・章ごとのページ）→ <執筆フォルダ>\_book\index.html
+.\template\build-html.bat ..\order-design\docs
 ```
 
-末尾の `docs` は執筆フォルダ名である（省略時は `docs`）。フォルダを改名したら
-その名前を渡す。
+末尾は執筆フォルダのパスである（省略時は `docs`）。相対・絶対どちらでもよい。
 
 {{< include 01-pdf.qmd >}}
 

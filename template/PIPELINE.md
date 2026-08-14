@@ -4,37 +4,58 @@
 変わるかをまとめる。テンプレートを改修するとき最初に読む。
 
 - 対象読者は**テンプレートを保守する人**（このファイルは `template/` に置く）。
-  執筆者向けの記法は `AUTHORING.md`、ビルド環境の詳細は `ADVANCED.md` を参照。
+  執筆者向けの記法は利用マニュアル（`manual/`）、配布・ビルド環境の詳細は `ADVANCED.md` を参照。
 - 用語: 「様式」= 会社の紙のフォーマット（外枠・資料番号欄・社名・ページ番号）。
 
 ## 0. フォルダの分担
 
+**`template/` は設計書リポジトリの中に置かない。** 発行者の手元にだけ置き、執筆フォルダの
+パスを渡して使う。設計書リポジトリには HTML に要る機構ファイルだけが**コミットされる**ので、
+執筆者は Quarto と VSCode 拡張だけで発行版と同じ番号の HTML を出せる。
+
 ```
-リポジトリ/
-├── template/     ← 様式・変換・ビルドの実体（このフォルダ。執筆者は触らない）
-│   ├── lib.typ, typst-template.typ, typst-show.typ, design-doc.lua, design-doc.css,
-│   ├── postprocess-html.mjs, mermaid-config.json, package.json,
-│   ├── setup.sh, setup.bat, build-qmd.sh, build-html.sh, render-diagrams.sh, PIPELINE.md
+発行者の作業フォルダ/
+├── template/     ← 様式・変換・ビルドの実体（このフォルダ。git 共有しない）
+│   ├── lib.typ, typst-template.typ, typst-show.typ, quarto-publish.yml,
+│   ├── design-doc.lua, design-doc.css, postprocess-html.js, mermaid-config.json,
+│   ├── package.json, VERSION, scaffold/,
+│   ├── init-doc.*, update-doc.*, setup.*, build-qmd.*, build-html.*, render-diagrams.sh,
 │   └── (setup 実行後: puppeteer.json / node_modules … いずれも .gitignore)
-└── docs/         ← 執筆フォルダ（既定名。執筆者が改名してよい）
-    ├── _quarto.yml, index.qmd, chapters/, diagrams/
-    └── (setup/ビルド後: lib.typ, design-doc.css, _book/ … いずれも .gitignore)
+└── order-design/ ← 設計書リポジトリ（git 共有。執筆者はこれだけ clone する）
+    └── docs/     ← 執筆フォルダ（名前は自由）
+        ├── _quarto.yml, index.qmd, chapters/, diagrams/     … 原稿
+        ├── design-doc.lua, design-doc.css, postprocess-html.js,
+        │   mermaid-config.json, .template-version           … 機構（コミットする）
+        ├── design-doc.pdf                                   … 中間版（コミットする）
+        └── (setup 後: lib.typ, typst-*.typ, _quarto-publish.yml, _book/ … .gitignore)
 ```
 
-- 執筆フォルダ名は自由（`docs` 以外でもよい）。ビルドは**リポジトリのルートから**
-  `./template/build-qmd.sh <執筆フォルダ名>` で呼ぶ（省略時 `docs`）。
-- `template/` と執筆フォルダは**兄弟**である前提。`_quarto.yml` は partial・filter を
-  `../template/...` で参照する。`design-doc.lua` は**環境変数に依存せず**、
-  `quarto.project.directory`（Quarto がフィルタに渡す）から執筆フォルダを、その隣の
-  `../template` から template を自力で特定する。→ **ビルドスクリプトでも VSCode の
-  Quarto 拡張（quarto preview / render）でも同じに動く**（§5 参照）。
-- **setup（重要）**: 環境変数で渡せない2つだけは `setup.sh`/`setup.bat` が執筆フォルダへ
-  **永続コピー**しておく（ビルドごとに消さず置きっぱなし。どちらも `.gitignore` 済み）:
-  - `lib.typ` … typst の import が「プロジェクト外を読めない」制約に掛かるため（PDF）。
-  - `design-doc.css` … Quarto がローカル css として `_book/` に取り込み、単体で配信・
-    zip できるようにするため（HTML）。
-  併せて setup は mermaid 用の Chrome/Edge を検出し `template/puppeteer.json` に記録する。
-  ビルドスクリプトは先頭で setup を呼ぶので、拡張派・スクリプト派どちらも同じ状態になる。
+- ビルドは `./template/build-qmd.sh <執筆フォルダのパス>`（省略時 `docs`）。
+  スクリプトは `TEMPLATE_ROOT` を渡すので、`template/` がどこにあってもよい。
+- `_quarto.yml` は filter を**同じフォルダ内の相対名**（`design-doc.lua`）で参照する。
+  `design-doc.lua` は `quarto.project.directory` から執筆フォルダ（ROOT）を自力で特定し、
+  `TEMPLATE_ROOT`（無ければ `ROOT/../template`）を TMPL とする。**TMPL は SVG 化にしか
+  使わない**ので、執筆者の環境に `template/` が無くても HTML は出る。
+- **3つの配置コマンド**（実体は1か所、責務だけ分けてある）:
+  - `update-doc` … 機構ファイル4本＋`.template-version` を執筆フォルダへ置く。
+    設計書リポジトリでは**コミット対象**。テンプレート更新の伝播はこれ。
+  - `setup` … `update-doc` を呼んだうえで、PDF 用の部品（`lib.typ`／typst partials／
+    `_quarto-publish.yml`）を置き、mermaid 用の Chrome/Edge を検出して
+    `template/puppeteer.json` に記録する。PDF 用部品は `.gitignore`。
+    ビルドスクリプトが先頭で呼ぶ。
+  - `init-doc` … 設計書リポジトリの雛形（`scaffold/`）を展開し、`update-doc` を呼び、
+    最後に HTML を1回ビルドして検証する。既存ファイルは上書きしない。
+- なぜ `lib.typ` と typst partials を執筆フォルダへ置くのか: typst の import は
+  「プロジェクト外を読めない」制約に掛かるため（PDF）。`design-doc.css` を置くのは
+  Quarto がローカル css として `_book/` に取り込み、単体で配信・zip できるようにするため。
+- なぜ typst の設定を `_quarto-publish.yml`（プロファイル）に分けるのか:
+  `template-partials` は実在するファイルを要求するので、`_quarto.yml` に書くと
+  執筆者の `quarto render`（フォーマット無指定＝全形式）が必ず失敗するため。
+  発行側は `quarto render --to typst --profile publish` で読み込ませる。
+- **パスは ASCII のみ。** Windows では、執筆フォルダのパスに日本語が含まれると
+  Quarto から Lua フィルタへ渡る時点で U+FFFD に置換されて届き（`quarto.project.directory`・
+  環境変数のいずれも同じ）、mermaid の SVG 化が成立しない。`init-doc` と
+  `design-doc.lua` の両方で検出して止めている。
 
 ---
 
@@ -55,12 +76,12 @@
   typst-template.typ                        Quarto の book HTML 生成
   typst-show.typ      ← template-partials          │
         │                                          ▼
-        ▼                                   postprocess-html.mjs
+        ▼                                   postprocess-html.js
      lib.typ          ← 様式の単一ソース      （図表番号を PDF に合わせる）
         │                                          │
         ▼                                          ▼
   _book/*.pdf → design-doc.pdf              _book/（章ごとの HTML）
-     ＝ 納品物                                  ＝ 社内レビュー用
+     ＝ 発行版・中間版                          ＝ 執筆者の確認用・配布用
 ```
 
 **同じ qmd から2系統が出る**のが要点。執筆者の記法は完全に共通で、
@@ -69,41 +90,49 @@
 ### ビルドコマンド
 
 ```
-# リポジトリのルートから実行する（末尾は執筆フォルダ名。省略すると docs）
-./template/setup.sh docs         # 初回のみ（配置 + ブラウザ検出）。ビルドも内部で呼ぶ
-./template/build-qmd.sh docs     # → docs/design-doc.pdf（納品物）
-./template/build-html.sh docs    # → docs/_book/index.html（社内レビュー用）
+# 発行者が実行する（末尾は執筆フォルダのパス。省略すると docs）
+./template/init-doc.sh ../order-design        # 設計書リポジトリを新規作成（最初の1回）
+./template/update-doc.sh ../order-design/docs # 機構ファイルを最新の template に更新
+./template/build-qmd.sh ../order-design/docs  # → <執筆フォルダ>/design-doc.pdf
+./template/build-html.sh ../order-design/docs # → <執筆フォルダ>/_book/index.html
 ```
 
-どちらも執筆フォルダの `_book/` を出力先に使い、**後から走ったほうが前の出力を
-消す**。そのため `build-qmd.sh` は PDF を `<執筆フォルダ>/design-doc.pdf` に取り出す。
-両方を残したいときは PDF → HTML の順に実行する。
+`build-*` はどちらも執筆フォルダの `_book/` を出力先に使い、**後から走ったほうが前の
+出力を消す**。そのため `build-qmd.sh` は PDF を `<執筆フォルダ>/design-doc.pdf` に
+取り出す。両方を残したいときは PDF → HTML の順に実行する。
 
-VSCode の Quarto 拡張から `quarto preview`/`render` を直接使う場合は、先に一度
-`setup` を実行しておけば同じように出力できる（拡張はビルドスクリプトを経由しないため）。
+執筆者側は何も要らない。`quarto preview` / `quarto render`（フォーマット無指定）で
+HTML が出て、図表番号の振り直しまで `post-render` が自動で行う。
 
 ---
 
 ## 2. ファイルの役割
 
-場所欄: **docs** = 執筆フォルダ / **tpl** = `template/`。
+場所欄: **doc** = 執筆フォルダ（設計書リポジトリ）/ **tpl** = `template/`。
+「配布」欄は、設計書リポジトリにコミットされるか。
 
-| ファイル | 場所 | 役割 | 影響する出力 |
-|---|---|---|---|
-| `_quarto.yml` | docs | 章の並び、出力形式、画面幅（`grid:`）、資料番号 | 両方 |
-| `index.qmd` | docs | 前付け（採番なし）。HTML のトップページ | 両方 |
-| `chapters/**.qmd` | docs | 本文 | 両方 |
-| `diagrams/` | docs | qmd が直接貼る静的図 + mermaid 生成 SVG の置き場 | 両方 |
-| `design-doc.lua` | tpl | mermaid / `.landscape` / `.ipo` / セル結合 / 表幅 | 両方 |
-| `typst-show.typ` | tpl | フロントマター → `design-doc()` の引数 | PDF |
-| `typst-template.typ` | tpl | Quarto 既定テンプレートの差し替え口（`lib.typ` を import） | PDF |
-| `lib.typ` | tpl | **様式の単一ソース**（枠・採番・IPO・横向き）。setup が docs へ永続コピー | PDF |
-| `design-doc.css` | tpl | レビュー HTML の見た目。setup が docs へ永続コピー | HTML |
-| `postprocess-html.mjs` | tpl | 図表番号を「章.節-連番」に振り直す | HTML |
-| `mermaid-config.json` | tpl | mermaid のテーマ・`htmlLabels: false` | 両方 |
-| `setup.sh` / `setup.bat` | tpl | 初期化: lib.typ/css の配置 + Chrome/Edge 検出→`puppeteer.json` | — |
-| `puppeteer.json` | tpl | setup 生成の machine ローカル設定（ブラウザパス）。`.gitignore` 済み | mermaid |
-| `build-qmd.sh` / `build-html.sh` | tpl | ビルド入口（引数 = 執筆フォルダ名。先頭で setup を呼ぶ） | — |
+| ファイル | 場所 | 配布 | 役割 | 影響する出力 |
+|---|---|---|---|---|
+| `_quarto.yml` | doc | ○ | 章の並び、html 設定、画面幅（`grid:`）、資料番号、`post-render` | 両方 |
+| `index.qmd` | doc | ○ | 前付け（採番なし）。HTML のトップページ | 両方 |
+| `chapters/**.qmd` | doc | ○ | 本文 | 両方 |
+| `diagrams/` | doc | ○ | qmd が直接貼る静的図 + mermaid 生成 SVG の置き場（`mmd-*` は除外） | 両方 |
+| `design-doc.lua` | tpl→doc | ○ | mermaid / `.landscape` / `.ipo` / セル結合 / 表幅 | 両方 |
+| `design-doc.css` | tpl→doc | ○ | HTML の見た目 | HTML |
+| `postprocess-html.js` | tpl→doc | ○ | 図表番号を「章.節-連番」に振り直す（`post-render` で自動実行） | HTML |
+| `mermaid-config.json` | tpl→doc | ○ | mermaid のテーマ・`htmlLabels: false`（SVG 化とプレビューの共通ソース） | 両方 |
+| `.template-version` | tpl→doc | ○ | 置いた時点のテンプレート版（`template/VERSION` の写し） | — |
+| `design-doc.pdf` | doc | ○ | 中間版（発行者が定期的に作る） | — |
+| `typst-show.typ` | tpl→doc | × | フロントマター → `design-doc()` の引数 | PDF |
+| `typst-template.typ` | tpl→doc | × | Quarto 既定テンプレートの差し替え口（`lib.typ` を import） | PDF |
+| `lib.typ` | tpl→doc | × | **様式の単一ソース**（枠・採番・IPO・横向き） | PDF |
+| `quarto-publish.yml` | tpl→doc | × | typst 用プロファイル（`_quarto-publish.yml` として置かれる） | PDF |
+| `VERSION` | tpl | — | テンプレートの版。更新したら上げる | — |
+| `scaffold/` | tpl | — | 設計書リポジトリの雛形（`init-doc` が展開） | — |
+| `init-doc` / `update-doc` | tpl | — | 雛形の作成 / 機構ファイルの更新 | — |
+| `setup.sh` / `setup.bat` | tpl | — | ビルド準備（update-doc + PDF 用部品 + Chrome/Edge 検出→`puppeteer.json`） | — |
+| `puppeteer.json` | tpl | — | setup 生成の machine ローカル設定（ブラウザパス）。`.gitignore` 済み | mermaid |
+| `build-qmd.sh` / `build-html.sh` | tpl | — | ビルド入口（引数 = 執筆フォルダのパス。先頭で setup を呼ぶ） | — |
 
 ---
 
@@ -112,7 +141,8 @@ VSCode の Quarto 拡張から `quarto preview`/`render` を直接使う場合�
 ### 3.1 Quarto から lib.typ へ届くまで
 
 Quarto の typst 出力は既定のテンプレートを持っているが、**`template-partials`
-で2つの partial を差し替えて**自前の様式に載せ替えている（`_quarto.yml`）。
+で2つの partial を差し替えて**自前の様式に載せ替えている（`_quarto-publish.yml`。
+setup が `template/quarto-publish.yml` から置く）。
 
 - `typst-template.typ` … Quarto 既定の本体を空にする役
 - `typst-show.typ` … フロントマターの値を `design-doc()` の引数に渡す役
@@ -172,10 +202,10 @@ title / subtitle / author / doc-number / company / toc …
 **必ず再ビルドして PDF を目視確認する。** ページ単位で見るなら（ルートから）:
 
 ```
-./template/setup.sh docs      # lib.typ を配置（未実施なら。実施済みなら省略可）
-cd docs
-# _quarto.yml の typst: に keep-typ: true を一時的に足してから
-quarto render --to typst
+./template/setup.sh <執筆フォルダのパス>   # lib.typ・partials を配置
+cd <執筆フォルダ>
+# _quarto-publish.yml の typst: に keep-typ: true を一時的に足してから
+quarto render --to typst --profile publish
 typst compile index.typ "chk-{n}.png" --format png --font-path "C:/Windows/Fonts" --ppi 70
 ```
 
@@ -203,7 +233,7 @@ book にすると、閲覧者が1ページで読むのは **約25KB**、共通�
 フィルタでは上書きできず、**生成された HTML を直すのが唯一の方法**
 （実測で確認済み）。
 
-`postprocess-html.mjs` は2パス構成:
+`postprocess-html.js` は2パス構成:
 
 1. `_quarto.yml` の `chapters:` の順に全章を走査し、見出しの `data-number` から
    章・節を拾って連番を確定する（連番は文書全体で決まるため章をまたぐ）
@@ -212,9 +242,29 @@ book にすると、閲覧者が1ページで読むのは **約25KB**、共通�
 書き換えるのは `figcaption` の「図 1.1: 」と相互参照リンクの本文の**2か所だけ**。
 章順は `_quarto.yml` から読むので二重管理にならない。
 
-**落とし穴**: 「図」と番号の間の NBSP は、book 出力では実体参照 `&nbsp;`、
+**落とし穴1**: 「図」と番号の間の NBSP は、book 出力では実体参照 `&nbsp;`、
 単一 HTML 出力では生の U+00A0 と形が違う。正規表現は `(?:\s|&nbsp;)*` で
 両対応にしてある（片方だけにすると 0 件マッチになる）。
+
+**落とし穴2（冪等性）**: この後処理は `_quarto.yml` の `project.post-render` に
+登録してあり、`quarto render` だけでなく **`quarto preview` が保存のたびに呼ぶ**。
+そのとき再生成されるのは編集した章だけで、他章は前回処理済みの HTML が `_book/` に
+残っている。つまり「処理済みの HTML をもう一度読んでも同じ番号を導出し、同じ結果を
+書く」必要がある。そのため:
+
+- キャプションの正規表現は未処理（`図 1.1: `）と処理済み（`図 3.2-1　`）の**両方**に一致する
+- `.tbl` の分割キャプションは、前回前置したラベルを剥がしてから前置し直す
+
+これを崩すと、プレビューのたびに「表 3-1　表 3-1　…」と番号が積み重なる（実際に
+起きていた不具合）。`postprocess-html.js` を触ったら、**同じ `_book/` に2回流して
+出力が変わらないこと**を必ず確かめる。
+
+**typst 出力時**: post-render は PDF ビルドでも呼ばれるので、`QUARTO_PROJECT_OUTPUT_FILES`
+に `.html` が1つも無ければ何もせず正常終了する。また、解決できない相互参照があっても
+異常終了しない（post-render の失敗は `quarto preview` 全体の失敗になり、執筆が止まるため）。
+
+**実行系**: `quarto run` / post-render は **Quarto 同梱の Deno** で走る。使うのは
+`node:fs` / `node:path` だけなので、執筆者の環境に node は要らない。
 
 ### 4.3 見た目の調整箇所
 
@@ -223,7 +273,7 @@ book にすると、閲覧者が1ページで読むのは **約25KB**、共通�
 | 画面全体の幅・左ペインの幅 | `_quarto.yml` の `format.html.grid` |
 | 章番号を出すか | `_quarto.yml` の `number-sections` |
 | 表・IPO・図の見た目 | `design-doc.css` |
-| 図表番号の書式 | `postprocess-html.mjs` |
+| 図表番号の書式 | `postprocess-html.js` |
 
 現在は **1920px 基準**（左ペイン 300px + 本文 1380px + 右余白 240px）。
 Quarto 既定は 250 + 800 + 250 ≒ 1280px。左ペインの 300px は
@@ -279,8 +329,16 @@ HTML では div 構造として組み立て直している。
   `quarto.doc.add_html_dependency` で一度だけ注入する。`mermaid-init.js` は
   `pre.mermaid-js` を拾って SVG 化するので、native ` ```{mermaid} ` と等価に描ける。
 - **なぜフラグで分けるか**: 配布 HTML は PDF と図を一致させたい（`htmlLabels:false` の
-  同一 SVG）ので `MERMAID_SVG=1` で従来の SVG 経路に載せ、`postprocess-html.mjs` の
-  figure 採番にも乗せる。プレビューの見た目は Quarto 標準テーマになるが内容確認には十分。
+  同一 SVG）ので `MERMAID_SVG=1` で従来の SVG 経路に載せ、`postprocess-html.js` の
+  figure 採番にも乗せる。
+- **設定の単一ソース**: `mermaid-config.json` は SVG 化（mmdc の `-c`）と
+  クライアント描画の**両方**が読む。後者は `quarto.doc.include_text('after-body', …)` で
+  `mermaid.initialize(...)` を流し込む（mermaid-init.js は読み込み時に一度
+  `initialize()` を呼んで Quarto 既定テーマを当てるので、**その後ろで**上書きする。
+  描画は window の load で走るため間に合う）。これで `theme` / `htmlLabels:false` /
+  フォントが揃う。設定ファイルは執筆フォルダ直下のものを優先し、無ければ `template/` を見る。
+- **残る差**: 描画エンジンの版が違う（プレビュー = Quarto 同梱 mermaid、発行版 =
+  `package.json` の mermaid-cli）。まれに図の形が変わるので、中間版 PDF で確認する。
 - **注意**: プレビューでは mermaid をベクター SVG 化しないため `diagrams/mmd-*.svg` は
   増えない（＝執筆者は Chrome/Edge も node_modules も要らない）。
 
@@ -312,8 +370,15 @@ HTML では div 構造として組み立て直している。
 - [ ] HTML も再ビルドしたか（PDF だけ直すと採番がずれることがある）
 - [ ] IPO の列比を変えたなら、`lib.typ` の `IPO-COLS` と
       `design-doc.css` の `.ipo-frame` の**両方**を直したか
-- [ ] 採番規則を変えたなら、`lib.typ` と `postprocess-html.mjs` の**両方**か
+- [ ] 採番規則を変えたなら、`lib.typ` と `postprocess-html.js` の**両方**か
 - [ ] 機構ファイルを増減したなら、それが `template/` にあるか。執筆フォルダ直下へ
-      配置が要るもの（typst import / `_book` 自己完結）なら、`setup.sh`/`setup.bat` の
-      コピー対象と `.gitignore` も更新したか
-- [ ] 執筆者に見える記法を増やしていないか（増やすなら `AUTHORING.md` の説明も更新する）
+      配置が要るなら、置き先に応じて次を更新したか:
+      - 執筆者に要る（HTML）… `update-doc.sh`/`.bat` のコピー対象、`scaffold/repo/gitignore`
+        （**無視しない**）、このリポジトリの `.gitignore`（無視する＋`!/template/...`）
+      - 発行時だけ要る（PDF）… `setup.sh`/`.bat` のコピー対象、`scaffold/repo/gitignore`
+        （無視する）、このリポジトリの `.gitignore`
+- [ ] `template/VERSION` を上げたか（設計書リポジトリ側の `.template-version` に反映され、
+      発行者が `update-doc` した差分として見える）
+- [ ] `postprocess-html.js` を触ったなら、**同じ `_book/` に2回流しても結果が変わらない**
+      ことを確かめたか（`quarto preview` は保存のたびに呼ぶ。§4.2）
+- [ ] 執筆者に見える記法を増やしていないか（増やすなら利用マニュアル `manual/` も更新する）

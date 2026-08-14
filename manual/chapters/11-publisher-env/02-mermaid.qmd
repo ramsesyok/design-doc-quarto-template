@@ -1,18 +1,18 @@
-## mermaid を PDF に載せる準備
+## mermaid を PDF に載せる準備 {#sec-mermaid-setup}
 
 mermaid 図を含む文書の PDF・配布 HTML を作るには、**mermaid-cli と Chrome / Edge**が
 要る。図をベクター SVG に焼き込み、PDF と HTML で図を一致させるためである。
 
 ### 手順
 
-リポジトリのルートで次を実行する。
+`template/` を展開したフォルダで次を実行する。
 
 ```bat
 cd template
 set "PUPPETEER_SKIP_DOWNLOAD=true"
 npm ci
 cd ..
-.\template\setup.bat docs
+.\template\setup.bat ..\order-design\docs
 ```
 
 | 行 | 意味 |
@@ -27,7 +27,7 @@ bash（macOS / Linux / Git Bash）では次のとおりである。
 cd template
 PUPPETEER_SKIP_DOWNLOAD=true npm ci
 cd ..
-./template/setup.sh docs
+./template/setup.sh ../order-design/docs
 ```
 
 ### Chromium をダウンロードしない理由
@@ -52,13 +52,13 @@ Windows のコマンドプロンプトは変数のインライン指定ができ
 
 ```bat
 set "EXECUTABLE_BROWSER=C:\Program Files\Google\Chrome\Application\chrome.exe"
-.\template\setup.bat docs
+.\template\setup.bat ..\order-design\docs
 ```
 
 bash では1行で書ける。
 
 ```bash
-EXECUTABLE_BROWSER="/path/to/chrome-or-msedge" ./template/setup.sh docs
+EXECUTABLE_BROWSER="/path/to/chrome-or-msedge" ./template/setup.sh ../order-design/docs
 ```
 
 ### さらに細かい調整
@@ -69,6 +69,18 @@ Chrome / Edge がまったく無い環境や、`--no-sandbox` 等の追加オプ
 ```json
 {"executablePath": "C:/Program Files/Google/Chrome/Application/chrome.exe", "args": ["--no-sandbox"]}
 ```
+
+### mermaid の設定は1か所
+
+テーマ・フォント・ラベルの描き方は `mermaid-config.json` にまとめてある。
+このファイルは**発行版の SVG 化と執筆者のプレビューの両方**が読むため、
+執筆者が見る図と発行版の図の設定が食い違わない。
+
+::: {.callout-note}
+設定ファイルは執筆フォルダに置かれた写しが使われる（`update-doc` が配置する）。
+様式として変更したいときは `template/mermaid-config.json` を直し、`update-doc` で
+配り直す。
+:::
 
 ### SVG はキャッシュされる
 
