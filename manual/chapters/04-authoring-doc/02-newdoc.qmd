@@ -52,7 +52,7 @@ OK -> docs\_book\index.html
 | `README.md` | 執筆者向けの入口（準備・書き方・確認方法） |
 | `<執筆フォルダ>/_quarto.yml` | book 設定の雛形（表題・資料番号・章の並び） |
 | `<執筆フォルダ>/index.qmd` | 前付けの雛形（改正履歴・用語） |
-| `<執筆フォルダ>/chapters/` | 章の雛形（1章分の `index.qmd`） |
+| `<執筆フォルダ>/chapters/01-overview/index.qmd` | 章の雛形（1章分） |
 | `<執筆フォルダ>/diagrams/` | 図の置き場（空） |
 | 機構ファイル5点 | `design-doc.lua` / `design-doc.css` / `postprocess-html.js` / `mermaid-config.json` / `.template-version` |
 :::

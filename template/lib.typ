@@ -487,9 +487,15 @@
   // 「td/th の中の ul/ol は padding-left: 1.2em」（design-doc.css）と見た目を揃える。
   // 段落（show par）は元から top-level だけに掛かるのでセル内は影響を受けない。
   // ipo() は自前で _sec-indent を 0 にしてから table を組むので、ここは素通りになる。
+  // あわせて**セル内は両端揃えにしない**。セルは幅が狭く、ファイル名・コマンドなど
+  // 途中で折り返せない語が入ると、その行だけ字間が大きく開いて読みにくくなる
+  //（例「<執 筆 フ ォ ル ダ>/chapters/…」）。列の揃え指定（`:---`）は最終行の寄せを
+  // 決めるだけで両端揃えは止まらないため、ここで par 側を切る（実測で確認）。
+  // 本文の段落は justify: true のまま（和文の作法）。
   show table: it => context {
     let prev = _sec-indent.get()
     _sec-indent.update(0)
+    set par(justify: false)
     it
     _sec-indent.update(prev)
   }
