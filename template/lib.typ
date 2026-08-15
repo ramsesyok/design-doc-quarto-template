@@ -58,6 +58,19 @@
 // （字形確認は Noto を入れて行うこと）。
 #let JP-SANS = ("Meiryo UI", "Yu Gothic", "MS PGothic")
 #let JP-SERIF = ("Meiryo UI", "Yu Mincho", "MS PMincho")
+// コードブロック・インラインコード（```…``` と `…`）の書体。**等幅であること**。
+// BIZ UDGothic は英数字も等幅（10pt なら和文 10pt / 欧文 5pt。実測）なので、
+// 日本語混じりのコードでも桁がそろう。無い環境では MS Gothic → Consolas の順に落ちる。
+//
+// **注意1**: typst には英語のファミリ名で指定する。"BIZ UDゴシック" では一致せず、
+//   別の書体にフォールバックして等幅にならない（実測で確認）。
+// **注意2**: BIZ UDGothic / MS Gothic は JIS 系の字形で、**バックスラッシュ `\` が
+//   円記号 `¥` として描かれる**（Windows 日本語環境の慣習どおり）。`\` の字形で
+//   出したいときは Consolas を先頭に置く:
+//     #let MONO = ("Consolas", "BIZ UDGothic", "MS Gothic")
+//   ただし Consolas の欧文は 0.55em、BIZ UDGothic の欧文は 0.5em なので、
+//   和文と欧文が混じるコードでは桁が厳密にはそろわなくなる。
+#let MONO = ("BIZ UDGothic", "MS Gothic", "Consolas", "Courier New")
 // spec: true の表題欄（ヘッダ領域）の書体。MS Gothic を既定にし、無い環境では JP-SANS に落ちる。
 #let SPEC-HEAD-FONT = ("MS Gothic", "Yu Gothic", "MS PGothic")
 
@@ -462,6 +475,9 @@
     it
   }
   show block.where(fill: CODE-BG): set par(justify: false, first-line-indent: 0pt)
+  // コード（ブロック・インラインとも）は等幅書体にする。Quarto の構文強調は
+  // トークンごとの inline raw なので、raw への set text がそのまま効く。
+  show raw: set text(font: MONO)
   // 箇条書き（list/enum）は「最上位のリストだけ」を見出しレベルぶん＋LIST-INDENT
   // 字下げする（段落の先頭字下げと頭を揃える）。入れ子のリストには重ね掛けせず、
   // Typst 標準のネスト字下げに任せる（重ね掛けすると段ごとに右へ流れてしまう）。
