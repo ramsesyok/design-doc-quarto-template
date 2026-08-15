@@ -9,7 +9,7 @@
 |---------------------------|--------------------------------|----------------------------------|
 | Quarto のインストーラ     | 公式サイトからダウンロード     | 全員に必要                       |
 | Node.js のインストーラ    | 公式サイトからダウンロード     | 発行者（mermaid を使う場合）     |
-| `template/` 一式          | リリースアセット               | `node_modules` を含めてコピーする |
+| リリース展開フォルダ一式  | リリースアセット               | `node_modules` を含めてコピーする |
 | 設計書リポジトリ          | git clone またはコピー         | 原稿と図                         |
 | 本書（PDF / HTML）        | リリースアセット               | 執筆者へ配る                     |
 :::
@@ -19,23 +19,24 @@
 閉域環境では `npm ci` が実行できないため、接続可能な環境であらかじめ導入しておく。
 
 ```bat
-cd template
+cd C:\tools\quarto-template-1.0.0\template
 set "PUPPETEER_SKIP_DOWNLOAD=true"
 npm ci
 ```
 
-この状態の `template/` をまるごとコピーする。
+この状態の展開フォルダ（`quarto-template-<版>` ごと）をまるごとコピーする。
 :::
 
 ### 持ち込み後の手順
 
 1. Quarto（と必要なら Node.js）をインストールする。
-2. `template/` と設計書リポジトリを、**それぞれ別のフォルダ**に配置する
-   （`template/` を設計書リポジトリの中に入れない）。パスは ASCII だけにする。
+2. リリース展開フォルダと設計書リポジトリを、**それぞれ別のフォルダ**に配置する
+   （展開フォルダを設計書リポジトリの中に入れない）。パスは ASCII だけにする。
 3. ビルド準備を行う。
 
    ```bat
-   .\template\setup.bat ..\order-design\docs
+   cd C:\tools\quarto-template-1.0.0
+   .\template\setup.bat C:\work\order-design\docs
    ```
 
 4. 出力する（@sec-build）。

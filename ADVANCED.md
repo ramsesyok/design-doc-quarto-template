@@ -55,6 +55,23 @@ README は最短手順にしてあります。このファイルには、その�
     └── design-doc.pdf        … 中間版（発行者が定期的に作ってコミットする）
 ```
 
+発行者の手元では、このリポジトリの代わりに**リリース ZIP を展開したフォルダ**を使います。
+展開したまま使い、中身を取り出しません。
+
+```
+C:\tools\
+└── quarto-template-1.0.0/   … リリース ZIP を展開したもの（＝ここで作業する）
+    ├── README.md / ADVANCED.md
+    ├── manual/              … 利用マニュアル（PDF / HTML。執筆者へ配る）
+    └── template/            … 上と同じ中身（node_modules は既定で非同梱）
+
+C:\work\
+└── order-design/            … 設計書リポジトリ
+    └── docs/
+```
+
+版がフォルダ名に入るので、新しいリリースは別フォルダに展開され、新旧を並べて置けます。
+
 ### 誰が何を配置するか
 
 | コマンド | 実行者 | 置くもの | git |
@@ -81,8 +98,8 @@ README は最短手順にしてあります。このファイルには、その�
 パスを基準に動くため、改名しても設定の書き換えは不要です。
 
 ```bash
-git mv docs design-doc                              # 例: docs → design-doc
-./template/build-qmd.sh ../order-design/design-doc  # ビルドは新しいパスを渡すだけ
+git mv docs design-doc                                # 例: docs → design-doc
+./template/build-qmd.sh ~/work/order-design/design-doc  # ビルドは新しいパスを渡すだけ
 ```
 
 **パスに ASCII 以外の文字（日本語など）は使えません。** Windows では Quarto から
@@ -92,21 +109,30 @@ Lua フィルタへ渡る時点でパスの文字が U+FFFD に置換されて�
 ## 3. ビルドの詳細
 
 ```bash
+cd ~/tools/quarto-template-1.0.0
+
 # PDF（発行版・中間版）
-./template/build-qmd.sh ../order-design/docs      # → <執筆フォルダ>/design-doc.pdf
+./template/build-qmd.sh ~/work/order-design/docs      # → <執筆フォルダ>/design-doc.pdf
 
 # 静的 HTML（配布用・章ごとに分割）
-./template/build-html.sh ../order-design/docs     # → <執筆フォルダ>/_book/index.html
+./template/build-html.sh ~/work/order-design/docs     # → <執筆フォルダ>/_book/index.html
 ```
 
 Windows（PowerShell / cmd）では、同じ引数で `.bat` 版を使います（出力先は同じ）:
 
 ```bat
-template\build-qmd.bat ..\order-design\docs
-template\build-html.bat ..\order-design\docs
+cd C:\tools\quarto-template-1.0.0
+.\template\build-qmd.bat C:\work\order-design\docs
+.\template\build-html.bat C:\work\order-design\docs
 ```
 
-- 引数は**執筆フォルダのパス**（省略時 `docs`）。相対・絶対どちらでも構いません。
+- 引数は**執筆フォルダのパス**（省略時 `docs`）。**絶対パスを推奨**します。相対パスも
+  使えますが、スクリプトの位置ではなく**いまいるフォルダ**からの相対として解釈されます
+  （スクリプト自身の位置は `%~dp0` / `BASH_SOURCE` から求めるので、`template/` を
+  どこに置いても、どう呼び出しても影響しません）。
+- `build-*` / `setup` / `update-doc` は執筆フォルダに `_quarto.yml` が無ければ
+  その場でエラーになるため、パスを間違えても何も壊れません。`init-doc` だけは
+  「無いものを作る」コマンドなので検出できません（→ 下の注意）。
 - ビルドスクリプトは先頭で `setup` を呼ぶので、単体で実行すれば準備も済みます。
 - `build-qmd` は `--profile publish` を付けて typst の設定を読み込ませます。
 - 図表番号の振り直しは `post-render`（`postprocess-html.js`）が行うので、
@@ -176,10 +202,10 @@ mermaid-cli）、まれに図の形が変わります。中間版 PDF で確認�
 発行版 PDF・配布 HTML を出す環境にだけ、mermaid-cli（node）と Chrome/Edge を用意します。
 
 ```bash
-cd template
-PUPPETEER_SKIP_DOWNLOAD=true npm ci        # 依存は template/ に入れる（Chromium は落とさない）
+cd ~/tools/quarto-template-1.0.0/template
+PUPPETEER_SKIP_DOWNLOAD=true npm ci          # 依存は template/ に入れる（Chromium は落とさない）
 cd ..
-./template/setup.sh ../order-design/docs    # Chrome/Edge を検出して記録
+./template/setup.sh ~/work/order-design/docs  # Chrome/Edge を検出して記録
 ```
 
 SVG 化には **Chrome か Edge**（Chromium 系ブラウザ）が1つあれば十分です。Chromium 自体は
@@ -188,14 +214,15 @@ SVG 化には **Chrome か Edge**（Chromium 系ブラウザ）が1つあれば�
 それを参照します。**自動検出できないときだけ**、パスを明示して再実行します:
 
 ```bash
-EXECUTABLE_BROWSER="/path/to/chrome-or-msedge" ./template/setup.sh ../order-design/docs
+EXECUTABLE_BROWSER="/path/to/chrome-or-msedge" ./template/setup.sh ~/work/order-design/docs
 ```
 
 Windows の cmd はインライン指定ができないので、`set` してから実行します:
 
 ```bat
+cd C:\tools\quarto-template-1.0.0
 set "EXECUTABLE_BROWSER=C:\Program Files\Google\Chrome\Application\chrome.exe"
-template\setup.bat ..\order-design\docs
+.\template\setup.bat C:\work\order-design\docs
 ```
 
 Chrome/Edge がまったく無い環境や、`--no-sandbox` 等の追加オプションが要る場合は
@@ -204,8 +231,8 @@ Chrome/Edge がまったく無い環境や、`--no-sandbox` 等の追加オプ�
 Chrome/Edge は不要）。
 
 `diagrams/order-flow.svg` のように qmd から直接参照している静的図を更新したいときは、
-`diagrams/*.mmd` を編集して `./template/render-diagrams.sh ../order-design/docs` を
-実行します。
+`diagrams/*.mmd` を編集して `./template/render-diagrams.sh ~/work/order-design/docs` を
+実行します（`.bat` 版はありません。Windows では Git Bash から実行してください）。
 
 ## 5. 環境変数
 
@@ -243,15 +270,19 @@ quarto render --to html
 1コマンドで行うので、**ビルド順（PDF → HTML）の間違い**や入れ忘れが起きません。
 
 ```bat
-template\make-release.bat
+:: このリポジトリのルートで実行する
+.\template\make-release.bat
 ```
 
 ```bash
 ./template/make-release.sh
 ```
 
-出力は `release/design-doc-template-<版>/`（展開済み）と同名の `.zip` です。
+出力は `release/quarto-template-<版>/`（展開済み）と同名の `.zip` です。
 第1引数で出力先を変えられます。
+
+**発行者はこの ZIP を展開したフォルダをそのまま使います**（中身を取り出しません）。
+版がフォルダ名に入るので、新旧のリリースを並べて置けます。
 
 | オプション | 効果 |
 |---|---|
@@ -262,7 +293,7 @@ template\make-release.bat
 同梱されるもの:
 
 ```
-design-doc-template-<版>/
+quarto-template-<版>/
 ├── README-release.md   … 発行者向けのはじめかた
 ├── README.md / ADVANCED.md
 ├── manual/利用マニュアル.pdf, manual/html/   … 執筆者へ配る

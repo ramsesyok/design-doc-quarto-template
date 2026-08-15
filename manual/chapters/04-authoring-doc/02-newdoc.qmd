@@ -5,17 +5,20 @@ clone して書き始めればよい（@sec-place）。
 
 ### 設計書リポジトリを作る（init-doc） {#sec-init}
 
-`template/` を展開したフォルダで、作成先のパスを渡して実行する。
+リリースを展開したフォルダを開き、作成先のパスを**絶対パス**で渡して実行する。
 
 ```bat
-.\template\init-doc.bat ..\order-design
+cd C:\tools\quarto-template-1.0.0
+.\template\init-doc.bat C:\work\order-design
 ```
 
 第2引数で執筆フォルダ名を変えられる（省略時は `docs`）。
 
 ```bat
-.\template\init-doc.bat ..\order-design design-doc
+.\template\init-doc.bat C:\work\order-design design-doc
 ```
+
+親フォルダ（`C:\work`）が無くても、まとめて作られる。
 
 次のように表示されれば成功である。
 
@@ -39,6 +42,11 @@ OK -> docs\_book\index.html
 作成先のパスは**英数字（ASCII）**にすること。日本語を含むパスでは mermaid 図の
 ベクター化（PDF・配布 HTML）が失敗するため、`init-doc` が検出して止める
 （@sec-ascii-path）。
+
+また、作成先は**絶対パス**で渡すこと。相対パスは「いま開いているフォルダ」からの
+相対として解釈される。`init-doc` は無いものを作るコマンドなので、パスを間違えても
+エラーにならず、意図しない場所にリポジトリができてしまう。表示された
+`Creating doc repository:` の行で、作成先が想定どおりか確認するとよい。
 :::
 
 #### init-doc が作るもの
@@ -145,14 +153,14 @@ toc-depth: 3              # 目次に載せる見出しの深さ
 既存の執筆フォルダをコピーし、機構ファイルを配置し直せばよい。
 
 ```bat
-xcopy /E /I ..\order-design\docs ..\order-design\design-doc2
-.\template\update-doc.bat ..\order-design\design-doc2
+xcopy /E /I C:\work\order-design\docs C:\work\order-design\design-doc2
+.\template\update-doc.bat C:\work\order-design\design-doc2
 ```
 
 ビルドはフォルダのパスを渡すだけである。
 
 ```bat
-.\template\build-qmd.bat ..\order-design\design-doc2
+.\template\build-qmd.bat C:\work\order-design\design-doc2
 ```
 
 ### 執筆フォルダを改名する
@@ -160,8 +168,10 @@ xcopy /E /I ..\order-design\docs ..\order-design\design-doc2
 執筆フォルダの名前は自由である。
 
 ```bat
-git mv docs design-doc
-.\template\build-qmd.bat ..\order-design\design-doc
+:: 設計書リポジトリ側で改名し、展開フォルダに戻ってビルドする
+cd C:\work\order-design && git mv docs design-doc
+cd C:\tools\quarto-template-1.0.0
+.\template\build-qmd.bat C:\work\order-design\design-doc
 ```
 
 `_quarto.yml` は機構ファイルを**同じフォルダ内の相対名**で参照し、ビルドスクリプトは

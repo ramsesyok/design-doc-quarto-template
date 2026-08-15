@@ -17,7 +17,7 @@
 自分が扱う文書に mermaid が含まれるかは、原稿を検索すれば分かる。
 
 ```bat
-findstr /S /M "```mermaid" ..\order-design\docs\chapters\*.qmd
+findstr /S /M "```mermaid" C:\work\order-design\docs\chapters\*.qmd
 ```
 
 何も表示されなければ mermaid は使われていない。

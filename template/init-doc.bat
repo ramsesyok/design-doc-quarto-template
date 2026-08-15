@@ -4,7 +4,10 @@ setlocal enabledelayedexpansion
 rem ============================================================
 rem  Create a new design-document repository (Windows / cmd). See init-doc.sh.
 rem  Usage:  template\init-doc.bat <repo-path> [writing-folder-name] [--no-render]
-rem    e.g.  template\init-doc.bat ..\order-design
+rem    e.g.  template\init-doc.bat C:\work\order-design
+rem  - Pass the repo path as an ABSOLUTE path. A relative path resolves against the
+rem    current directory (not this script's location). init-doc creates what does not
+rem    exist, so a wrong path is not detected and the repo lands somewhere unintended.
 rem  - Existing files are never overwritten (safe to re-run).
 rem  - Mechanism files come from update-doc.bat.
 rem  - Renders HTML once at the end to verify the authoring path works.

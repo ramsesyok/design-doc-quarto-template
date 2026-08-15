@@ -4,12 +4,18 @@
 | やりたいこと             | コマンド                                            | 参照  |
 |--------------------------|-----------------------------------------------------|-------|
 | 確認用 HTML を出す（執筆者） | `cd docs` ＋ `quarto render`                     | 5章   |
-| 設計書リポジトリを作る   | `.\template\init-doc.bat ..\order-design`           | 2章   |
-| 機構ファイルを更新する   | `.\template\update-doc.bat ..\order-design\docs`    | 2章   |
-| PDF を出す               | `.\template\build-qmd.bat ..\order-design\docs`     | 12章  |
-| 配布 HTML を出す         | `.\template\build-html.bat ..\order-design\docs`    | 12章  |
+| 設計書リポジトリを作る   | `.\template\init-doc.bat C:\work\order-design`      | 2章   |
+| 機構ファイルを更新する   | `.\template\update-doc.bat C:\work\order-design\docs` | 2章 |
+| PDF を出す               | `.\template\build-qmd.bat C:\work\order-design\docs` | 12章 |
+| 配布 HTML を出す         | `.\template\build-html.bat C:\work\order-design\docs` | 12章 |
 | 両方出す                 | PDF → HTML の順に実行する                           | 12章  |
 :::
 
-上の4つは発行者の作業であり、`template/` を置いたフォルダから実行する
-（`..\order-design\docs` は執筆フォルダのパス）。
+上の4つは発行者の作業であり、**リリースを展開したフォルダ**から実行する。
+
+```bat
+cd C:\tools\quarto-template-1.0.0
+```
+
+`C:\work\order-design\docs` は執筆フォルダのパスである。相対パスは「いま開いている
+フォルダ」からの相対になるため、**絶対パスで書く**こと。

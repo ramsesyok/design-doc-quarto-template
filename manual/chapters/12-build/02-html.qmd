@@ -2,16 +2,17 @@
 
 ### 手順
 
-`template/` を置いたフォルダで次を実行する。
+リリースを展開したフォルダで次を実行する。
 
 ```bat
-.\template\build-html.bat ..\order-design\docs
+cd C:\tools\quarto-template-1.0.0
+.\template\build-html.bat C:\work\order-design\docs
 ```
 
 次のように表示されれば成功である。
 
 ```text
-OK: open ..\order-design\docs\_book\index.html in your browser.
+OK: open C:\work\order-design\docs\_book\index.html in your browser.
 ```
 
 ### 何が行われるか

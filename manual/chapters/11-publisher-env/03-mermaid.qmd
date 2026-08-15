@@ -5,14 +5,14 @@ mermaid 図を含む文書の PDF・配布 HTML を作るには、**mermaid-cli 
 
 ### 手順
 
-`template/` を展開したフォルダで次を実行する。
+リリースを展開したフォルダで次を実行する。
 
 ```bat
-cd template
+cd C:\tools\quarto-template-1.0.0\template
 set "PUPPETEER_SKIP_DOWNLOAD=true"
 npm ci
 cd ..
-.\template\setup.bat ..\order-design\docs
+.\template\setup.bat C:\work\order-design\docs
 ```
 
 | 行 | 意味 |
@@ -24,10 +24,10 @@ cd ..
 bash（macOS / Linux / Git Bash）では次のとおりである。
 
 ```bash
-cd template
+cd ~/tools/quarto-template-1.0.0/template
 PUPPETEER_SKIP_DOWNLOAD=true npm ci
 cd ..
-./template/setup.sh ../order-design/docs
+./template/setup.sh ~/work/order-design/docs
 ```
 
 ### Chromium をダウンロードしない理由
@@ -52,13 +52,13 @@ Windows のコマンドプロンプトは変数のインライン指定ができ
 
 ```bat
 set "EXECUTABLE_BROWSER=C:\Program Files\Google\Chrome\Application\chrome.exe"
-.\template\setup.bat ..\order-design\docs
+.\template\setup.bat C:\work\order-design\docs
 ```
 
 bash では1行で書ける。
 
 ```bash
-EXECUTABLE_BROWSER="/path/to/chrome-or-msedge" ./template/setup.sh ../order-design/docs
+EXECUTABLE_BROWSER="/path/to/chrome-or-msedge" ./template/setup.sh ~/work/order-design/docs
 ```
 
 ### さらに細かい調整

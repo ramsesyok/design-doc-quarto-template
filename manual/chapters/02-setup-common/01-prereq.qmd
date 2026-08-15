@@ -14,10 +14,13 @@ macOS / Linux では拡張子とパス区切りを読み替える。
 
 | Windows | macOS / Linux |
 |---------|---------------|
-| `.\template\init-doc.bat ..\order-design` | `./template/init-doc.sh ../order-design` |
-| `.\template\update-doc.bat ..\order-design\docs` | `./template/update-doc.sh ../order-design/docs` |
-| `.\template\build-qmd.bat ..\order-design\docs` | `./template/build-qmd.sh ../order-design/docs` |
-| `.\template\build-html.bat ..\order-design\docs` | `./template/build-html.sh ../order-design/docs` |
+| `.\template\init-doc.bat C:\work\order-design` | `./template/init-doc.sh ~/work/order-design` |
+| `.\template\update-doc.bat C:\work\order-design\docs` | `./template/update-doc.sh ~/work/order-design/docs` |
+| `.\template\build-qmd.bat C:\work\order-design\docs` | `./template/build-qmd.sh ~/work/order-design/docs` |
+| `.\template\build-html.bat C:\work\order-design\docs` | `./template/build-html.sh ~/work/order-design/docs` |
+
+いずれも**リリースを展開したフォルダを開いた状態**で実行する（@sec-place）。
+`.\template\` の部分はそのフォルダからの相対、設計書リポジトリのパスは絶対で書く。
 
 ### 共通で入れるものは Quarto だけ
 
@@ -36,5 +39,6 @@ node、npm、Chrome / Edge は**発行者だけ**が必要とする（発行用�
 渡る時点で文字が壊れて届き、mermaid 図のベクター化（PDF・配布 HTML）が失敗する。
 
 フォルダ名は `order-design` や `docs` のように英数字で付ける。ユーザー名に日本語が
-入っている環境では、`C:\work\` のような場所に置く。
+入っている環境では、`C:\work\`・`C:\tools\` のような場所に置く（デスクトップや
+ダウンロードフォルダの下は、パスにユーザー名が入るので避ける）。
 :::

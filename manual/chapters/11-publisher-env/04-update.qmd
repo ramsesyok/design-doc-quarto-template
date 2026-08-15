@@ -5,11 +5,16 @@
 
 ### 機構ファイルの更新（update-doc）
 
-保守者から新しいリリースを受け取ったら、設計書リポジトリへ入れ直す。
+保守者から新しいリリースを受け取ったら、設計書リポジトリへ入れ直す。新しいリリースは
+**別のフォルダに展開される**ので、そちらへ移動してから実行する。
 
 ```bat
-.\template\update-doc.bat ..\order-design\docs
+cd C:\tools\quarto-template-1.1.0
+.\template\update-doc.bat C:\work\order-design\docs
 ```
+
+古い版のフォルダは残しておけるため、問題があれば元の版から `update-doc` を実行し
+直せば戻せる。
 
 機構ファイル5点（`design-doc.lua` / `design-doc.css` / `postprocess-html.js` /
 `mermaid-config.json` / `.template-version`）だけが置き換わる。**原稿には触れない。**
@@ -30,7 +35,7 @@
 
 ```bat
 :: 明示的に実行する場合
-.\template\setup.bat ..\order-design\docs
+.\template\setup.bat C:\work\order-design\docs
 ```
 
 ::: {.callout-note}

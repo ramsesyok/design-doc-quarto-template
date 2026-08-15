@@ -9,8 +9,11 @@
 #     --no-build           マニュアルを再ビルドせず、既にある成果物を使う
 #
 # 作るもの:
-#   <出力先>/design-doc-template-<版>/        … 展開済みの一式
-#   <出力先>/design-doc-template-<版>.zip     … 上を固めたもの
+#   <出力先>/quarto-template-<版>/            … 展開済みの一式
+#   <出力先>/quarto-template-<版>.zip         … 上を固めたもの
+#
+# 発行者はこの ZIP を展開したフォルダを**そのまま**使う（中身を取り出さない）。
+# 版がフォルダ名に入るので、新旧を並べて置ける。
 #
 # 中身は README.md / ADVANCED.md / manual（PDF と HTML）/ template 一式。
 # manual の原稿（.qmd）と .git は入れない（発行者は本文を編集しないため）。
@@ -34,7 +37,7 @@ done
 [ -n "$OUT_DIR" ] || OUT_DIR="$REPO_ROOT/release"
 
 VERSION="$(tr -d ' \r\n' < "$TEMPLATE_ROOT/VERSION")"
-NAME="design-doc-template-$VERSION"
+NAME="quarto-template-$VERSION"
 mkdir -p "$OUT_DIR"
 OUT_ROOT="$(cd "$OUT_DIR" && pwd)"
 STAGE="$OUT_ROOT/$NAME"

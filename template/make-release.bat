@@ -6,8 +6,10 @@ rem  Build the release asset for publishers (Windows / cmd). See make-release.sh
 rem  Usage (from the repository root):
 rem    template\make-release.bat [out-dir] [--with-node-modules] [--with-sample] [--no-build]
 rem  Produces:
-rem    <out-dir>\design-doc-template-<version>\      (extracted tree)
-rem    <out-dir>\design-doc-template-<version>.zip   (zipped, via PowerShell)
+rem    <out-dir>\quarto-template-<version>\      (extracted tree)
+rem    <out-dir>\quarto-template-<version>.zip   (zipped, via PowerShell)
+rem  Publishers use the extracted folder AS IS (they do not move its contents out).
+rem  The version is part of the folder name, so old and new releases can coexist.
 rem  NOTE: keep this file ASCII only. cmd.exe misparses multibyte (Japanese)
 rem        text in .bat files, so comments/messages must stay in English.
 rem ============================================================
@@ -35,7 +37,7 @@ if not defined OUT_DIR set "OUT_DIR=%REPO_ROOT%\release"
 
 set /p VERSION=<"%TEMPLATE_ROOT%\VERSION"
 set "VERSION=%VERSION: =%"
-set "NAME=design-doc-template-%VERSION%"
+set "NAME=quarto-template-%VERSION%"
 
 if not exist "%OUT_DIR%" mkdir "%OUT_DIR%"
 pushd "%OUT_DIR%" || exit /b 1
