@@ -1,4 +1,4 @@
-## Quarto のインストール
+## Quarto のインストール {#sec-quarto-install}
 
 ### 手順
 

@@ -13,5 +13,7 @@
 
 {{< include 03-mermaid.qmd >}}
 
-{{< include 04-offline.qmd >}}
+{{< include 04-update.qmd >}}
+
+{{< include 05-offline.qmd >}}
 

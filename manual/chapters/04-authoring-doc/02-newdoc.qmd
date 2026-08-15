@@ -1,26 +1,80 @@
 ## 新しい文書を作る・増やす {#sec-newdoc}
 
 **この節の作業は発行者が行う。** 執筆者は、できあがった設計書リポジトリを
-clone して書き始めればよい。
+clone して書き始めればよい（@sec-place）。
 
-### 新しい設計書リポジトリを作る
+### 設計書リポジトリを作る（init-doc） {#sec-init}
 
-`init-doc` で雛形を作る（@sec-init）。作られるのは最小限の骨組み
-（`_quarto.yml`・前付け・1章分の雛形・図の置き場）だけなので、続けて章立てを整える。
+`template/` を展開したフォルダで、作成先のパスを渡して実行する。
 
 ```bat
 .\template\init-doc.bat ..\order-design
 ```
 
-1. `_quarto.yml` の `title`・`doc-number`・`company-ja` などを文書に合わせる
-   （@sec-quarto-yml）。
-2. `index.qmd`（前付け）の改正履歴・用語を書き換える。
-3. `chapters/` に章のフォルダを作り、`_quarto.yml` の `chapters:` に並べる
-   （@sec-chapters）。
+第2引数で執筆フォルダ名を変えられる（省略時は `docs`）。
 
-::: {.callout-tip}
-章立てはチームや文書の種類で決まっていることが多い。**発行者が最初に章の雛形まで
-作って共有する**と、執筆者は本文だけに集中できる。
+```bat
+.\template\init-doc.bat ..\order-design design-doc
+```
+
+次のように表示されれば成功である。
+
+```text
+Creating doc repository: C:\work\order-design  (writing folder: docs)
+  created: C:\work\order-design\.gitignore
+  created: C:\work\order-design\.gitattributes
+  created: C:\work\order-design\.vscode\settings.json
+  created: README.md
+  created: C:\work\order-design\docs\_quarto.yml
+  ...
+Updated mechanism files in "C:\work\order-design\docs" (template 1.0.0)
+Rendering HTML once to verify...
+OK -> docs\_book\index.html
+```
+
+最後に HTML を1回ビルドし、**執筆者が確認できる状態になっているか**をその場で検証する
+（`--no-render` を付けると省略できる）。
+
+::: {.callout-warning}
+作成先のパスは**英数字（ASCII）**にすること。日本語を含むパスでは mermaid 図の
+ベクター化（PDF・配布 HTML）が失敗するため、`init-doc` が検出して止める
+（@sec-ascii-path）。
+:::
+
+#### init-doc が作るもの
+
+::: {.tbl caption="init-doc が置くファイル" label="tbl-init-files" widths="34,66"}
+| 置かれるもの | 役割 |
+|:--|---|
+| `.gitignore` | 生成物と PDF 用の一時ファイルを除外する（中間版 PDF は**除外しない**） |
+| `.gitattributes` | 改行コードの固定（機構ファイルは LF、PDF は binary） |
+| `.vscode/settings.json` | 日本語を等幅で表示する設定（@sec-author-env） |
+| `README.md` | 執筆者向けの入口（準備・書き方・確認方法） |
+| `<執筆フォルダ>/_quarto.yml` | book 設定の雛形（表題・資料番号・章の並び） |
+| `<執筆フォルダ>/index.qmd` | 前付けの雛形（改正履歴・用語） |
+| `<執筆フォルダ>/chapters/` | 章の雛形（1章分の `index.qmd`） |
+| `<執筆フォルダ>/diagrams/` | 図の置き場（空） |
+| 機構ファイル5点 | `design-doc.lua` / `design-doc.css` / `postprocess-html.js` / `mermaid-config.json` / `.template-version` |
+:::
+
+::: {.callout-note}
+**既にあるファイルは上書きしない。** 途中で失敗したときや、あとから雛形を足したい
+ときに再実行しても、書いた原稿は消えない。
+:::
+
+### 文書に合わせて整える
+
+雛形のままでは文書にならない。作成に続けて次を手で直す。
+
+1. `<執筆フォルダ>/_quarto.yml` … 表題（`title`）・資料番号（`doc-number`）・
+   会社名（`company-ja` / `company-en`）・章の並び（`chapters:`）→ 次項
+2. `<執筆フォルダ>/index.qmd`（前付け）… 改正履歴・用語を書き換える
+3. `<執筆フォルダ>/chapters/` … 章立てを作る（@sec-chapters）
+4. `git init` → コミット → 執筆者へ共有する（利用マニュアルもあわせて配る）
+
+::: {.callout-important}
+章立て（`chapters/` の構成）は文書の種類やチームの規約によって異なる。
+**発行者が最初に決めて雛形として置く**ことで、執筆者は本文に集中できる。
 :::
 
 ### 文書全体の設定（`_quarto.yml`） {#sec-quarto-yml}
