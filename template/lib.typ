@@ -70,22 +70,20 @@
 //     和文（1em）の半分でないため、和文混じりで桁がずれる
 //   NSimSun / SimSun … 等幅（0.5em）で `\` も出るが、和文が中国語字形になる
 //
-// そこで **ASCII だけ NSimSun、それ以外（和文）は BIZ UDGothic** に振り分ける。
-// covers は「この書体を使う文字の範囲」を絞る typst の機能。
+// **本テンプレートは (a) 等幅を優先し、`\` は `¥` で表示されるのを許容する**
+// （Windows 日本語環境の慣習どおりの見え方になる）。ゴシック体で統一され、
+// 和文混じりのコードでも桁がそろう。
 //
 // **注意**: typst には英語のファミリ名で指定する。"BIZ UDゴシック" では一致せず、
 // 別の書体にフォールバックして等幅にならない（実測で確認）。
 //
-// 好みに応じて次のようにも書ける:
-//   ("BIZ UDGothic", …)                     … 全部ゴシック。ただし `\` は `¥`
+// `\` の字形を優先したいときは、次のいずれかに差し替える:
+//   ((name: "NSimSun", covers: regex("[ -~]")), "BIZ UDGothic", …)
+//       … ASCII だけ NSimSun にする（covers = 書体を使う文字範囲を絞る typst の機能）。
+//         等幅と `\` を両立できるが、欧文がタイプライタ体（明朝系）になる。
 //   ((name: "Consolas", covers: regex("[ -~]")), "BIZ UDGothic", …)
-//                                           … 欧文は Consolas。桁そろえは犠牲
-#let MONO = (
-  (name: "NSimSun", covers: regex("[ -~]")),   // ASCII（0.5em・`\` の字形）
-  "BIZ UDGothic",                              // 和文（1em）
-  "MS Gothic",                                 // 予備（和文）
-  "Consolas",                                  // 予備（欧文）
-)
+//       … 欧文は見慣れた Consolas。ただし桁そろえは崩れる。
+#let MONO = ("BIZ UDGothic", "MS Gothic", "Consolas", "Courier New")
 // spec: true の表題欄（ヘッダ領域）の書体。MS Gothic を既定にし、無い環境では JP-SANS に落ちる。
 #let SPEC-HEAD-FONT = ("MS Gothic", "Yu Gothic", "MS PGothic")
 
