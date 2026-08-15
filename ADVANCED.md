@@ -115,10 +115,13 @@ findstr /S /C:"quarto-template-1." README.md ADVANCED.md template\PIPELINE.md ma
 ```
 quarto-template-<版>/
 ├── README-release.md   … 発行者向けのはじめかた（展開したらまずこれ）
-├── README.md / ADVANCED.md
-├── manual/利用マニュアル.pdf, manual/html/   … 執筆者へ配る
+├── README.md           … テンプレートの概要と作業の流れ
+├── manual/利用マニュアル.pdf, manual/html/   … 発行者が読む・執筆者へ配る
 └── template/           … node_modules と puppeteer.json は除く
 ```
+
+**このファイル（`ADVANCED.md`）は同梱されません。** 保守者専用であり、発行者は
+`README-release.md`・`README.md`・利用マニュアルで足ります。
 
 ### 作るときの注意
 

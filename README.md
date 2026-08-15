@@ -39,8 +39,8 @@ Typst テンプレートと Pandoc の Lua フィルタとして実装してあ�
 ```
 C:\tools\
 └── quarto-template-1.1.0/   ← リリース ZIP を展開したもの（git 管理外）
-    ├── README.md, ADVANCED.md
-    ├── manual/              ← 利用マニュアル（執筆者へ配る）
+    ├── README-release.md    ← 発行者向けのはじめかた
+    ├── manual/              ← 利用マニュアル（手順の正。執筆者へも配る）
     └── template/            ← ここのスクリプトを実行する
 
 C:\work\
@@ -75,7 +75,7 @@ C:\work\
 
 このリポジトリで `make-release` を実行すると、`quarto-template-<版>.zip`
 （`template/` 一式＋利用マニュアルの PDF / HTML）ができます。
-→ [ADVANCED.md](ADVANCED.md)
+→ [ADVANCED.md](ADVANCED.md)（このリポジトリにあります。リリースには同梱しません）
 
 ### 2. 発行者が設計書リポジトリを作る
 
@@ -132,7 +132,7 @@ cd C:\tools\quarto-template-1.2.0
 | ドキュメント | 内容 | 読む人 |
 |---|---|---|
 | [manual/](manual/) | **利用マニュアル**（役割別の環境構築・執筆・確認・出力・記法・制限事項・トラブル対処）。本テンプレート自身で書かれており、`.\template\build-qmd.bat manual` で PDF になります | 全員（執筆者にはこの PDF/HTML を配る） |
-| [ADVANCED.md](ADVANCED.md) | リポジトリの構成、版の上げ方、リリースの作り方・配り方 | 保守者 |
+| [ADVANCED.md](ADVANCED.md) | リポジトリの構成、版の上げ方、リリースの作り方・配り方。**このリポジトリのみ**（リリースには同梱しません） | 保守者 |
 | [template/PIPELINE.md](template/PIPELINE.md) | 変換の内部と様式の調整箇所 | 保守者 |
 
 `docs/` はこのリポジトリ同梱の**サンプル**（受注管理システムの基本設計書）です。

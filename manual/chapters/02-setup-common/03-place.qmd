@@ -23,7 +23,7 @@
 ```text
 C:\tools\
 └── quarto-template-1.1.0/     … リリース ZIP を展開したもの（git 共有しない）
-    ├── README.md, ADVANCED.md
+    ├── README-release.md      … 発行者向けのはじめかた
     ├── manual/                … 本書の PDF / HTML（執筆者へ配る）
     └── template/              … ここのスクリプトを実行する
 
