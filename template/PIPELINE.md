@@ -20,7 +20,7 @@ quarto-template-<版>/ ← リリース ZIP を展開したもの（発行者は
     ├── lib.typ, typst-template.typ, typst-show.typ, quarto-publish.yml,
     ├── design-doc.lua, design-doc.css, postprocess-html.js, mermaid-config.json,
     ├── package.json, VERSION, scaffold/,
-    ├── init-doc.*, update-doc.*, setup.*, build-qmd.*, build-html.*, render-diagrams.sh,
+    ├── init-doc.*, update-doc.*, setup.*, build-qmd.*, build-html.*, render-diagrams.*,
     └── (setup 実行後: puppeteer.json / node_modules … いずれも .gitignore)
 
 order-design/     ← 設計書リポジトリ（git 共有。執筆者はこれだけ clone する）
