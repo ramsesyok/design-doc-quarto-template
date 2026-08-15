@@ -132,7 +132,7 @@ cd C:\tools\quarto-template-1.2.0
 | ドキュメント | 内容 | 読む人 |
 |---|---|---|
 | [manual/](manual/) | **利用マニュアル**（役割別の環境構築・執筆・確認・出力・記法・制限事項・トラブル対処）。本テンプレート自身で書かれており、`.\template\build-qmd.bat manual` で PDF になります | 全員（執筆者にはこの PDF/HTML を配る） |
-| [ADVANCED.md](ADVANCED.md) | リポジトリ構成、ビルドの詳細、mermaid の準備、環境変数 | 発行者・保守者 |
+| [ADVANCED.md](ADVANCED.md) | リポジトリの構成、版の上げ方、リリースの作り方・配り方 | 保守者 |
 | [template/PIPELINE.md](template/PIPELINE.md) | 変換の内部と様式の調整箇所 | 保守者 |
 
 `docs/` はこのリポジトリ同梱の**サンプル**（受注管理システムの基本設計書）です。
