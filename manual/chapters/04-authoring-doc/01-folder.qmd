@@ -52,9 +52,9 @@ order-design/              … 設計書リポジトリ（clone するのはこ�
 
 ### 生成物とバージョン管理
 
-::: {.tbl caption="バージョン管理の対象" label="tbl-vcs" widths="40,20,40"}
-| ファイル | 管理する | 備考 |
-|---|---|---|
+::: {.tbl caption="バージョン管理の対象" label="tbl-vcs" widths="45,10,45"}
+| ファイル | 管理 | 備考 |
+|---|:---:|---|
 | `_quarto.yml`・`index.qmd`・`chapters/`・`diagrams/` | ○ | 原稿そのもの |
 | 機構ファイル4点・`.template-version` | ○ | 発行者が置く。差分が出たら発行者がコミットする |
 | `design-doc.pdf` | ○ | **中間版**。発行者が定期的に更新してコミットする |
@@ -65,3 +65,5 @@ order-design/              … 設計書リポジトリ（clone するのはこ�
 
 除外の設定は `init-doc` が置いた `.gitignore` に入っているので、執筆者が
 意識する必要はない。
+
+{{< pagebreak >}}

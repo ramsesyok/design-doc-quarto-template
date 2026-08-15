@@ -33,4 +33,6 @@ quarto --version
 - 情報システム部門の配布パッケージに Quarto を含めてもらう。
 
 Quarto 本体さえ入れば、以降の手順にネットワーク接続は要らない
-（mermaid を PDF に載せる場合を除く。11章参照）。
+（mermaid を PDF に載せる場合を除く。@sec-publisher-env 参照）。
+
+{{< pagebreak >}}

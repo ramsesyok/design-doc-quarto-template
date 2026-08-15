@@ -47,3 +47,5 @@ call .\template\build-qmd.bat  "%DOC%" || exit /b 1
 call .\template\build-html.bat "%DOC%" || exit /b 1
 echo DONE: %DOC%\design-doc.pdf and %DOC%\_book\index.html
 ```
+
+{{< pagebreak >}}

@@ -6,15 +6,15 @@
 | 不要なもの      | 何に使うものか                     | 誰が必要とするか                     |
 |-----------------|------------------------------------|--------------------------------------|
 | `template/`     | 様式・変換・ビルドの実体           | 発行者・保守者                       |
-| node / npm      | mermaid 図の SVG 化                | 発行者（11章）                       |
-| Chrome / Edge   | mermaid 図の SVG 化                | 発行者（11章）                       |
-| TeX / LaTeX     | ―（本テンプレートでは未使用）      | 誰も必要としない                     |
+| node / npm      | mermaid 図の SVG 化                | 発行者（ @sec-publisher-env ）       |
+| Chrome / Edge   | mermaid 図の SVG 化                | 発行者（ @sec-publisher-env ）       |
+| TeX / LaTeX     | ―（本テンプレートでは未使用）     | 誰も必要としない                     |
 | Typst 単体      | PDF 組版（Quarto に同梱）          | 誰も必要としない                     |
 :::
 
 ### mermaid 図は執筆者の環境でも書ける
 
-mermaid（文字で書くフローチャート。8章参照）は、**執筆者のプレビューでは
+mermaid（文字で書くフローチャート。@sec-figure 参照）は、**執筆者のプレビューでは
 Quarto 同梱の機能がブラウザ内で描画する**。node も Chrome / Edge の設定も要らず、
 図を編集すれば即座にプレビューへ反映される。
 

@@ -36,7 +36,7 @@ OK -> docs\_book\index.html
 
 ::: {.tbl caption="init-doc が置くファイル" label="tbl-init-files" widths="34,66"}
 | 置かれるもの | 役割 |
-|---|---|
+|:--|---|
 | `.gitignore` | 生成物と PDF 用の一時ファイルを除外する（中間版 PDF は**除外しない**） |
 | `.gitattributes` | 改行コードの固定（機構ファイルは LF、PDF は binary） |
 | `.vscode/settings.json` | 日本語を等幅で表示する設定（3章） |

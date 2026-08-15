@@ -1,4 +1,4 @@
-# 基礎的な Markdown 記法
+# 基礎的な Markdown 記法 {#sec-markdown}
 
 本章では、Markdown の基本的な書き方を述べる。Markdown を書いたことがない読者を
 対象とし、本テンプレートで実際に使う範囲に絞って示す。

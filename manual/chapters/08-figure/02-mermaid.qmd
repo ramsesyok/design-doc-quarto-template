@@ -87,3 +87,5 @@ Quarto 同梱、発行版は mermaid-cli）、複雑な図ではまれに形が�
 bash 環境から実行する。この操作は mermaid の SVG 化を行うため、発行者の環境
 （node と Chrome / Edge）が要る。
 :::
+
+{{< pagebreak >}}

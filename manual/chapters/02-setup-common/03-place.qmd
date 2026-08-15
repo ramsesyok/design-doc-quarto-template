@@ -55,6 +55,6 @@ git clone <設計書リポジトリのURL>
 ### 配布・持ち出しの単位
 
 閉域環境などへ持ち出すときは、**リリースアセット一式**（`template/`）を持ち出す。
-mermaid を PDF に載せる環境では `template/node_modules` も併せて持ち出す（11章参照）。
+mermaid を PDF に載せる環境では `template/node_modules` も併せて持ち出す（@sec-publisher-env 参照）。
 
 執筆者の端末に持ち出すのは設計書リポジトリだけでよい。

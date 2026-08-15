@@ -26,3 +26,5 @@ node --version
 バージョン番号（例: `v20.11.0`）が表示されればよい。
 
 続けて mermaid-cli を導入する（@sec-mermaid-setup）。
+
+{{< pagebreak >}}

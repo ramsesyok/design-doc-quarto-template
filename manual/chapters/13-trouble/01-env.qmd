@@ -35,3 +35,5 @@ dir template
 `template` フォルダが見えていれば、発行者の作業フォルダにいる。
 執筆者の手元には `template/` は無い（HTML の確認は執筆フォルダの中で
 `quarto render` を実行する）。
+
+{{< pagebreak >}}
