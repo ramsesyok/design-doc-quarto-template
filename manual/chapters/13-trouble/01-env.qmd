@@ -4,10 +4,11 @@
 | 症状                                       | 対処                                                                 |
 |--------------------------------------------|----------------------------------------------------------------------|
 | `quarto` が見つからない                     | Quarto のインストール後、VSCode を再起動する。確認は `quarto --version` |
-| コマンドが「見つかりません」と言われる     | **リポジトリのルート**でターミナルを開いているか確認する。`.\template\...` はルートから実行する |
-| `_quarto.yml not found` で止まる           | 執筆フォルダ名の指定が違う。`.\template\build-qmd.bat <フォルダ名>` を確認する |
-| `node` が見つからない                       | 発行者の環境に node が入っていない（11章）。執筆だけなら不要         |
-| `postprocess-html.mjs failed`              | node が入っていない。`build-html` は mermaid の有無によらず node が要る |
+| コマンドが「見つかりません」と言われる     | `template/` を置いたフォルダでターミナルを開いているか確認する（発行者の作業） |
+| `_quarto.yml not found` で止まる           | 執筆フォルダのパスが違う。`.\template\build-qmd.bat <執筆フォルダのパス>` を確認する |
+| `cannot open design-doc.lua` で止まる       | 執筆フォルダに機構ファイルが無い。発行者に `update-doc` の実行を依頼する |
+| `node` が見つからない                       | 発行者の環境に node が入っていない（11章）。mermaid を使わないなら不要 |
+| mermaid の変換に失敗する                    | パスに日本語が入っていないか確認する（@sec-ascii-path）。次に Chrome / Edge の設定（11章） |
 | `WARNING: Chrome / Edge not found.`        | 執筆・プレビューには影響しない。PDF に mermaid を載せるときだけ対処する（11章） |
 | 表の罫線が画面でそろわない                 | 日本語等幅フォントが効いていない（3章）。出力される PDF・HTML は崩れていない |
 | プレビューが表示されない                   | VSCode の Quarto 拡張が入っているか確認する（3章）                    |
@@ -31,4 +32,8 @@ cd
 dir template
 ```
 
-`template` フォルダが見えていれば、リポジトリのルートにいる。
+`template` フォルダが見えていれば、発行者の作業フォルダにいる。
+執筆者の手元には `template/` は無い（HTML の確認は執筆フォルダの中で
+`quarto render` を実行する）。
+
+{{< pagebreak >}}

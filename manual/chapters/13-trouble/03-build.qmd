@@ -6,7 +6,8 @@
 | PDF を作り直したら HTML が消えた           | 仕様である。PDF → HTML の順に作り直す（12章）                        |
 | 図（mermaid）が PDF に出ない                | mermaid の準備が済んでいない（11章）。文字だけの原稿なら不要        |
 | コールアウトのアイコンが豆腐（□）になる    | `typst compile` を直接使っている。`build-qmd` から出力する（12章）   |
-| 図表番号が「図 1.1」形式のまま               | 執筆者の確認用 HTML を見ている。配布 HTML は `build-html` で作る     |
+| 図表番号が「図 1.1」形式のまま               | 後処理が走っていない。`_quarto.yml` の `post-render` と `postprocess-html.js` の有無を確認する（発行者に `update-doc` を依頼） |
+| 表番号が「表 3-1　表 3-1　…」と重なる         | 古い機構ファイルを使っている。発行者に `update-doc` を依頼する       |
 | HTML の見た目が崩れる                       | `index.html` 単体を渡している。`_book` をフォルダごと渡す            |
 | 目次のページ番号がずれる                    | 出力し直す。原稿を直した後の再出力で解消する                         |
 | ビルドが途中で止まる                        | エラーメッセージの直前の行を読む。`ERROR:` で始まる行が原因を示す    |
@@ -20,10 +21,10 @@
 ::: {.tbl caption="エラーメッセージと段階" label="tbl-error-stage" widths="42,58"}
 | メッセージ                            | 失敗した段階と対処                                       |
 |---------------------------------------|----------------------------------------------------------|
-| `"…\_quarto.yml" not found.`          | 実行場所か引数が違う。ルートから実行し、フォルダ名を渡す |
-| `ERROR: setup failed.`                | 初期化に失敗した。`template/` の配置を確認する           |
+| `"…\_quarto.yml" not found.`          | 引数が違う。執筆フォルダのパスを渡す                     |
+| `ERROR: setup failed.`                | 準備に失敗した。`template/` の配置を確認する             |
 | `ERROR: quarto render failed.`        | 原稿の変換に失敗した。直前の Quarto のメッセージを読む   |
-| `ERROR: postprocess-html.mjs failed.` | node が無いか、`_book` の生成に失敗している              |
+| `mermaid の変換に失敗しました`        | パスの日本語（@sec-ascii-path）か、Chrome / Edge の設定（11章） |
 | `could not extract the PDF`           | PDF の生成に失敗している。直前のメッセージを読む         |
 :::
 
@@ -38,7 +39,7 @@ Quarto は失敗した原稿のファイル名と行番号を示す。多くは�
 
 ### 切り分けの手順
 
-1. **確認用 HTML を出す**（`quarto render --to html`）。ここで失敗するなら原稿の問題である。
+1. **確認用 HTML を出す**（執筆フォルダで `quarto render`）。ここで失敗するなら原稿の問題である。
 2. **直前に編集した箇所を戻してみる**。Git で管理していれば `git diff` で範囲が分かる。
 3. **章を1つずつ外す**。`_quarto.yml` の `chapters:` をコメントアウトして絞り込む。
 

@@ -1,40 +1,45 @@
 #!/usr/bin/env bash
-# 執筆環境の初期化（一度だけ実行すればよい。冪等なので何度実行しても安全）。
+# 発行者のビルド環境を整える（冪等なので何度実行しても安全）。ビルドの先頭で自動実行される。
 #
-# 使い方（リポジトリのルートから実行する）:
-#   ./template/setup.sh [執筆フォルダ名]     # 省略時は docs
+# 使い方（template/ の位置はどこでもよい。執筆フォルダのパスを渡す）:
+#   ./template/setup.sh <執筆フォルダのパス>     # 省略時は docs
 #
 # やること:
-#   1) template/ の lib.typ と design-doc.css を執筆フォルダ直下へ配置する。
-#      - lib.typ … Typst の import が「プロジェクト外を読めない」制約に掛かるため、
-#        プロジェクトルート（執筆フォルダ）内に置く必要がある（PDF）。
-#      - design-doc.css … Quarto がローカル css として _book/ に取り込み、
-#        _book/ 単体で配信・zip できるようにする（HTML）。
-#      どちらも .gitignore 済みなので git には載らない。
-#   2) mermaid 図のベクター SVG 化に使う Chrome/Edge を検出し、template/puppeteer.json に
-#      その実行パスを書く（Chromium はダウンロードしない）。これは納品 PDF・配布 HTML を
-#      作る係にだけ要る（build-*.sh / MERMAID_SVG=1）。**執筆者のプレビューは不要**:
-#      quarto preview の HTML は Quarto 同梱 mermaid でブラウザ内描画され node も要らない。
+#   1) 機構ファイル（design-doc.lua / design-doc.css / postprocess-html.js /
+#      mermaid-config.json / .template-version）を執筆フォルダへ置く。
+#      → 実体は update-doc.sh。doc リポジトリではこれらは**コミット対象**なので、
+#        テンプレートを更新したあとにビルドすると git の差分として現れる。
+#   2) PDF 用の機構を執筆フォルダへ置く（いずれも .gitignore 済み。git には載らない）:
+#      - lib.typ … Typst の import が「プロジェクト外を読めない」制約に掛かるため
+#      - typst-template.typ / typst-show.typ … 様式の partial
+#      - _quarto-publish.yml … typst 用のプロファイル（--profile publish で効く）
+#   3) mermaid 図のベクター SVG 化に使う Chrome/Edge を検出し、template/puppeteer.json に
+#      その実行パスを書く（Chromium はダウンロードしない）。
 #
-# これを実行しておけば、以後はビルドスクリプトでも VSCode の Quarto 拡張
-# （quarto preview / render）でも PDF/HTML を出力できる（プレビューは node 不要）。
+# **これは発行者だけが実行する。** 執筆者は Quarto と VSCode 拡張だけで HTML を出せる
+# （mermaid は Quarto 同梱のランタイムでブラウザ内描画。node も template/ も要らない）。
 set -euo pipefail
 
 TEMPLATE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONTENT_DIR="${1:-docs}"
 if [ ! -f "$CONTENT_DIR/_quarto.yml" ]; then
   echo "エラー: '$CONTENT_DIR/_quarto.yml' が見つかりません。" >&2
-  echo "       リポジトリのルートから実行し、第1引数に執筆フォルダ名を渡してください。" >&2
+  echo "       第1引数に執筆フォルダのパスを渡してください（例: ../受注管理-設計書/docs）。" >&2
   exit 1
 fi
 CONTENT_ROOT="$(cd "$CONTENT_DIR" && pwd)"
 
-# 1) 機構ファイルを執筆フォルダへ配置（冪等・常に上書き）
-cp -f "$TEMPLATE_ROOT/lib.typ"        "$CONTENT_ROOT/lib.typ"
-cp -f "$TEMPLATE_ROOT/design-doc.css" "$CONTENT_ROOT/design-doc.css"
-echo "配置: $CONTENT_DIR/lib.typ, $CONTENT_DIR/design-doc.css"
+# 1) 機構ファイル（HTML 側。doc リポジトリではコミット対象）
+"$TEMPLATE_ROOT/update-doc.sh" "$CONTENT_ROOT"
 
-# 2) mermaid 用ブラウザ（Chrome → Edge の順に検出）。EXECUTABLE_BROWSER があれば優先。
+# 2) PDF 用の機構（冪等・常に上書き）
+cp -f "$TEMPLATE_ROOT/lib.typ"             "$CONTENT_ROOT/lib.typ"
+cp -f "$TEMPLATE_ROOT/typst-template.typ"  "$CONTENT_ROOT/typst-template.typ"
+cp -f "$TEMPLATE_ROOT/typst-show.typ"      "$CONTENT_ROOT/typst-show.typ"
+cp -f "$TEMPLATE_ROOT/quarto-publish.yml"  "$CONTENT_ROOT/_quarto-publish.yml"
+echo "配置: $CONTENT_DIR/lib.typ, typst-template.typ, typst-show.typ, _quarto-publish.yml"
+
+# 3) mermaid 用ブラウザ（Chrome → Edge の順に検出）。EXECUTABLE_BROWSER があれば優先。
 to_win_path() { printf '%s' "$1" | sed -E 's#^/([a-zA-Z])/#\1:/#; s#\\#/#g'; }
 BROWSER="${EXECUTABLE_BROWSER:-}"
 if [ -z "$BROWSER" ]; then
@@ -62,9 +67,8 @@ if [ -n "$BROWSER" ]; then
   echo "  -> $PP に記録しました"
 else
   echo "警告: Chrome / Edge が見つかりませんでした。" >&2
-  echo "      執筆・プレビュー（quarto preview）はこのままで可能です（mermaid はブラウザ内描画）。" >&2
-  echo "      納品 PDF・配布 HTML を作るときだけ、EXECUTABLE_BROWSER=<chrome/msedge の実行" >&2
-  echo "      ファイル> を指定して setup を再実行してください。" >&2
+  echo "      納品 PDF・配布 HTML の mermaid をベクター化できません。" >&2
+  echo "      EXECUTABLE_BROWSER=<chrome/msedge の実行ファイル> を指定して再実行してください。" >&2
 fi
 
-echo "OK: '$CONTENT_DIR' の初期化が完了しました。"
+echo "OK: '$CONTENT_DIR' のビルド準備が完了しました。"

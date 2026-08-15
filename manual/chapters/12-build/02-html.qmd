@@ -2,16 +2,16 @@
 
 ### 手順
 
-リポジトリのルートで次を実行する。
+`template/` を置いたフォルダで次を実行する。
 
 ```bat
-.\template\build-html.bat docs
+.\template\build-html.bat ..\order-design\docs
 ```
 
 次のように表示されれば成功である。
 
 ```text
-OK: open docs\_book\index.html in your browser.
+OK: open ..\order-design\docs\_book\index.html in your browser.
 ```
 
 ### 何が行われるか
@@ -19,23 +19,23 @@ OK: open docs\_book\index.html in your browser.
 1. `setup` が呼ばれる（PDF と同じ）。
 2. `MERMAID_SVG=1` を設定して Quarto が HTML を生成する。この設定により
    **mermaid が PDF と同じベクター SVG に焼き込まれ**、図が PDF と一致する。
-3. `template/postprocess-html.mjs` を node で実行し、**図表番号を「章.節-連番」形式に
-   振り直す**。
+3. 図表番号を「章.節-連番」形式に振り直す後処理が走る（Quarto の `post-render` に
+   登録されているので自動）。
 
-::: {.callout-important}
-手順3のため、**この経路は mermaid を使わない文書でも node が必須**である。
-node が無い環境では `ERROR: postprocess-html.mjs failed.` で止まる。
+::: {.callout-note}
+手順3は執筆者の `quarto render` でも同じように走る。したがって**図表番号は
+執筆者の HTML と配布 HTML で同じ**である。node が要るのは手順2の mermaid だけである。
 :::
 
 ### 執筆者の確認用 HTML との違い
 
 ::: {.tbl caption="確認用HTMLと配布HTMLの違い" label="tbl-html-diff" widths="24,38,38"}
-| 項目           | `quarto render --to html` | `build-html`                     |
+| 項目           | 執筆者の `quarto render`  | `build-html`                     |
 |----------------|---------------------------|----------------------------------|
-| 実行場所       | 執筆フォルダの中          | リポジトリのルート               |
-| 必要な環境     | Quarto のみ               | Quarto ＋ node（＋ mermaid 環境）|
+| 実行場所       | 執筆フォルダの中          | `template/` を置いたフォルダ     |
+| 必要な環境     | Quarto のみ               | Quarto ＋ mermaid 環境（node）   |
 | mermaid の描画 | ブラウザ内で描画          | ベクター SVG に焼き込み          |
-| 図表番号       | 図 1.1 形式               | 図 3.2-1 形式                    |
+| 図表番号       | 図 3.2-1 形式（同じ）     | 図 3.2-1 形式                    |
 | 用途           | 執筆者の確認              | 社内レビュー・配布               |
 :::
 
@@ -55,3 +55,5 @@ node が無い環境では `ERROR: postprocess-html.mjs failed.` で止まる。
 | 図表番号 | 「図 3.2-1」形式になっているか（PDF と一致するか） |
 | 相互参照 | クリックで該当箇所へ飛ぶか |
 | 図 | mermaid 図が表示されているか |
+
+{{< pagebreak >}}

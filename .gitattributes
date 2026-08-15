@@ -3,6 +3,11 @@
 # バッチファイルは CRLF（Windows/cmd 前提）。
 *.bat text eol=crlf
 # ビルドに使うテキストも LF に統一しておく。
-*.mjs text eol=lf
+# 設計書リポジトリへ配布する機構ファイル（css / json を含む）は、両側で改行が
+# 揃っていないと「発行者が setup を走らせるたびに差分が出る」ため、必ず LF にする。
+*.js text eol=lf
 *.lua text eol=lf
 *.typ text eol=lf
+*.css text eol=lf
+*.json text eol=lf
+VERSION text eol=lf

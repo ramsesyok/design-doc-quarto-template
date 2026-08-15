@@ -10,13 +10,14 @@
 | 権限 | Quarto のインストールに管理者権限が要る場合がある |
 
 本書のコマンド例は Windows のコマンドプロンプト（`cmd`）を基準とする。
-macOS / Linux では拡張子を読み替える。
+macOS / Linux では拡張子とパス区切りを読み替える。
 
 | Windows | macOS / Linux |
 |---------|---------------|
-| `.\template\setup.bat docs` | `./template/setup.sh docs` |
-| `.\template\build-qmd.bat docs` | `./template/build-qmd.sh docs` |
-| `.\template\build-html.bat docs` | `./template/build-html.sh docs` |
+| `.\template\init-doc.bat ..\order-design` | `./template/init-doc.sh ../order-design` |
+| `.\template\update-doc.bat ..\order-design\docs` | `./template/update-doc.sh ../order-design/docs` |
+| `.\template\build-qmd.bat ..\order-design\docs` | `./template/build-qmd.sh ../order-design/docs` |
+| `.\template\build-html.bat ..\order-design\docs` | `./template/build-html.sh ../order-design/docs` |
 
 ### 共通で入れるものは Quarto だけ
 
@@ -25,5 +26,15 @@ macOS / Linux では拡張子を読み替える。
 同梱されているため、別途インストールする必要はない。TeX / LaTeX も不要である。
 :::
 
-node、npm、Chrome / Edge は**発行者だけ**が必要とする（mermaid 図を PDF・配布 HTML に
-焼き込むときに使う）。詳細は 11章に示す。執筆だけを行う端末には入れなくてよい。
+node、npm、Chrome / Edge は**発行者だけ**が必要とする（発行用にmermaid 図を PDF・配布 HTML に焼き込むときに使う）。詳細は  @sec-publisher-env に示す。執筆だけを行う端末には入れなくてよい。
+
+### パスに日本語を使わない {#sec-ascii-path}
+
+::: {.callout-warning}
+設計書リポジトリと `template/` は、**パスに ASCII 以外の文字（日本語など）を含めない
+場所**に置くこと。Windows では、パスに日本語が含まれると Quarto から変換フィルタへ
+渡る時点で文字が壊れて届き、mermaid 図のベクター化（PDF・配布 HTML）が失敗する。
+
+フォルダ名は `order-design` や `docs` のように英数字で付ける。ユーザー名に日本語が
+入っている環境では、`C:\work\` のような場所に置く。
+:::

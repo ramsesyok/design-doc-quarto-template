@@ -2,26 +2,33 @@
 
 ### 手順
 
-リポジトリのルートで次を実行する。
+`template/` を置いたフォルダで次を実行する。
 
 ```bat
-.\template\build-qmd.bat docs
+.\template\build-qmd.bat ..\order-design\docs
 ```
 
 次のように表示されれば成功である。
 
 ```text
-OK -> docs\design-doc.pdf
+OK -> ..\order-design\docs\design-doc.pdf
 ```
 
 初回は少し時間がかかる。2回目以降は図のキャッシュが効くため速くなる。
 
 ### 何が行われるか
 
-1. `setup` が呼ばれ、`lib.typ` と `design-doc.css` が執筆フォルダへ配置される。
-2. Quarto が原稿を Typst 形式に変換し、PDF を組版する。
+1. `setup` が呼ばれ、機構ファイルと PDF 用の部品（`lib.typ`・typst の partial・
+   `_quarto-publish.yml`）が執筆フォルダへ配置される。
+2. Quarto が原稿を Typst 形式に変換し、PDF を組版する（`--profile publish`）。
    このとき mermaid 図はベクター SVG に焼き込まれる。
 3. できあがった PDF が `<執筆フォルダ>\design-doc.pdf` に取り出される。
+
+::: {.callout-important}
+この PDF は**中間版としてリポジトリにコミットする**（`.gitignore` の対象外にしてある）。
+執筆者は改ページ・横向きページ・紙の様式をこの PDF で確認する（5章）。
+発行版も同じ手順で作る。
+:::
 
 ::: {.callout-note}
 ビルドスクリプトは先頭で `setup` を呼ぶため、単体で実行すれば初期化も済む。
@@ -65,3 +72,5 @@ PDF ができたら、次の点を確認する。
 | 改ページ | 表や図が不自然に割れていないか |
 | 横向きページ | 向きと外枠が正しいか |
 | mermaid 図 | 図が画像として出ているか（抜けていないか） |
+
+{{< pagebreak >}}

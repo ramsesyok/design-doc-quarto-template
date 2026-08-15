@@ -1,12 +1,13 @@
-# 文書を作る
+# 文書を作る {#sec-authoring-doc}
 
 本章では、原稿を書き始めるまでの操作を述べる。**記法ではなく、文書の枠組みを
 組み立てる作業**を扱う。個々の書き方（表・図・相互参照など）は 6章以降に示す。
 
+@sec-newdoc（設計書リポジトリの作成と文書の設定）は**発行者**の作業である。
+執筆者は @sec-folder と @sec-chapters を読めばよい。
+
 {{< include 01-folder.qmd >}}
 
-{{< include 02-settings.qmd >}}
+{{< include 02-newdoc.qmd >}}
 
 {{< include 03-chapters.qmd >}}
-
-{{< include 04-newdoc.qmd >}}

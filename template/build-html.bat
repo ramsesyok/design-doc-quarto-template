@@ -2,14 +2,15 @@
 chcp 65001 >nul
 setlocal enabledelayedexpansion
 rem ============================================================
-rem  HTML build for internal review (Windows / cmd). See build-html.sh for details.
-rem  Usage (from the repository root):  template\build-html.bat [content-dir]
+rem  Distribution HTML build (Windows / cmd). See build-html.sh for details.
+rem  Usage:  template\build-html.bat <path-to-writing-folder>
 rem   - Output: <content-dir>\_book\ (per-chapter HTML + site_libs\ + search.json).
 rem     Open _book\index.html to review; zip _book\ to share.
 rem   - Distribution HTML bakes mermaid to the same vector SVG as the PDF, so
 rem     MERMAID_SVG=1 is passed (the author's quarto preview omits it and renders
 rem     mermaid client-side with Quarto's bundled runtime).
-rem   - Figure/table numbers are re-numbered to "chapter.section-index" by postprocess-html.mjs.
+rem   - Figure/table numbers are re-numbered by postprocess-html.js, which runs as
+rem     the project's post-render hook (do NOT call it again from here).
 rem  NOTE: keep this file ASCII only. cmd.exe misparses multibyte (Japanese)
 rem        text in .bat files, so comments/messages must stay in English.
 rem ============================================================
@@ -22,11 +23,11 @@ if "%CONTENT_DIR%"=="" set "CONTENT_DIR=docs"
 
 if not exist "%CONTENT_DIR%\_quarto.yml" (
   echo ERROR: "%CONTENT_DIR%\_quarto.yml" not found. 1>&2
-  echo        Run from the repository root and pass the content dir as the 1st argument. 1>&2
+  echo        Pass the path of the writing folder as the 1st argument. 1>&2
   exit /b 1
 )
 
-rem Prepare the writing environment (idempotent): place lib.typ / design-doc.css + mermaid browser config.
+rem Prepare the build environment (idempotent): mechanism files + PDF partials + mermaid browser config.
 call "%TEMPLATE_ROOT%\setup.bat" "%CONTENT_DIR%"
 if errorlevel 1 (
   echo ERROR: setup failed. 1>&2
@@ -44,12 +45,7 @@ if errorlevel 1 (
   exit /b 1
 )
 
-node "%TEMPLATE_ROOT%\postprocess-html.mjs" _book
-if errorlevel 1 (
-  echo ERROR: postprocess-html.mjs failed. 1>&2
-  popd
-  exit /b 1
-)
+rem Figure/table numbering is done by the post-render hook (postprocess-html.js).
 
 popd
 

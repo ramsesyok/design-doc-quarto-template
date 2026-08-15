@@ -1,0 +1,174 @@
+## 新しい文書を作る・増やす {#sec-newdoc}
+
+**この節の作業は発行者が行う。** 執筆者は、できあがった設計書リポジトリを
+clone して書き始めればよい（@sec-place）。
+
+### 設計書リポジトリを作る（init-doc） {#sec-init}
+
+`template/` を展開したフォルダで、作成先のパスを渡して実行する。
+
+```bat
+.\template\init-doc.bat ..\order-design
+```
+
+第2引数で執筆フォルダ名を変えられる（省略時は `docs`）。
+
+```bat
+.\template\init-doc.bat ..\order-design design-doc
+```
+
+次のように表示されれば成功である。
+
+```text
+Creating doc repository: C:\work\order-design  (writing folder: docs)
+  created: C:\work\order-design\.gitignore
+  created: C:\work\order-design\.gitattributes
+  created: C:\work\order-design\.vscode\settings.json
+  created: README.md
+  created: C:\work\order-design\docs\_quarto.yml
+  ...
+Updated mechanism files in "C:\work\order-design\docs" (template 1.0.0)
+Rendering HTML once to verify...
+OK -> docs\_book\index.html
+```
+
+最後に HTML を1回ビルドし、**執筆者が確認できる状態になっているか**をその場で検証する
+（`--no-render` を付けると省略できる）。
+
+::: {.callout-warning}
+作成先のパスは**英数字（ASCII）**にすること。日本語を含むパスでは mermaid 図の
+ベクター化（PDF・配布 HTML）が失敗するため、`init-doc` が検出して止める
+（@sec-ascii-path）。
+:::
+
+#### init-doc が作るもの
+
+::: {.tbl caption="init-doc が置くファイル" label="tbl-init-files" widths="34,66"}
+| 置かれるもの | 役割 |
+|:--|---|
+| `.gitignore` | 生成物と PDF 用の一時ファイルを除外する（中間版 PDF は**除外しない**） |
+| `.gitattributes` | 改行コードの固定（機構ファイルは LF、PDF は binary） |
+| `.vscode/settings.json` | 日本語を等幅で表示する設定（@sec-author-env） |
+| `README.md` | 執筆者向けの入口（準備・書き方・確認方法） |
+| `<執筆フォルダ>/_quarto.yml` | book 設定の雛形（表題・資料番号・章の並び） |
+| `<執筆フォルダ>/index.qmd` | 前付けの雛形（改正履歴・用語） |
+| `<執筆フォルダ>/chapters/01-overview/index.qmd` | 章の雛形（1章分） |
+| `<執筆フォルダ>/diagrams/` | 図の置き場（空） |
+| 機構ファイル5点 | `design-doc.lua` / `design-doc.css` / `postprocess-html.js` / `mermaid-config.json` / `.template-version` |
+:::
+
+::: {.callout-note}
+**既にあるファイルは上書きしない。** 途中で失敗したときや、あとから雛形を足したい
+ときに再実行しても、書いた原稿は消えない。
+:::
+
+### 文書に合わせて整える
+
+雛形のままでは文書にならない。作成に続けて次を手で直す。
+
+1. `<執筆フォルダ>/_quarto.yml` … 表題（`title`）・資料番号（`doc-number`）・
+   会社名（`company-ja` / `company-en`）・章の並び（`chapters:`）→ 次項
+2. `<執筆フォルダ>/index.qmd`（前付け）… 改正履歴・用語を書き換える
+3. `<執筆フォルダ>/chapters/` … 章立てを作る（@sec-chapters）
+4. `git init` → コミット → 執筆者へ共有する（利用マニュアルもあわせて配る）
+
+::: {.callout-important}
+章立て（`chapters/` の構成）は文書の種類やチームの規約によって異なる。
+**発行者が最初に決めて雛形として置く**ことで、執筆者は本文に集中できる。
+:::
+
+### 文書全体の設定（`_quarto.yml`） {#sec-quarto-yml}
+
+表題・資料番号・会社名などは `_quarto.yml` の先頭で設定する。**本文には書かない**。
+
+```yaml
+book:
+  title: 受注管理システム 基本設計書   # 表題
+  subtitle: サンプル・ボイラープレート  # 副題（任意）
+  author: 設計チーム                    # 作成者（任意）
+  chapters:                             # 章の並び（@sec-chapters 参照）
+    - index.qmd
+    - chapters/01-overview/index.qmd
+
+lang: ja
+doc-number: SD-2026-001   # 資料番号（各ページ右上・横ページ右端に出る）
+doc-revision: ""          # 改訂記号（A〜Z / NC）。doc-number の末尾に結合。空=なし
+
+spec: false               # スペック様式（表題欄）にするか
+company-ja: ソフト開発株式会社          # スペック様式フッターの会社名（日本語）
+company-en: Soft Development Co., Ltd.  # スペック様式フッターの会社名（英語）
+
+cover: false              # 表紙（タイトルページ）を出す。true で出す
+toc: true                 # 目次を出す
+toc-title: 目 次          # 目次の見出し
+toc-depth: 3              # 目次に載せる見出しの深さ
+```
+
+#### 主な設定項目
+
+::: {.tbl caption="_quarto.yml の主な設定項目" label="tbl-settings" widths="20,14,66"}
+| 項目           | 既定    | 内容                                                             |
+|----------------|---------|------------------------------------------------------------------|
+| `title`        | ―      | 表題。表紙・目次・ヘッダに使われる                                |
+| `subtitle`     | ―      | 副題。任意                                                        |
+| `author`       | ―      | 作成者。任意                                                      |
+| `doc-number`   | ―      | 資料番号。全ページの資料番号欄に表示される                        |
+| `doc-revision` | 空      | 改訂記号（`A`〜`Z` / `NC`）。`doc-number` の末尾に結合（`SD-2026-001A`） |
+| `spec`         | `false` | `true` でスペック様式に切り替える                                 |
+| `company-ja`   | ―      | スペック様式フッターの会社名（日本語）                            |
+| `company-en`   | ―      | スペック様式フッターの会社名（英語）                              |
+| `cover`        | `false` | 表紙（タイトルページ）を出すか                                    |
+| `toc`          | `true`  | 目次を出すか                                                      |
+| `toc-depth`    | `3`     | 目次に載せる見出しの深さ                                          |
+:::
+
+目次は章番号・リーダー線・実ページ番号つきで自動生成され、本文を直せば自動で追従する。
+
+#### スペック様式（`spec: true`）
+
+`spec: true` にすると、資料番号欄のかわりに**表題欄**（左に「スペック / SPECIFICATION」、
+右にスペック番号＝`doc-number` と改訂符号＝`doc-revision`）を全ページの上部に出す様式へ
+切り替わる。A4 横・IPO 図では右側に 90 度回転して配置される。あわせて外枠の下に
+会社名フッターを出す。
+
+- `company-ja` / `company-en` は `spec: true` のときだけ表示される
+  （A4 縦は外枠下・ページ中央、A4 横 / IPO は左余白に回転して配置）。
+
+::: {.callout-note}
+執筆する Markdown（本文の書き方）は `spec` の値に関係なく同じである。
+様式を切り替えても原稿を書き直す必要はない。
+:::
+
+### 1つのリポジトリに文書を増やす
+
+同じ設計書リポジトリに別の文書を足すときは、執筆フォルダをもう1つ作る。
+既存の執筆フォルダをコピーし、機構ファイルを配置し直せばよい。
+
+```bat
+xcopy /E /I ..\order-design\docs ..\order-design\design-doc2
+.\template\update-doc.bat ..\order-design\design-doc2
+```
+
+ビルドはフォルダのパスを渡すだけである。
+
+```bat
+.\template\build-qmd.bat ..\order-design\design-doc2
+```
+
+### 執筆フォルダを改名する
+
+執筆フォルダの名前は自由である。
+
+```bat
+git mv docs design-doc
+.\template\build-qmd.bat ..\order-design\design-doc
+```
+
+`_quarto.yml` は機構ファイルを**同じフォルダ内の相対名**で参照し、ビルドスクリプトは
+渡されたパスを基準に動くため、**改名しても設定の書き換えは不要**である。
+
+::: {.callout-warning}
+フォルダ名・パスは**英数字（ASCII）**にすること。日本語のフォルダ名にすると、
+Windows では mermaid 図のベクター化（PDF・配布 HTML）が失敗する
+（@sec-ascii-path）。
+:::

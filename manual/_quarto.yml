@@ -3,7 +3,8 @@
 #
 #  本テンプレート自身の使い方を、本テンプレートで書いた文書。
 #  構成の規約は docs/ のサンプルと同じ（1ファイル = 1章、章の中は include で分割）。
-#  様式・変換・ビルドの実体はリポジトリ直下の ../template/ にある。
+#  様式・変換・ビルドの実体は template/ にある（このフォルダ直下の design-doc.lua 等は
+#  setup が置く写し。詳細は docs/_quarto.yml の先頭コメントと template/PIPELINE.md）。
 #
 #  ビルドはリポジトリのルートから:
 #    .\template\build-qmd.bat manual     … PDF  → manual\design-doc.pdf
@@ -12,6 +13,9 @@
 project:
   type: book
   output-dir: _book
+  # 図表番号を PDF と同じ「章.節-連番」に振り直す後処理（Quarto 同梱 Deno。node 不要）。
+  post-render:
+    - postprocess-html.js
 
 book:
   title: 設計書テンプレート 利用マニュアル
@@ -50,10 +54,6 @@ toc-title: 目 次
 toc-depth: 3
 
 format:
-  typst:
-    template-partials:
-      - ../template/typst-template.typ
-      - ../template/typst-show.typ
   html:
     number-sections: true
     css: design-doc.css
@@ -64,4 +64,4 @@ format:
       margin-width: 60px
 
 filters:
-  - ../template/design-doc.lua
+  - design-doc.lua

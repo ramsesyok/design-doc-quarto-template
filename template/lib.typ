@@ -58,8 +58,39 @@
 // （字形確認は Noto を入れて行うこと）。
 #let JP-SANS = ("Meiryo UI", "Yu Gothic", "MS PGothic")
 #let JP-SERIF = ("Meiryo UI", "Yu Mincho", "MS PMincho")
+// コードブロック・インラインコード（```…``` と `…`）の書体。
+// 満たしたい条件は2つ:
+//   (a) 完全な等幅 … 欧文が和文のちょうど半分幅（10pt なら 5pt / 10pt）。
+//       グリッド表や図の例をコードとして貼ったときに桁がそろう。
+//   (b) `\` がバックスラッシュの字形で出る（円記号 `¥` にならない）。
+//
+// Windows 標準の書体では、この2つを**1つの書体では両立できない**（実測）:
+//   BIZ UDGothic / MS Gothic / MS Mincho / BIZ UDMincho … 等幅だが `\` が `¥`
+//   Consolas 0.55em / Cascadia Mono 0.586em / Courier New 0.6em … `\` は出るが
+//     和文（1em）の半分でないため、和文混じりで桁がずれる
+//   NSimSun / SimSun … 等幅（0.5em）で `\` も出るが、和文が中国語字形になる
+//
+// **本テンプレートは (a) 等幅を優先し、`\` は `¥` で表示されるのを許容する**
+// （Windows 日本語環境の慣習どおりの見え方になる）。ゴシック体で統一され、
+// 和文混じりのコードでも桁がそろう。
+//
+// **注意**: typst には英語のファミリ名で指定する。"BIZ UDゴシック" では一致せず、
+// 別の書体にフォールバックして等幅にならない（実測で確認）。
+//
+// `\` の字形を優先したいときは、次のいずれかに差し替える:
+//   ((name: "NSimSun", covers: regex("[ -~]")), "BIZ UDGothic", …)
+//       … ASCII だけ NSimSun にする（covers = 書体を使う文字範囲を絞る typst の機能）。
+//         等幅と `\` を両立できるが、欧文がタイプライタ体（明朝系）になる。
+//   ((name: "Consolas", covers: regex("[ -~]")), "BIZ UDGothic", …)
+//       … 欧文は見慣れた Consolas。ただし桁そろえは崩れる。
+#let MONO = ("BIZ UDGothic", "MS Gothic", "Consolas", "Courier New")
 // spec: true の表題欄（ヘッダ領域）の書体。MS Gothic を既定にし、無い環境では JP-SANS に落ちる。
 #let SPEC-HEAD-FONT = ("MS Gothic", "Yu Gothic", "MS PGothic")
+
+// ---- 色 ----
+// コードブロックの背景。Quarto の Skylighting() が使う定数と同じ値にしておく
+// （この色で block を特定して両端揃えを切るため。§本文の体裁 の show ルール参照）。
+#let CODE-BG = rgb("#f1f3f5")
 
 // ---- 線 ----
 #let BORDER = rgb("#b0b0b0")   // 本文中の表罫線（様式ではなく中身の罫線）
@@ -441,6 +472,25 @@
   show par: it => context {
     if _in-list.get() { it } else { pad(left: _sec-indent.get() * HEAD-INDENT-STEP, it) }
   }
+  // コードブロック（```…```）には本文の体裁を持ち込まない。
+  // 本文は justify: true（両端揃え）なので、そのままだと**長い行が折り返されたときに
+  // 単語間が引き伸ばされて均等割り付けのように見える**（コマンド行でよく起きる）。
+  // 先頭字下げも同様に不要。
+  //
+  // 対象が2種類あることに注意（実測）:
+  //   1) 素の raw ブロック（構文強調が無い場合）
+  //   2) Quarto の Skylighting()（構文強調がある場合）… ```lang フェンスはこちら。
+  //      raw 要素ではなく「トークンごとの inline raw を並べた**ふつうの段落**」を
+  //      block で包んだものなので、raw の show ルールでは捕まえられない。
+  //      背景色（CODE-BG = Quarto 側の定数）で block を特定する。
+  show raw.where(block: true): it => {
+    set par(justify: false, first-line-indent: 0pt)
+    it
+  }
+  show block.where(fill: CODE-BG): set par(justify: false, first-line-indent: 0pt)
+  // コード（ブロック・インラインとも）は等幅書体にする。Quarto の構文強調は
+  // トークンごとの inline raw なので、raw への set text がそのまま効く。
+  show raw: set text(font: MONO)
   // 箇条書き（list/enum）は「最上位のリストだけ」を見出しレベルぶん＋LIST-INDENT
   // 字下げする（段落の先頭字下げと頭を揃える）。入れ子のリストには重ね掛けせず、
   // Typst 標準のネスト字下げに任せる（重ね掛けすると段ごとに右へ流れてしまう）。
@@ -466,9 +516,15 @@
   // 「td/th の中の ul/ol は padding-left: 1.2em」（design-doc.css）と見た目を揃える。
   // 段落（show par）は元から top-level だけに掛かるのでセル内は影響を受けない。
   // ipo() は自前で _sec-indent を 0 にしてから table を組むので、ここは素通りになる。
+  // あわせて**セル内は両端揃えにしない**。セルは幅が狭く、ファイル名・コマンドなど
+  // 途中で折り返せない語が入ると、その行だけ字間が大きく開いて読みにくくなる
+  //（例「<執 筆 フ ォ ル ダ>/chapters/…」）。列の揃え指定（`:---`）は最終行の寄せを
+  // 決めるだけで両端揃えは止まらないため、ここで par 側を切る（実測で確認）。
+  // 本文の段落は justify: true のまま（和文の作法）。
   show table: it => context {
     let prev = _sec-indent.get()
     _sec-indent.update(0)
+    set par(justify: false)
     it
     _sec-indent.update(prev)
   }

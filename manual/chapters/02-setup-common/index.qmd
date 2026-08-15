@@ -1,9 +1,16 @@
-# 基礎的な環境構築
+# 基礎的な環境構築 {#sec-setup-common}
 
-本章では、**執筆者・発行者のいずれにも共通して必要**な環境の構築手順を述べる。
-役割ごとの追加設定は 3章（執筆者）及び 11章（発行者）に示す。
+本章では、**執筆者・発行者のいずれにも共通して必要**な環境（Quarto の導入）と、
+役割ごとに手元へ置くものを述べる。役割ごとの追加設定は @sec-author-env （執筆者）
+及び @sec-publisher-env （発行者）に示す。
 
 本章の手順は**1台につき一度だけ**実施すればよい。
+
+::: {.callout-note}
+設計書リポジトリそのものを作る手順（`init-doc`）は、環境構築ではなく文書を作る作業
+なので @sec-newdoc にある。発行者は本章のあと @sec-publisher-env を済ませ、
+@sec-newdoc でリポジトリを作る。
+:::
 
 {{< include 01-prereq.qmd >}}
 
@@ -11,6 +18,4 @@
 
 {{< include 03-place.qmd >}}
 
-{{< include 04-init.qmd >}}
-
-{{< include 05-verify.qmd >}}
+{{< include 04-verify.qmd >}}

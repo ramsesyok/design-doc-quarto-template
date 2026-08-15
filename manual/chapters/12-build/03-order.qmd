@@ -9,8 +9,8 @@
 
 ```bat
 :: 正しい順序
-.\template\build-qmd.bat docs
-.\template\build-html.bat docs
+.\template\build-qmd.bat ..\order-design\docs
+.\template\build-html.bat ..\order-design\docs
 ```
 
 ### なぜこの順序なのか
@@ -42,7 +42,10 @@ PDF → HTML の順に作り直せばよい。
 
 ```bat
 @echo off
-call .\template\build-qmd.bat docs  || exit /b 1
-call .\template\build-html.bat docs || exit /b 1
-echo DONE: docs\design-doc.pdf and docs\_book\index.html
+set "DOC=..\order-design\docs"
+call .\template\build-qmd.bat  "%DOC%" || exit /b 1
+call .\template\build-html.bat "%DOC%" || exit /b 1
+echo DONE: %DOC%\design-doc.pdf and %DOC%\_book\index.html
 ```
+
+{{< pagebreak >}}
