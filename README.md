@@ -24,7 +24,7 @@
 
 ```
 C:\tools\
-└── quarto-template-1.0.0/   ← リリース ZIP を展開したもの（git 管理外）
+└── quarto-template-1.1.0/   ← リリース ZIP を展開したもの（git 管理外）
     ├── README.md, ADVANCED.md
     ├── manual/              ← 利用マニュアル（執筆者へ配る）
     └── template/            ← ここのスクリプトを実行する
@@ -62,13 +62,13 @@ C:\work\
 
 ```bat
 :: 事前に Quarto を入れておく（https://quarto.org/docs/get-started/）
-cd C:\tools\quarto-template-1.0.0
+cd C:\tools\quarto-template-1.1.0
 .\template\init-doc.bat C:\work\order-design
 ```
 
 ```bash
 # macOS / Linux / Git Bash
-cd ~/tools/quarto-template-1.0.0
+cd ~/tools/quarto-template-1.1.0
 ./template/init-doc.sh ~/work/order-design
 ```
 
@@ -103,7 +103,7 @@ VSCode で `.qmd` を開いて **Preview**（`Ctrl+Shift+K`）を押せば、保
 設計書リポジトリを最新にしてから、展開先で `template/` 側のスクリプトにパスを渡します。
 
 ```bat
-cd C:\tools\quarto-template-1.0.0
+cd C:\tools\quarto-template-1.1.0
 
 :: PDF → <執筆フォルダ>\design-doc.pdf（中間版としてコミットして共有する）
 .\template\build-qmd.bat C:\work\order-design\docs
@@ -125,11 +125,11 @@ cd C:\tools\quarto-template-1.0.0
 保守者から新しいリリースを受け取ったら、機構ファイルを設計書リポジトリへ入れ直します。
 
 ```bat
-cd C:\tools\quarto-template-1.1.0
+cd C:\tools\quarto-template-1.2.0
 .\template\update-doc.bat C:\work\order-design\docs
 ```
 
-新しいリリースは**別のフォルダに展開されます**（`quarto-template-1.1.0`）。
+新しいリリースは**別のフォルダに展開されます**（`quarto-template-1.2.0`）。
 古い版のフォルダは残しておけるので、必要なら戻せます。
 
 `design-doc.lua` / `design-doc.css` / `postprocess-html.js` / `mermaid-config.json` と

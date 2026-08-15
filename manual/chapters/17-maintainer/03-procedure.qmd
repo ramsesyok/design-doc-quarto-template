@@ -2,6 +2,21 @@
 
 1. `template/` のファイルを直す。
 2. 配布される機構ファイルを直したら `template/VERSION` を上げる。
+
+   ::: {.callout-important}
+   **版を上げたら、本書と `README.md` / `ADVANCED.md` の実行例に埋め込まれた
+   版番号も揃える。** 展開フォルダ名に版が入るため、`cd C:\tools\quarto-template-1.1.0`
+   のような例が全体で30箇所ほどある。ずれていると、発行者が手元のフォルダ名と
+   合わない手順を読むことになる。
+
+   ```bat
+   :: 旧版が残っていないか確認する（VERSION と一致すること）
+   findstr /S /C:"quarto-template-1." README.md ADVANCED.md template\PIPELINE.md manual\chapters\*.qmd
+   ```
+
+   「新しい版を受け取ったとき」の説明で使う版番号（現行＋1）も併せてずらす。
+   :::
+
 3. `setup` を再実行して、執筆フォルダへ反映する。
 
    ```bat

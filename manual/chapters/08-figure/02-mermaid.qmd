@@ -76,7 +76,7 @@ Quarto 同梱、発行版は mermaid-cli）、複雑な図ではまれに形が�
 `diagrams/*.mmd` に mermaid のソースを置き、あらかじめ SVG に変換しておくこともできる。
 
 ```bash
-cd ~/tools/quarto-template-1.0.0
+cd ~/tools/quarto-template-1.1.0
 ./template/render-diagrams.sh ~/work/order-design/docs
 ```
 
