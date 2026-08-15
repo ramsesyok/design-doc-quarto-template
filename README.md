@@ -1,10 +1,24 @@
-# 設計書テンプレート（Markdown で書いて、PDF にする）
+# 設計書テンプレート — Quarto で「日本の設計書様式」の PDF を組む
 
-**Markdown を書くだけで、客先提出品質の PDF 設計書ができます。**
-外枠・資料番号欄・社名といった会社様式、目次、章番号、図表番号、相互参照、改ページは
-すべて自動です。執筆者は本文の中身だけに集中してください。
+[Quarto](https://quarto.org/) を拡張して、**Markdown の原稿から「外枠・資料番号欄・
+社名」付きの PDF 設計書**を組むテンプレートです。組版には Quarto 同梱の
+[Typst](https://typst.app/) を使うため、**LaTeX のインストールは要りません**。
 
-内容確認用の HTML（章ごとのページ・全文検索つき）も、同じ原稿から作れます。
+日本のシステム開発で使われる設計書の様式 — 全ページの外枠と資料番号欄、
+「図 3.2-1」形式の図表採番、IPO 図、横向きページ、大きな表のページ分割 — を
+Typst テンプレートと Pandoc の Lua フィルタとして実装してあります。
+執筆者が書くのは Markdown だけで、様式は一切書きません。
+
+同じ原稿から、内容確認用の HTML（章ごとのページ・全文検索つき）も出せます。
+
+| 要素 | 使っているもの |
+|---|---|
+| 原稿 | Markdown（Quarto の `.qmd`） |
+| PDF 組版 | Quarto → Typst（Quarto 同梱。LaTeX 不要） |
+| 様式の実体 | `template/lib.typ`（Typst テンプレート） |
+| 記法の拡張 | `template/design-doc.lua`（Pandoc Lua フィルタ） |
+| 図 | mermaid（文字で書いた図をベクター SVG に） |
+| 執筆者に要るもの | Quarto ＋ VSCode の Quarto 拡張だけ |
 
 > **このリポジトリは「様式の実体（`template/`）」です。**
 > 設計書そのものは、ここから作る**別のリポジトリ（設計書リポジトリ）**に置きます。
@@ -15,7 +29,7 @@
 | 役割 | 持つもの | やること |
 |---|---|---|
 | **保守者** | このリポジトリ | 様式・変換の保守。`template/` と利用マニュアルをリリースとして配る |
-| **発行者** | `template/`（リリース） | 設計書リポジトリを作る・機構を更新する・**発行版と中間版の PDF/HTML を作る** |
+| **発行者** | リリース展開フォルダ | 設計書リポジトリを作る・機構を更新する・**発行版と中間版の PDF/HTML を作る** |
 | **執筆者** | 設計書リポジトリだけ | 原稿を書く。**Quarto と VSCode 拡張だけ**で HTML を見ながら確認できる |
 
 **`template/` は設計書リポジトリの中に置きません。** 発行者の手元に別途置き、
@@ -55,107 +69,69 @@ C:\work\
 
 ---
 
-## 1. 発行者: 設計書リポジトリを作る
+## 使い方の全体像
 
-保守者から受け取った**リリースアセット**（`quarto-template-<版>.zip`）を展開し、
-展開先に `cd` してから、設計書リポジトリを置きたい場所を指定して実行します。
+### 1. 保守者がリリースを配る
+
+このリポジトリで `make-release` を実行すると、`quarto-template-<版>.zip`
+（`template/` 一式＋利用マニュアルの PDF / HTML）ができます。
+→ [ADVANCED.md](ADVANCED.md)
+
+### 2. 発行者が設計書リポジトリを作る
+
+ZIP を展開し、**展開したフォルダで**実行します。
 
 ```bat
-:: 事前に Quarto を入れておく（https://quarto.org/docs/get-started/）
 cd C:\tools\quarto-template-1.1.0
 .\template\init-doc.bat C:\work\order-design
 ```
 
-```bash
-# macOS / Linux / Git Bash
-cd ~/tools/quarto-template-1.1.0
-./template/init-doc.sh ~/work/order-design
-```
+できた `docs\_quarto.yml` の表題・資料番号・会社名・章立てを整え、`git init` して
+執筆者に共有します（利用マニュアルの PDF も一緒に配ります）。
+→ 利用マニュアル 2章・4章
 
-- 第2引数で執筆フォルダ名を変えられます（既定 `docs`）。
-- **設計書リポジトリのパスは絶対パスで渡してください。** 相対パスは「いまいる
-  フォルダ」からの相対として解釈されるため、`cd` した場所を間違えると、エラーに
-  ならないまま意図しない場所にリポジトリができます。
-- **パスは ASCII で** — 日本語のフォルダ名は使えません（Windows で mermaid の
-  SVG 化が失敗します。`init-doc` が検出して止めます）。
-- 既にあるファイルは上書きしません。最後に HTML を1回ビルドして、執筆者が確認できる
-  状態になっているかを検証します。
+### 3. 執筆者が原稿を書く
 
-作られたら、文書に合わせて手で直します。
-
-1. `docs/_quarto.yml` … 表題・資料番号（`doc-number`）・会社名・章の並び
-2. `docs/index.qmd`（前付け）と `docs/chapters/` … 章立てを作る
-3. `git init` → コミット → 執筆者に共有（利用マニュアルの PDF/HTML も一緒に配る）
-
-## 2. 執筆者: 原稿を書く・HTML で確認する
-
-設計書リポジトリを clone し、**Quarto** と **VSCode の Quarto 拡張**を入れるだけです。
+設計書リポジトリを clone し、**Quarto と VSCode の Quarto 拡張だけ**で書きます。
+`Ctrl+Shift+K` のプレビューに、発行版と同じ章番号・図表番号・相互参照が出ます。
 `template/` も node も要りません。
+→ 利用マニュアル 3章・5章、記法は 6〜10章
 
-VSCode で `.qmd` を開いて **Preview**（`Ctrl+Shift+K`）を押せば、保存のたびに HTML が
-更新されます。章番号・図表番号・相互参照は発行版と同じ番号で表示されます。
-
-書き方（記法）は**利用マニュアル**（`manual/` をビルドしたもの。発行者が配布）を
-参照してください。
-
-## 3. 発行者: 発行版・中間版を作る
-
-設計書リポジトリを最新にしてから、展開先で `template/` 側のスクリプトにパスを渡します。
+### 4. 発行者が PDF・配布 HTML を出す
 
 ```bat
 cd C:\tools\quarto-template-1.1.0
-
-:: PDF → <執筆フォルダ>\design-doc.pdf（中間版としてコミットして共有する）
-.\template\build-qmd.bat C:\work\order-design\docs
-
-:: 配布 HTML → <執筆フォルダ>\_book\index.html
+.\template\build-qmd.bat  C:\work\order-design\docs
 .\template\build-html.bat C:\work\order-design\docs
 ```
 
-- ビルドの先頭で `setup` が走り、機構ファイルと PDF 用の部品が自動で配置されます。
-- **中間版の PDF を定期的にコミットしてください。** 改ページ・横向きページ・表の分割・
-  紙の様式は HTML では確認できないので、執筆者はこの PDF で確認します。
-- PDF と HTML は同じ `_book/` を使うため、**あとから実行したほうが前の出力を消します**
-  （PDF 本体は `design-doc.pdf` に取り出されるので残ります）。
-- mermaid をベクター化するため、この経路だけ node と Chrome/Edge が要ります
-  （→ [ADVANCED.md](ADVANCED.md#4-mermaid-を使う場合)）。
+PDF は**中間版**としてコミットします。改ページ・横向きページ・紙の様式は HTML では
+確認できないため、執筆者はこの PDF で紙面を見ます。
+mermaid 図を PDF に載せる場合だけ、この環境に node と Chrome/Edge が要ります。
+→ 利用マニュアル 11章・12章
 
-### テンプレートを更新したとき
+### テンプレートを更新するとき
 
-保守者から新しいリリースを受け取ったら、機構ファイルを設計書リポジトリへ入れ直します。
+新しい版は別のフォルダに展開されるので、そちらから機構ファイルを入れ直します。
 
 ```bat
 cd C:\tools\quarto-template-1.2.0
 .\template\update-doc.bat C:\work\order-design\docs
 ```
 
-新しいリリースは**別のフォルダに展開されます**（`quarto-template-1.2.0`）。
-古い版のフォルダは残しておけるので、必要なら戻せます。
-
-`design-doc.lua` / `design-doc.css` / `postprocess-html.js` / `mermaid-config.json` と
-版を記録する `.template-version` が更新されます。**git の差分として出るのでコミットして
-ください。** 執筆者は pull するだけで新しい機構になります。
+差分は git に出るのでコミットします。執筆者は pull するだけです。
+→ 利用マニュアル 11章
 
 ---
 
-## 4. うまくいかないとき
+## 次に読むもの
 
-| 症状 | 対処 |
-|---|---|
-| `quarto` が見つからない | Quarto のインストール後、VSCode を再起動してください。確認は `quarto --version` |
-| 執筆者の HTML が出ない | 設計書リポジトリの執筆フォルダで `quarto preview`。`design-doc.lua` などの機構ファイルが揃っているか確認（無ければ発行者が `update-doc`） |
-| 表の罫線が画面でそろわない | 日本語等幅フォントが効いていません（`.vscode/settings.json`）。出力される PDF・HTML は崩れていません |
-| 図（mermaid）が PDF に出ない | 発行者の環境に node と Chrome/Edge が要ります（→ [ADVANCED.md](ADVANCED.md#4-mermaid-を使う場合)） |
-| mermaid の変換に失敗する | パスに日本語が入っていないか確認してください（ASCII 必須） |
-| PDF を作り直したら HTML が消えた | 仕様です。PDF → HTML の順に作り直してください |
-
----
-
-## 5. もっと詳しく
+うまくいかないときの対処は、**利用マニュアルの13章「困ったときは」**にまとまって
+います（環境・執筆・出力の症状別に引けます）。
 
 | ドキュメント | 内容 | 読む人 |
 |---|---|---|
-| [manual/](manual/) | **利用マニュアル**（役割別の環境構築・執筆・確認・出力・記法・制限事項）。本テンプレート自身で書かれており、`template\build-qmd.bat manual` で PDF になります | 全員（執筆者にはこの PDF/HTML を配る） |
+| [manual/](manual/) | **利用マニュアル**（役割別の環境構築・執筆・確認・出力・記法・制限事項・トラブル対処）。本テンプレート自身で書かれており、`.\template\build-qmd.bat manual` で PDF になります | 全員（執筆者にはこの PDF/HTML を配る） |
 | [ADVANCED.md](ADVANCED.md) | リポジトリ構成、ビルドの詳細、mermaid の準備、環境変数 | 発行者・保守者 |
 | [template/PIPELINE.md](template/PIPELINE.md) | 変換の内部と様式の調整箇所 | 保守者 |
 
