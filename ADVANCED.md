@@ -60,7 +60,7 @@ README は最短手順にしてあります。このファイルには、その�
 
 ```
 C:\tools\
-└── quarto-template-1.0.0/   … リリース ZIP を展開したもの（＝ここで作業する）
+└── quarto-template-1.1.0/   … リリース ZIP を展開したもの（＝ここで作業する）
     ├── README.md / ADVANCED.md
     ├── manual/              … 利用マニュアル（PDF / HTML。執筆者へ配る）
     └── template/            … 上と同じ中身（node_modules は既定で非同梱）
@@ -109,7 +109,7 @@ Lua フィルタへ渡る時点でパスの文字が U+FFFD に置換されて�
 ## 3. ビルドの詳細
 
 ```bash
-cd ~/tools/quarto-template-1.0.0
+cd ~/tools/quarto-template-1.1.0
 
 # PDF（発行版・中間版）
 ./template/build-qmd.sh ~/work/order-design/docs      # → <執筆フォルダ>/design-doc.pdf
@@ -121,7 +121,7 @@ cd ~/tools/quarto-template-1.0.0
 Windows（PowerShell / cmd）では、同じ引数で `.bat` 版を使います（出力先は同じ）:
 
 ```bat
-cd C:\tools\quarto-template-1.0.0
+cd C:\tools\quarto-template-1.1.0
 .\template\build-qmd.bat C:\work\order-design\docs
 .\template\build-html.bat C:\work\order-design\docs
 ```
@@ -202,7 +202,7 @@ mermaid-cli）、まれに図の形が変わります。中間版 PDF で確認�
 発行版 PDF・配布 HTML を出す環境にだけ、mermaid-cli（node）と Chrome/Edge を用意します。
 
 ```bash
-cd ~/tools/quarto-template-1.0.0/template
+cd ~/tools/quarto-template-1.1.0/template
 PUPPETEER_SKIP_DOWNLOAD=true npm ci          # 依存は template/ に入れる（Chromium は落とさない）
 cd ..
 ./template/setup.sh ~/work/order-design/docs  # Chrome/Edge を検出して記録
@@ -220,7 +220,7 @@ EXECUTABLE_BROWSER="/path/to/chrome-or-msedge" ./template/setup.sh ~/work/order-
 Windows の cmd はインライン指定ができないので、`set` してから実行します:
 
 ```bat
-cd C:\tools\quarto-template-1.0.0
+cd C:\tools\quarto-template-1.1.0
 set "EXECUTABLE_BROWSER=C:\Program Files\Google\Chrome\Application\chrome.exe"
 .\template\setup.bat C:\work\order-design\docs
 ```
@@ -302,6 +302,10 @@ quarto-template-<版>/
 
 - 版は `template/VERSION` から取ります。**リリース前に上げてください**（設計書
   リポジトリ側の `.template-version` と突き合わせて更新要否が判断されます）。
+- 版を上げたら、**このファイル・`README.md`・`manual/` の実行例に埋め込まれた
+  版番号も揃えてください**（展開フォルダ名に版が入るため、`quarto-template-1.1.0`
+  のような記述が全体で30箇所ほどあります）。あわせて「新しい版を受け取ったとき」の
+  説明で使う版番号（現行＋1）もずらします。手順は利用マニュアル17章にあります。
 - 配布物の中の `.bat` は CRLF、`.sh` は LF に正規化されます。**LF のままの `.bat` は
   cmd.exe が `for` / `if` の複数行ブロックを解釈できず壊れます**（実測）。
 - zip 化は `zip` → bsdtar（Windows 同梱の `tar.exe`）→ python の順に試します。

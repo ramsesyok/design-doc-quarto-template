@@ -8,7 +8,7 @@ mermaid 図を含む文書の PDF・配布 HTML を作るには、**mermaid-cli 
 リリースを展開したフォルダで次を実行する。
 
 ```bat
-cd C:\tools\quarto-template-1.0.0\template
+cd C:\tools\quarto-template-1.1.0\template
 set "PUPPETEER_SKIP_DOWNLOAD=true"
 npm ci
 cd ..
@@ -24,7 +24,7 @@ cd ..
 bash（macOS / Linux / Git Bash）では次のとおりである。
 
 ```bash
-cd ~/tools/quarto-template-1.0.0/template
+cd ~/tools/quarto-template-1.1.0/template
 PUPPETEER_SKIP_DOWNLOAD=true npm ci
 cd ..
 ./template/setup.sh ~/work/order-design/docs

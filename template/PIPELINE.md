@@ -103,7 +103,7 @@ order-design/     ← 設計書リポジトリ（git 共有。執筆者はこれ
 
 ```
 # 発行者が実行する（展開フォルダで cd してから。末尾は執筆フォルダのパス＝絶対推奨）
-cd ~/tools/quarto-template-1.0.0
+cd ~/tools/quarto-template-1.1.0
 ./template/init-doc.sh ~/work/order-design        # 設計書リポジトリを新規作成（最初の1回）
 ./template/update-doc.sh ~/work/order-design/docs # 機構ファイルを最新の template に更新
 ./template/build-qmd.sh ~/work/order-design/docs  # → <執筆フォルダ>/design-doc.pdf
