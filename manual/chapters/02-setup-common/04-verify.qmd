@@ -40,7 +40,8 @@ cd ..\..
 PDF が出せるかどうかは、原稿を入れたあとに確認する（@sec-build）。
 
 ```bat
-.\template\build-qmd.bat ..\order-design\docs
+cd C:\tools\quarto-template-1.0.0
+.\template\build-qmd.bat C:\work\order-design\docs
 ```
 
 ::: {.callout-warning}

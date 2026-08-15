@@ -3,8 +3,12 @@
 #
 # 使い方（template/ の位置はどこでもよい。作る先のパスを渡す）:
 #   ./template/init-doc.sh <doc リポジトリのパス> [執筆フォルダ名] [--no-render]
-#   例) ./template/init-doc.sh ../受注管理-設計書
-#       ./template/init-doc.sh ../受注管理-設計書 設計書
+#   例) ./template/init-doc.sh ~/work/order-design
+#       ./template/init-doc.sh ~/work/order-design design-doc
+#
+# **作る先は絶対パスで渡すこと。** 相対パスは CWD 基準で解決される（このスクリプト
+# の位置からではない）。init-doc は「無いものを作る」ので誤りを検出できず、
+# エラーにならないまま意図しない場所に作られる。
 #
 # 作るもの:
 #   <doc リポジトリ>/
@@ -38,6 +42,7 @@ done
 if [ -z "$REPO_DIR" ]; then
   echo "エラー: 作成先のパスを渡してください。" >&2
   echo "使い方: ./template/init-doc.sh <doc リポジトリのパス> [執筆フォルダ名] [--no-render]" >&2
+  echo "        例: ./template/init-doc.sh ~/work/order-design（絶対パス推奨）" >&2
   exit 1
 fi
 

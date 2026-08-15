@@ -14,13 +14,16 @@
    反映する。
 
    ```bat
-   .	emplate\make-release.bat
+   .\template\make-release.bat
    ```
 
-   `release\design-doc-template-<版>.zip` に、`template/` 一式と本書（PDF / HTML）が
+   `release\quarto-template-<版>.zip` に、`template/` 一式と本書（PDF / HTML）が
    まとまる。マニュアルのビルド（PDF → HTML の順）も中で行うため、順序の間違いや
    入れ忘れが起きない。閉域向けに `template/node_modules` も入れるときは
    `--with-node-modules` を付ける。
+
+   発行者はこの ZIP を展開し、**展開したフォルダのまま**使う。版がフォルダ名に
+   入るので、発行者の手元では新旧のリリースが別フォルダとして並ぶ。
 
 ::: {.callout-warning}
 `setup` の再実行を忘れると、執筆フォルダに古い機構ファイルが残ったままになり、

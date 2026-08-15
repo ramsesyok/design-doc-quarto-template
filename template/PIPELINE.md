@@ -14,24 +14,36 @@
 執筆者は Quarto と VSCode 拡張だけで発行版と同じ番号の HTML を出せる。
 
 ```
-発行者の作業フォルダ/
-├── template/     ← 様式・変換・ビルドの実体（このフォルダ。git 共有しない）
-│   ├── lib.typ, typst-template.typ, typst-show.typ, quarto-publish.yml,
-│   ├── design-doc.lua, design-doc.css, postprocess-html.js, mermaid-config.json,
-│   ├── package.json, VERSION, scaffold/,
-│   ├── init-doc.*, update-doc.*, setup.*, build-qmd.*, build-html.*, render-diagrams.sh,
-│   └── (setup 実行後: puppeteer.json / node_modules … いずれも .gitignore)
-└── order-design/ ← 設計書リポジトリ（git 共有。執筆者はこれだけ clone する）
-    └── docs/     ← 執筆フォルダ（名前は自由）
-        ├── _quarto.yml, index.qmd, chapters/, diagrams/     … 原稿
-        ├── design-doc.lua, design-doc.css, postprocess-html.js,
-        │   mermaid-config.json, .template-version           … 機構（コミットする）
-        ├── design-doc.pdf                                   … 中間版（コミットする）
-        └── (setup 後: lib.typ, typst-*.typ, _quarto-publish.yml, _book/ … .gitignore)
+quarto-template-<版>/ ← リリース ZIP を展開したもの（発行者はここで作業する）
+└── template/     ← 様式・変換・ビルドの実体（このフォルダ。git 共有しない）
+    ├── lib.typ, typst-template.typ, typst-show.typ, quarto-publish.yml,
+    ├── design-doc.lua, design-doc.css, postprocess-html.js, mermaid-config.json,
+    ├── package.json, VERSION, scaffold/,
+    ├── init-doc.*, update-doc.*, setup.*, build-qmd.*, build-html.*, render-diagrams.sh,
+    └── (setup 実行後: puppeteer.json / node_modules … いずれも .gitignore)
+
+order-design/     ← 設計書リポジトリ（git 共有。執筆者はこれだけ clone する）
+└── docs/         ← 執筆フォルダ（名前は自由）
+    ├── _quarto.yml, index.qmd, chapters/, diagrams/     … 原稿
+    ├── design-doc.lua, design-doc.css, postprocess-html.js,
+    │   mermaid-config.json, .template-version           … 機構（コミットする）
+    ├── design-doc.pdf                                   … 中間版（コミットする）
+    └── (setup 後: lib.typ, typst-*.typ, _quarto-publish.yml, _book/ … .gitignore)
 ```
+
+保守者のリポジトリでは `template/` がリポジトリ直下にあり、`docs/`（サンプル）と
+`manual/`（本書を含むマニュアル原稿）が兄弟として並ぶ。**どちらの配置でも動く**
+（下記の通りスクリプトは自分の位置を自力で求める）。
 
 - ビルドは `./template/build-qmd.sh <執筆フォルダのパス>`（省略時 `docs`）。
   スクリプトは `TEMPLATE_ROOT` を渡すので、`template/` がどこにあってもよい。
+- **すべてのスクリプトが自分の位置を自力で求める**（`.sh` は
+  `$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)`、`.bat` は `%~dp0`）。したがって
+  スクリプトを相対・絶対どちらで呼んでも `TEMPLATE_ROOT` は正しく決まり、CWD に
+  依存しない。**CWD 基準で解決されるのは引数側だけ**なので、執筆フォルダ／
+  設計書リポジトリのパスは絶対パスで渡すのが安全。
+  `build-*` / `setup` / `update-doc` は `_quarto.yml` の有無を確認してから動くため
+  パス誤りは即エラーになるが、`init-doc` は「無いものを作る」ので検出できない。
 - `_quarto.yml` は filter を**同じフォルダ内の相対名**（`design-doc.lua`）で参照する。
   `design-doc.lua` は `quarto.project.directory` から執筆フォルダ（ROOT）を自力で特定し、
   `TEMPLATE_ROOT`（無ければ `ROOT/../template`）を TMPL とする。**TMPL は SVG 化にしか
@@ -90,11 +102,12 @@
 ### ビルドコマンド
 
 ```
-# 発行者が実行する（末尾は執筆フォルダのパス。省略すると docs）
-./template/init-doc.sh ../order-design        # 設計書リポジトリを新規作成（最初の1回）
-./template/update-doc.sh ../order-design/docs # 機構ファイルを最新の template に更新
-./template/build-qmd.sh ../order-design/docs  # → <執筆フォルダ>/design-doc.pdf
-./template/build-html.sh ../order-design/docs # → <執筆フォルダ>/_book/index.html
+# 発行者が実行する（展開フォルダで cd してから。末尾は執筆フォルダのパス＝絶対推奨）
+cd ~/tools/quarto-template-1.0.0
+./template/init-doc.sh ~/work/order-design        # 設計書リポジトリを新規作成（最初の1回）
+./template/update-doc.sh ~/work/order-design/docs # 機構ファイルを最新の template に更新
+./template/build-qmd.sh ~/work/order-design/docs  # → <執筆フォルダ>/design-doc.pdf
+./template/build-html.sh ~/work/order-design/docs # → <執筆フォルダ>/_book/index.html
 ```
 
 `build-*` はどちらも執筆フォルダの `_book/` を出力先に使い、**後から走ったほうが前の

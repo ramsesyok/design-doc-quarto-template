@@ -3,7 +3,7 @@
 #
 # 使い方（template/ の位置はどこでもよい。執筆フォルダのパスを渡す）:
 #   ./template/build-qmd.sh <執筆フォルダのパス>     # 省略時は docs
-#   例) ./template/build-qmd.sh ../受注管理-設計書/docs
+#   例) ./template/build-qmd.sh ~/work/order-design/docs
 #
 # 執筆者が編集するのは <執筆フォルダ>/chapters 以下の qmd と _quarto.yml だけ。
 # 様式・変換・テンプレートの実体はすべて template/（このスクリプトと同じ場所）にある。
@@ -19,7 +19,7 @@ TEMPLATE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONTENT_DIR="${1:-docs}"
 if [ ! -f "$CONTENT_DIR/_quarto.yml" ]; then
   echo "エラー: '$CONTENT_DIR/_quarto.yml' が見つかりません。" >&2
-  echo "       第1引数に執筆フォルダのパスを渡してください（例: ../受注管理-設計書/docs）。" >&2
+  echo "       第1引数に執筆フォルダのパスを渡してください（例: ~/work/order-design/docs）。" >&2
   exit 1
 fi
 CONTENT_ROOT="$(cd "$CONTENT_DIR" && pwd)"

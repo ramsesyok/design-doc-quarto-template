@@ -2,7 +2,7 @@
 # 執筆フォルダの「機構ファイル」を template/ の内容に更新する（発行者が実行）。
 #
 # 使い方（template/ の位置はどこでもよい。執筆フォルダのパスを渡す）:
-#   ./template/update-doc.sh <執筆フォルダのパス>      # 例: ../受注管理-設計書/docs
+#   ./template/update-doc.sh <執筆フォルダのパス>      # 例: ~/work/order-design/docs
 #
 # 置くもの（doc リポジトリでは**コミット対象**。執筆者はこれで HTML を出せる）:
 #   design-doc.lua        … 独自記法（.tbl / .ipo / .landscape / mermaid）の変換
@@ -20,7 +20,7 @@ TEMPLATE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONTENT_DIR="${1:-docs}"
 if [ ! -f "$CONTENT_DIR/_quarto.yml" ]; then
   echo "エラー: '$CONTENT_DIR/_quarto.yml' が見つかりません。" >&2
-  echo "       第1引数に執筆フォルダのパスを渡してください（例: ../受注管理-設計書/docs）。" >&2
+  echo "       第1引数に執筆フォルダのパスを渡してください（例: ~/work/order-design/docs）。" >&2
   exit 1
 fi
 CONTENT_ROOT="$(cd "$CONTENT_DIR" && pwd)"

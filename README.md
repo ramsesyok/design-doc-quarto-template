@@ -23,12 +23,20 @@
 といった事故を防ぐため）。
 
 ```
-発行者の作業フォルダ/
-├── template/            ← リリースを展開したもの（git 管理外）
-└── order-design/        ← 設計書リポジトリ（git 共有。執筆者はこれだけ clone する）
+C:\tools\
+└── quarto-template-1.0.0/   ← リリース ZIP を展開したもの（git 管理外）
+    ├── README.md, ADVANCED.md
+    ├── manual/              ← 利用マニュアル（執筆者へ配る）
+    └── template/            ← ここのスクリプトを実行する
+
+C:\work\
+└── order-design/            ← 設計書リポジトリ（git 共有。執筆者はこれだけ clone する）
     ├── .gitignore, .gitattributes, README.md, .vscode/settings.json
-    └── docs/            ← 執筆フォルダ（原稿＋機構ファイル）
+    └── docs/                ← 執筆フォルダ（原稿＋機構ファイル）
 ```
+
+**展開したフォルダはそのまま使います**（中身を取り出して並べ替える必要はありません）。
+展開先に `cd` して、設計書リポジトリのパスを渡してスクリプトを実行します。
 
 ## できること
 
@@ -49,20 +57,25 @@
 
 ## 1. 発行者: 設計書リポジトリを作る
 
-保守者から受け取った**リリースアセット**（`template/` 一式＋利用マニュアルの PDF/HTML）を
-展開し、設計書リポジトリを置きたい場所を指定して実行します。
+保守者から受け取った**リリースアセット**（`quarto-template-<版>.zip`）を展開し、
+展開先に `cd` してから、設計書リポジトリを置きたい場所を指定して実行します。
 
 ```bat
 :: 事前に Quarto を入れておく（https://quarto.org/docs/get-started/）
-template\init-doc.bat ..\order-design
+cd C:\tools\quarto-template-1.0.0
+.\template\init-doc.bat C:\work\order-design
 ```
 
 ```bash
 # macOS / Linux / Git Bash
-./template/init-doc.sh ../order-design
+cd ~/tools/quarto-template-1.0.0
+./template/init-doc.sh ~/work/order-design
 ```
 
 - 第2引数で執筆フォルダ名を変えられます（既定 `docs`）。
+- **設計書リポジトリのパスは絶対パスで渡してください。** 相対パスは「いまいる
+  フォルダ」からの相対として解釈されるため、`cd` した場所を間違えると、エラーに
+  ならないまま意図しない場所にリポジトリができます。
 - **パスは ASCII で** — 日本語のフォルダ名は使えません（Windows で mermaid の
   SVG 化が失敗します。`init-doc` が検出して止めます）。
 - 既にあるファイルは上書きしません。最後に HTML を1回ビルドして、執筆者が確認できる
@@ -87,14 +100,16 @@ VSCode で `.qmd` を開いて **Preview**（`Ctrl+Shift+K`）を押せば、保
 
 ## 3. 発行者: 発行版・中間版を作る
 
-設計書リポジトリを最新にしてから、`template/` 側のスクリプトにパスを渡します。
+設計書リポジトリを最新にしてから、展開先で `template/` 側のスクリプトにパスを渡します。
 
 ```bat
+cd C:\tools\quarto-template-1.0.0
+
 :: PDF → <執筆フォルダ>\design-doc.pdf（中間版としてコミットして共有する）
-template\build-qmd.bat ..\order-design\docs
+.\template\build-qmd.bat C:\work\order-design\docs
 
 :: 配布 HTML → <執筆フォルダ>\_book\index.html
-template\build-html.bat ..\order-design\docs
+.\template\build-html.bat C:\work\order-design\docs
 ```
 
 - ビルドの先頭で `setup` が走り、機構ファイルと PDF 用の部品が自動で配置されます。
@@ -110,8 +125,12 @@ template\build-html.bat ..\order-design\docs
 保守者から新しいリリースを受け取ったら、機構ファイルを設計書リポジトリへ入れ直します。
 
 ```bat
-template\update-doc.bat ..\order-design\docs
+cd C:\tools\quarto-template-1.1.0
+.\template\update-doc.bat C:\work\order-design\docs
 ```
+
+新しいリリースは**別のフォルダに展開されます**（`quarto-template-1.1.0`）。
+古い版のフォルダは残しておけるので、必要なら戻せます。
 
 `design-doc.lua` / `design-doc.css` / `postprocess-html.js` / `mermaid-config.json` と
 版を記録する `.template-version` が更新されます。**git の差分として出るのでコミットして
