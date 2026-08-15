@@ -16,7 +16,7 @@ README は最短手順にしてあります。このファイルには、その�
 
 ```
 【保守者】design-doc-quarto-template/     … このリポジトリ
-├── README.md / ADVANCED.md / AUTHORING.md
+├── README.md / ADVANCED.md
 ├── .gitignore / .gitattributes / .vscode/settings.json
 ├── docs/                     … サンプル（受注管理システム。記法の実例＋様式の検証用）
 ├── manual/                   … 利用マニュアルの原稿（執筆フォルダの一つ）
@@ -236,3 +236,42 @@ MERMAID_SVG=1 quarto render --to html
 set "MERMAID_SVG=1"
 quarto render --to html
 ```
+
+## 6. リリースを作る（保守者）
+
+発行者へ配る一式は `make-release` で作ります。マニュアルのビルドから zip 化までを
+1コマンドで行うので、**ビルド順（PDF → HTML）の間違い**や入れ忘れが起きません。
+
+```bat
+template\make-release.bat
+```
+
+```bash
+./template/make-release.sh
+```
+
+出力は `release/design-doc-template-<版>/`（展開済み）と同名の `.zip` です。
+第1引数で出力先を変えられます。
+
+| オプション | 効果 |
+|---|---|
+| `--with-node-modules` | `template/node_modules` も同梱する（閉域向け。約 330MB 増える） |
+| `--with-sample` | サンプル文書（`docs/`）も同梱する（原稿と図だけ。生成物は除く） |
+| `--no-build` | マニュアルを再ビルドせず、既にある成果物を使う |
+
+同梱されるもの:
+
+```
+design-doc-template-<版>/
+├── README-release.md   … 発行者向けのはじめかた
+├── README.md / ADVANCED.md
+├── manual/利用マニュアル.pdf, manual/html/   … 執筆者へ配る
+└── template/           … node_modules と puppeteer.json は除く
+```
+
+- 版は `template/VERSION` から取ります。**リリース前に上げてください**（設計書
+  リポジトリ側の `.template-version` と突き合わせて更新要否が判断されます）。
+- 配布物の中の `.bat` は CRLF、`.sh` は LF に正規化されます。**LF のままの `.bat` は
+  cmd.exe が `for` / `if` の複数行ブロックを解釈できず壊れます**（実測）。
+- zip 化は `zip` → bsdtar（Windows 同梱の `tar.exe`）→ python の順に試します。
+  **GNU tar は zip を作れません**（`tar -a -c -f x.zip` は中身が tar のままになる）。

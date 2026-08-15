@@ -53,6 +53,8 @@ page-*.png
 
 # ==== 配布スナップショット（配布時に作り直す） ====
 *.zip
+# make-release の出力先（既定）
+/release/
 
 # ==== OS / エディタ ====
 .DS_Store

@@ -14,6 +14,8 @@
 | mermaid のテーマ・フォント       | `mermaid-config.json`       | SVG 化とプレビューの共通ソース          |
 | `_quarto.yml` の設定項目の追加   | `typst-show.typ` ＋ `lib.typ` | 引数として渡す                        |
 | 設計書リポジトリの雛形           | `template/scaffold/`        | `init-doc` が展開する                   |
+| リリースの中身・手順             | `template/make-release.*`   | 配布物の構成を変えるときはここ          |
+| 発行者向けのはじめかた           | `template/release-README.md`| リリース直下に置かれる案内              |
 :::
 
 ::: {.callout-important}

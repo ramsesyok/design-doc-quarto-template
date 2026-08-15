@@ -25,6 +25,8 @@ design-doc-quarto-template/
     ├── package.json          … mermaid-cli（mermaid を使う場合のみ npm ci）
     ├── scaffold/             … 設計書リポジトリの雛形
     ├── init-doc.sh / .bat    … 設計書リポジトリを新規作成
+    ├── make-release.sh / .bat … 発行者へ配るリリース一式を作る
+    ├── release-README.md     … リリース直下に置く案内（発行者向け）
     ├── update-doc.sh / .bat  … 機構ファイルを更新
     ├── setup.sh / .bat       … ビルド準備（機構＋PDF 用部品＋ブラウザ検出）
     ├── build-qmd.sh / .bat   … book → PDF

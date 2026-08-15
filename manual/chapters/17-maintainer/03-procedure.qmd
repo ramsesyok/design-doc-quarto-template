@@ -10,8 +10,17 @@
 
 4. サンプル文書（`docs/`）で PDF・HTML の両方を出し、体裁を確認する。
 5. 本書（`manual/`）でも出力を確認する（記法の網羅度が高いため、退行を見つけやすい）。
-6. リリースを作る（`template/` 一式＋本書の PDF / HTML）。発行者はこれを受け取り、
-   `update-doc` で利用中の設計書リポジトリへ反映する。
+6. リリースを作る。発行者はこれを受け取り、`update-doc` で利用中の設計書リポジトリへ
+   反映する。
+
+   ```bat
+   .	emplate\make-release.bat
+   ```
+
+   `release\design-doc-template-<版>.zip` に、`template/` 一式と本書（PDF / HTML）が
+   まとまる。マニュアルのビルド（PDF → HTML の順）も中で行うため、順序の間違いや
+   入れ忘れが起きない。閉域向けに `template/node_modules` も入れるときは
+   `--with-node-modules` を付ける。
 
 ::: {.callout-warning}
 `setup` の再実行を忘れると、執筆フォルダに古い機構ファイルが残ったままになり、
