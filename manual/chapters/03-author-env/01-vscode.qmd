@@ -1,4 +1,4 @@
-## VSCode と Quarto 拡張
+## VSCode と Quarto 拡張　{#sec-vscode}
 
 ### VSCode の導入
 
