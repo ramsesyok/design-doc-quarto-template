@@ -15,7 +15,7 @@ README は最短手順にしてあります。このファイルには、その�
 `template/` は設計書リポジトリの中に置きません。
 
 ```
-【保守者】design-doc-quarto-template/     … このリポジトリ
+【保守者】quarto-template/                … このリポジトリ
 ├── README.md / ADVANCED.md
 ├── .gitignore / .gitattributes / .vscode/settings.json
 ├── docs/                     … サンプル（受注管理システム。記法の実例＋様式の検証用）
