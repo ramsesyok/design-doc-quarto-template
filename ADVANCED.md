@@ -38,7 +38,7 @@ README は最短手順にしてあります。このファイルには、その�
     ├── setup.sh / setup.bat  … ビルド準備（機構＋PDF 用部品の配置、mermaid 用ブラウザ設定）
     ├── build-qmd.sh / .bat   … book → PDF
     ├── build-html.sh / .bat  … book → 静的 HTML（章ごと分割）
-    └── render-diagrams.sh    … diagrams/*.mmd → SVG（静的図を更新したときだけ）
+    └── render-diagrams.sh / .bat … diagrams/*.mmd → SVG（静的図を更新したときだけ）
 
 【発行者・執筆者】order-design/            … 設計書リポジトリ（git で共有）
 ├── .gitignore / .gitattributes / README.md / .vscode/settings.json
@@ -231,8 +231,20 @@ Chrome/Edge がまったく無い環境や、`--no-sandbox` 等の追加オプ�
 Chrome/Edge は不要）。
 
 `diagrams/order-flow.svg` のように qmd から直接参照している静的図を更新したいときは、
-`diagrams/*.mmd` を編集して `./template/render-diagrams.sh ~/work/order-design/docs` を
-実行します（`.bat` 版はありません。Windows では Git Bash から実行してください）。
+`diagrams/*.mmd` を編集して次を実行します。
+
+```bat
+cd C:\tools\quarto-template-1.1.0
+.\template\render-diagrams.bat C:\work\order-design\docs
+```
+
+```bash
+cd ~/tools/quarto-template-1.1.0
+./template/render-diagrams.sh ~/work/order-design/docs
+```
+
+`diagrams/` 直下の `*.mmd` だけが対象です（章本文の ```` ```mermaid ```` フェンスは
+ビルド時に `design-doc.lua` が自動変換するので対象外）。
 
 ## 5. 環境変数
 

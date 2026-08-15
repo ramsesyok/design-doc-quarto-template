@@ -31,5 +31,5 @@ quarto-template/
     ├── setup.sh / .bat       … ビルド準備（機構＋PDF 用部品＋ブラウザ検出）
     ├── build-qmd.sh / .bat   … book → PDF
     ├── build-html.sh / .bat  … book → 静的 HTML（章ごと分割）
-    └── render-diagrams.sh    … diagrams/*.mmd → SVG（静的図を更新したときだけ）
+    └── render-diagrams.sh / .bat … diagrams/*.mmd → SVG（静的図を更新したときだけ）
 ```
