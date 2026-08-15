@@ -1,0 +1,26 @@
+## 何をどこで直すか
+
+::: {.tbl caption="調整箇所の対応" label="tbl-maint-where" widths="34,26,40"}
+| 直したいもの                     | 直す場所                    | 備考                                   |
+|----------------------------------|-----------------------------|----------------------------------------|
+| 外枠の寸法・余白                 | `lib.typ`                   | 冒頭の「【1】調整パラメータ」に集約     |
+| フォント・文字サイズ             | `lib.typ`                   | 同上                                   |
+| 章番号・図表番号の書式           | `lib.typ`                   | 採番の実装                             |
+| 番号付きリストの記号             | `lib.typ`                   | `ENUM-NUMBERING`                       |
+| IPO 図の欄割り・横向きの体裁     | `lib.typ`                   | ―                                     |
+| 独自記法の追加・変更             | `design-doc.lua`            | `.tbl` / `.landscape` / `.ipo` / mermaid |
+| HTML の見た目                    | `design-doc.css`            | ―                                     |
+| HTML の図表番号の振り直し        | `postprocess-html.js`       | Quarto の採番より後段で走る必要がある   |
+| mermaid のテーマ・フォント       | `mermaid-config.json`       | SVG 化とプレビューの共通ソース          |
+| `_quarto.yml` の設定項目の追加   | `typst-show.typ` ＋ `lib.typ` | 引数として渡す                        |
+| 設計書リポジトリの雛形           | `template/scaffold/`        | `init-doc` が展開する                   |
+:::
+
+::: {.callout-important}
+`design-doc.lua`・`design-doc.css`・`postprocess-html.js`・`mermaid-config.json` は
+**設計書リポジトリへ配布される**（コミットされる）。これらを直したら
+`template/VERSION` を上げ、利用側の発行者に `update-doc` の実行を依頼する。
+:::
+
+様式の調整パラメータは `template/lib.typ` の冒頭「【1】調整パラメータ」に
+集約してある。まずここを見ればよい。

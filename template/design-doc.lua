@@ -85,7 +85,7 @@ local function render_mermaid(code)
   local hash = pandoc.utils.sha1(code):sub(1, 8)
   local svg = DIAG .. '/mmd-' .. hash .. '.svg'
   local rel = diag_rel() .. '/mmd-' .. hash .. '.svg'
-  if file_exists(svg) then return rel end
+  if file_exists(svg) then return rel, svg end
   pandoc.system.make_directory(DIAG, true)
   local mmd = DIAG .. '/mmd-' .. hash .. '.mmd'
   local f = assert(io.open(mmd, 'w')); f:write(code); f:close()
@@ -115,7 +115,43 @@ local function render_mermaid(code)
       '\n  `./template/setup.sh <執筆フォルダのパス>` を実行するか、' ..
       '\n  EXECUTABLE_BROWSER=<chrome/msedge の実行ファイル> を指定してください。')
   end
-  return rel
+  return rel, svg
+end
+
+-- 図の幅（本文幅に対する %）。縦長の図をそのまま 90% で貼ると、高さが本文領域を
+-- 超えて**枠からはみ出し、上下が切れる**（実測）。SVG の viewBox から縦横比を読み、
+-- 高すぎる図は幅を絞って収める。
+--   本文領域は A4 縦で 168 x 246mm（lib.typ の PAGE-P-MARGIN から）。
+--   幅 90% = 151mm のとき、高さが 234mm を超えると収まらない → 比の上限 ≒ 1.55。
+-- lib.typ の余白を変えたら、この 2 定数も見直すこと。
+local FIG_W_PCT = 90
+local FIG_MAX_ASPECT = 1.55
+
+-- SVG の縦横比（高さ/幅）。viewBox → width/height 属性の順に見る。読めなければ nil。
+local function svg_aspect(path)
+  local head = nil
+  local f = io.open(path, 'r')
+  if f then head = f:read(2048); f:close() end
+  if not head then return nil end
+  local w, h = head:match('viewBox%s*=%s*"%s*[%d%.%-]+%s+[%d%.%-]+%s+([%d%.]+)%s+([%d%.]+)')
+  if not w then
+    w = head:match('<svg[^>]-%swidth%s*=%s*"([%d%.]+)')
+    h = head:match('<svg[^>]-%sheight%s*=%s*"([%d%.]+)')
+  end
+  w, h = tonumber(w or ''), tonumber(h or '')
+  if not w or not h or w <= 0 then return nil end
+  return h / w
+end
+
+-- 図に付ける width 属性（例 '90%'）。縦長なら上限比に収まるまで絞る。
+local function fig_width(path)
+  local a = svg_aspect(path)
+  local pct = FIG_W_PCT
+  if a and a > FIG_MAX_ASPECT then
+    pct = math.floor(FIG_W_PCT * FIG_MAX_ASPECT / a + 0.5)
+    if pct < 20 then pct = 20 end
+  end
+  return pct .. '%'
 end
 
 -- mermaid をベクター SVG に焼くのは PDF(typst) と、配布 HTML（build-html.sh が
@@ -153,8 +189,9 @@ end
 function CodeBlock(el)
   if el.classes:includes('mermaid') then
     if WANT_SVG then
-      local svg = render_mermaid(el.text)
-      local img = pandoc.Image({}, svg, '', pandoc.Attr('', {}, { { 'width', '90%' } }))
+      local rel, abs = render_mermaid(el.text)
+      local img = pandoc.Image({}, rel, '',
+        pandoc.Attr('', {}, { { 'width', fig_width(abs) } }))
       return pandoc.Para({ img })
     end
     -- 執筆者プレビュー: Quarto native と同じ <pre class="mermaid mermaid-js"> を出す。

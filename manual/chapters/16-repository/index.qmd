@@ -4,121 +4,15 @@
 **設計書リポジトリ**（発行者が作り、執筆者が clone する）の2つがあり、
 `template/` は設計書リポジトリに含まれない。
 
-## 様式のリポジトリ（保守者）
+{{< include 01-template-repo.qmd >}}
 
-```text
-design-doc-quarto-template/
-├── README.md                … 役割ごとの最短手順（入口）
-├── ADVANCED.md              … 構成・配布の単位・ビルド詳細（発行者・保守者）
-├── .gitignore
-├── .gitattributes           … 改行コードの固定（*.sh=LF / *.bat=CRLF / 機構=LF）
-├── .vscode/settings.json    … サンプル設定（日本語を等幅にする）
-│
-├── docs/                     … サンプル（受注管理システム。記法の実例・様式の検証用）
-├── manual/                   … 本書の原稿（執筆フォルダの一つ）
-│
-└── template/                 … 様式・変換・ビルドの実体
-    ├── PIPELINE.md           … 出力経路と様式調整箇所の解説（保守者向け）
-    ├── VERSION               … テンプレートの版
-    ├── lib.typ               … 様式の単一ソース（外枠・採番・IPO・横向き）
-    ├── typst-template.typ    … Quarto 既定テンプレートの差し替え口
-    ├── typst-show.typ        … _quarto.yml の設定を様式の引数へ渡す
-    ├── quarto-publish.yml    … PDF 用プロファイルの元
-    ├── design-doc.lua        … 独自記法（.tbl / .landscape / .ipo / mermaid）の変換
-    ├── design-doc.css        … HTML の見た目
-    ├── postprocess-html.js   … HTML の図表番号を「章.節-連番」に振り直す後処理
-    ├── mermaid-config.json   … mermaid 設定（htmlLabels:false 必須）
-    ├── package.json          … mermaid-cli（mermaid を使う場合のみ npm ci）
-    ├── scaffold/             … 設計書リポジトリの雛形
-    ├── init-doc.sh / .bat    … 設計書リポジトリを新規作成
-    ├── update-doc.sh / .bat  … 機構ファイルを更新
-    ├── setup.sh / .bat       … ビルド準備（機構＋PDF 用部品＋ブラウザ検出）
-    ├── build-qmd.sh / .bat   … book → PDF
-    ├── build-html.sh / .bat  … book → 静的 HTML（章ごと分割）
-    └── render-diagrams.sh    … diagrams/*.mmd → SVG（静的図を更新したときだけ）
-```
+{{< include 02-doc-repo.qmd >}}
 
-## 設計書リポジトリ（発行者・執筆者）
+{{< include 03-files.qmd >}}
 
-```text
-order-design/                 … 名前は文書ごとに決める（ASCII）
-├── .gitignore
-├── .gitattributes
-├── .vscode/settings.json
-├── README.md                 … 執筆者向けの入口（init-doc が置く）
-└── docs/                     … 執筆フォルダ（名前は自由）
-    ├── _quarto.yml           … book 設定（章の並び・doc-number・post-render）
-    ├── index.qmd             … 前付け（採番されない）
-    ├── chapters/             … 本文
-    ├── diagrams/             … 静的図と mermaid 生成 SVG のキャッシュ置き場
-    ├── design-doc.pdf        … 中間版 PDF（発行者が更新・コミット）
-    ├── design-doc.lua        ┐
-    ├── design-doc.css        │ 機構ファイル（コミットする。実体は template/）
-    ├── postprocess-html.js   │
-    ├── mermaid-config.json   ┘
-    └── .template-version     … 置かれたテンプレートの版
-```
+{{< include 04-distributed.qmd >}}
 
-## ファイルの役割
+{{< include 05-generated.qmd >}}
 
-::: {.tbl caption="template/ の主なファイル" label="tbl-repo-files" widths="26,20,54"}
-| ファイル                | 効く先        | 役割                                                       |
-|-------------------------|---------------|------------------------------------------------------------|
-| `lib.typ`               | PDF           | 様式の単一ソース。外枠・採番・IPO・横向きの実装             |
-| `typst-template.typ`    | PDF           | Quarto 既定テンプレートの差し替え口。`lib.typ` を取り込む   |
-| `typst-show.typ`        | PDF           | `_quarto.yml` の設定を様式の引数へ渡す                      |
-| `quarto-publish.yml`    | PDF           | typst 用の設定。`_quarto-publish.yml` として置かれる        |
-| `design-doc.lua`        | PDF ＋ HTML   | 独自記法（`.tbl` / `.landscape` / `.ipo` / mermaid）の変換  |
-| `design-doc.css`        | HTML          | HTML の見た目                                               |
-| `postprocess-html.js`   | HTML          | 図表番号を「章.節-連番」に振り直す後処理                    |
-| `mermaid-config.json`   | PDF ＋ HTML   | mermaid の設定（`htmlLabels:false` が必須）                 |
-| `scaffold/`             | ―            | 設計書リポジトリの雛形（`init-doc` が展開）                 |
-:::
+{{< include 06-docs-map.qmd >}}
 
-## 設計書リポジトリに配られるもの
-
-::: {.tbl caption="配布と管理の対応" label="tbl-repo-dist" widths="34,20,46"}
-| ファイル | 管理 | 置く人・タイミング |
-|---|---|---|
-| `design-doc.lua`・`design-doc.css`・`postprocess-html.js`・`mermaid-config.json` | ○ | `init-doc`／`update-doc`／ビルド時の `setup` |
-| `.template-version` | ○ | 同上（`template/VERSION` の写し） |
-| `design-doc.pdf` | ○ | 発行者が中間版・発行版を作ったとき |
-| `lib.typ`・`typst-template.typ`・`typst-show.typ`・`_quarto-publish.yml` | × | 発行者の `setup`（PDF を出すときだけ） |
-| `_book/`・`diagrams/mmd-*.svg` | × | ビルド |
-:::
-
-::: {.callout-note}
-機構ファイルは**コミットされる**ので、執筆者は clone するだけで HTML を出せる。
-テンプレートが更新されたら発行者が `update-doc` で入れ直し、差分をコミットする。
-:::
-
-## 生成物
-
-次のものは生成物であり、設計書リポジトリの `.gitignore` により管理対象外としてある。
-
-| 生成物 | 生成元 |
-|--------|--------|
-| `<執筆フォルダ>/lib.typ`・`typst-*.typ`・`_quarto-publish.yml` | `setup` が `template/` からコピー |
-| `<執筆フォルダ>/_book/` | ビルド |
-| `<執筆フォルダ>/diagrams/mmd-*.svg` | mermaid の変換キャッシュ |
-| `template/node_modules/` | `npm ci` |
-| `template/puppeteer.json` | `setup` のブラウザ検出 |
-
-**`<執筆フォルダ>/design-doc.pdf` は例外**で、中間版として管理対象にしてある（12章）。
-
-## 既存ドキュメントとの関係
-
-本書はテンプレートのリポジトリ同梱の文書を、役割ごとに再構成したものである。
-
-::: {.tbl caption="既存ドキュメントとの対応" label="tbl-doc-map" widths="26,34,40"}
-| ドキュメント            | 内容                             | 本書での対応          |
-|-------------------------|----------------------------------|-----------------------|
-| `README.md`             | 役割ごとの最短手順               | 1章・2章・4章・12章   |
-| `ADVANCED.md`           | 構成・配布・ビルド詳細・mermaid・環境変数 | 11章・12章・16章 |
-| `template/PIPELINE.md`  | 変換の内部と様式の調整箇所       | 17章                  |
-:::
-
-::: {.callout-note}
-記法をまとめた `AUTHORING.md` は本書 6章〜10章に移行済みである。
-執筆者に配るのは本書（PDF / HTML）とする。
-:::

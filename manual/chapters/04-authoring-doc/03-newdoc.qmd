@@ -1,4 +1,29 @@
-## 文書全体の設定（`_quarto.yml`） {#sec-quarto-yml}
+## 新しい文書を作る・増やす {#sec-newdoc}
+
+**この節の作業は発行者が行う。** 執筆者は、できあがった設計書リポジトリを
+clone して書き始めればよい。
+
+### 新しい設計書リポジトリを作る
+
+`init-doc` で雛形を作る（@sec-init）。作られるのは最小限の骨組み
+（`_quarto.yml`・前付け・1章分の雛形・図の置き場）だけなので、続けて章立てを整える。
+
+```bat
+.\template\init-doc.bat ..\order-design
+```
+
+1. `_quarto.yml` の `title`・`doc-number`・`company-ja` などを文書に合わせる
+   （@sec-quarto-yml）。
+2. `index.qmd`（前付け）の改正履歴・用語を書き換える。
+3. `chapters/` に章のフォルダを作り、`_quarto.yml` の `chapters:` に並べる
+   （@sec-chapters）。
+
+::: {.callout-tip}
+章立てはチームや文書の種類で決まっていることが多い。**発行者が最初に章の雛形まで
+作って共有する**と、執筆者は本文だけに集中できる。
+:::
+
+### 文書全体の設定（`_quarto.yml`） {#sec-quarto-yml}
 
 表題・資料番号・会社名などは `_quarto.yml` の先頭で設定する。**本文には書かない**。
 
@@ -25,7 +50,7 @@ toc-title: 目 次          # 目次の見出し
 toc-depth: 3              # 目次に載せる見出しの深さ
 ```
 
-### 主な設定項目
+#### 主な設定項目
 
 ::: {.tbl caption="_quarto.yml の主な設定項目" label="tbl-settings" widths="20,14,66"}
 | 項目           | 既定    | 内容                                                             |
@@ -45,7 +70,7 @@ toc-depth: 3              # 目次に載せる見出しの深さ
 
 目次は章番号・リーダー線・実ページ番号つきで自動生成され、本文を直せば自動で追従する。
 
-### スペック様式（`spec: true`）
+#### スペック様式（`spec: true`）
 
 `spec: true` にすると、資料番号欄のかわりに**表題欄**（左に「スペック / SPECIFICATION」、
 右にスペック番号＝`doc-number` と改訂符号＝`doc-revision`）を全ページの上部に出す様式へ
@@ -60,4 +85,36 @@ toc-depth: 3              # 目次に載せる見出しの深さ
 様式を切り替えても原稿を書き直す必要はない。
 :::
 
-{{< pagebreak >}}
+### 1つのリポジトリに文書を増やす
+
+同じ設計書リポジトリに別の文書を足すときは、執筆フォルダをもう1つ作る。
+既存の執筆フォルダをコピーし、機構ファイルを配置し直せばよい。
+
+```bat
+xcopy /E /I ..\order-design\docs ..\order-design\design-doc2
+.\template\update-doc.bat ..\order-design\design-doc2
+```
+
+ビルドはフォルダのパスを渡すだけである。
+
+```bat
+.\template\build-qmd.bat ..\order-design\design-doc2
+```
+
+### 執筆フォルダを改名する
+
+執筆フォルダの名前は自由である。
+
+```bat
+git mv docs design-doc
+.\template\build-qmd.bat ..\order-design\design-doc
+```
+
+`_quarto.yml` は機構ファイルを**同じフォルダ内の相対名**で参照し、ビルドスクリプトは
+渡されたパスを基準に動くため、**改名しても設定の書き換えは不要**である。
+
+::: {.callout-warning}
+フォルダ名・パスは**英数字（ASCII）**にすること。日本語のフォルダ名にすると、
+Windows では mermaid 図のベクター化（PDF・配布 HTML）が失敗する
+（@sec-ascii-path）。
+:::

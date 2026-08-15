@@ -61,6 +61,11 @@
 // spec: true の表題欄（ヘッダ領域）の書体。MS Gothic を既定にし、無い環境では JP-SANS に落ちる。
 #let SPEC-HEAD-FONT = ("MS Gothic", "Yu Gothic", "MS PGothic")
 
+// ---- 色 ----
+// コードブロックの背景。Quarto の Skylighting() が使う定数と同じ値にしておく
+// （この色で block を特定して両端揃えを切るため。§本文の体裁 の show ルール参照）。
+#let CODE-BG = rgb("#f1f3f5")
+
 // ---- 線 ----
 #let BORDER = rgb("#b0b0b0")   // 本文中の表罫線（様式ではなく中身の罫線）
 #let FRAME = 0.8pt + black     // 様式の外枠。太さを変えるならここ
@@ -441,6 +446,22 @@
   show par: it => context {
     if _in-list.get() { it } else { pad(left: _sec-indent.get() * HEAD-INDENT-STEP, it) }
   }
+  // コードブロック（```…```）には本文の体裁を持ち込まない。
+  // 本文は justify: true（両端揃え）なので、そのままだと**長い行が折り返されたときに
+  // 単語間が引き伸ばされて均等割り付けのように見える**（コマンド行でよく起きる）。
+  // 先頭字下げも同様に不要。
+  //
+  // 対象が2種類あることに注意（実測）:
+  //   1) 素の raw ブロック（構文強調が無い場合）
+  //   2) Quarto の Skylighting()（構文強調がある場合）… ```lang フェンスはこちら。
+  //      raw 要素ではなく「トークンごとの inline raw を並べた**ふつうの段落**」を
+  //      block で包んだものなので、raw の show ルールでは捕まえられない。
+  //      背景色（CODE-BG = Quarto 側の定数）で block を特定する。
+  show raw.where(block: true): it => {
+    set par(justify: false, first-line-indent: 0pt)
+    it
+  }
+  show block.where(fill: CODE-BG): set par(justify: false, first-line-indent: 0pt)
   // 箇条書き（list/enum）は「最上位のリストだけ」を見出しレベルぶん＋LIST-INDENT
   // 字下げする（段落の先頭字下げと頭を揃える）。入れ子のリストには重ね掛けせず、
   // Typst 標準のネスト字下げに任せる（重ね掛けすると段ごとに右へ流れてしまう）。

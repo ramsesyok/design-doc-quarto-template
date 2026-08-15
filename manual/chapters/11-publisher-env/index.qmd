@@ -7,32 +7,11 @@
 役割である。**mermaid 図をベクター化する経路にだけ**、Quarto 以外のソフトウェアが
 必要になる。
 
-## 必要なものの整理
+{{< include 01-need.qmd >}}
 
-::: {.tbl caption="発行者に必要な追加ソフトウェア" label="tbl-pub-need" widths="26,26,48"}
-| 追加するもの        | 必要になる条件           | 用途                              |
-|---------------------|--------------------------|-----------------------------------|
-| `template/` 一式    | 常に                     | 様式・変換・ビルドの実体          |
-| node ＋ mermaid-cli | mermaid 図を含む文書のとき | mermaid をベクター SVG に焼き込む |
-| Chrome / Edge       | mermaid 図を含む文書のとき | mermaid の SVG 化（描画エンジン） |
-:::
+{{< include 02-node.qmd >}}
 
-::: {.callout-note}
-**図表番号の後処理に node は要らない。** 「図 3.2-1」形式への振り直しは Quarto に
-同梱された実行環境で動くため、mermaid を使わない文書なら **Quarto だけで PDF も
-配布 HTML も出力できる**。
-:::
+{{< include 03-mermaid.qmd >}}
 
-自分が扱う文書に mermaid が含まれるかは、原稿を検索すれば分かる。
+{{< include 04-offline.qmd >}}
 
-```bat
-findstr /S /M "```mermaid" ..\order-design\docs\chapters\*.qmd
-```
-
-何も表示されなければ mermaid は使われていない。
-
-{{< include 01-node.qmd >}}
-
-{{< include 02-mermaid.qmd >}}
-
-{{< include 03-offline.qmd >}}

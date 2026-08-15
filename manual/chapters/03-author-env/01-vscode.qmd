@@ -13,7 +13,14 @@ VSCode の公式サイト（<https://code.visualstudio.com/>）からインス�
 
 1. VSCode を起動する。
 2. 拡張機能ビューを開く（左端のアイコン、または `Ctrl+Shift+X`）。
-3. 検索欄に **Quarto** と入力し、Quarto（発行元 Posit）をインストールする。
+3. 検索欄に **Quarto** と入力し、拡張機能 ID が `quarto.quarto`（発行元 `quarto`）の
+   ものをインストールする。
+
+::: {.callout-note}
+同名の拡張が複数あるため、**発行元と ID で見分ける**こと。正しいものは
+Quarto プロジェクト（quarto.org）が公開している `quarto.quarto` である。
+ID は拡張機能の詳細ページに表示される。
+:::
 
 これで次の機能が使えるようになる。
 
@@ -23,7 +30,36 @@ VSCode の公式サイト（<https://code.visualstudio.com/>）からインス�
 | 構文の色分け | 自動 |
 | 見出しのアウトライン表示 | エクスプローラの「アウトライン」 |
 
-プレビューの使い方は 5章に示す。
+プレビューの使い方は @sec-review に示す。
+
+### 閉域網で拡張機能を入れる（VSIX）
+
+拡張機能マーケットプレースに接続できない環境では、**VSIX ファイル**（拡張機能の
+配布形式）を持ち込んで導入する。
+
+1. 接続できる環境で VSIX を入手する。Visual Studio Marketplace の拡張機能ページ
+   （`quarto.quarto`）の「Resources」にある **Download Extension** から取得する。
+   ファイル名は `quarto.quarto-<版>.vsix` の形になる。
+2. VSIX を閉域網の端末へ持ち込む。
+3. VSCode で拡張機能ビューを開き、右上の **「…」→「VSIX からのインストール…」**
+   を選んで VSIX を指定する。
+
+コマンドでも入れられる。
+
+```bat
+code --install-extension quarto.quarto-1.135.0.vsix
+```
+
+::: {.callout-important}
+VSIX で入れた拡張は**自動更新されない**。版を上げるときは新しい VSIX を
+持ち込んで同じ手順を繰り返す。
+:::
+
+::: {.callout-note}
+拡張機能はプレビューを便利にするためのものであり、**出力そのものには要らない**。
+VSIX を用意できない場合でも、ターミナルから `quarto render` を実行すれば
+HTML は出せる（@sec-review）。
+:::
 
 ### フォルダを開く
 
