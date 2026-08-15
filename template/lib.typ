@@ -58,19 +58,34 @@
 // （字形確認は Noto を入れて行うこと）。
 #let JP-SANS = ("Meiryo UI", "Yu Gothic", "MS PGothic")
 #let JP-SERIF = ("Meiryo UI", "Yu Mincho", "MS PMincho")
-// コードブロック・インラインコード（```…``` と `…`）の書体。**等幅であること**。
-// BIZ UDGothic は英数字も等幅（10pt なら和文 10pt / 欧文 5pt。実測）なので、
-// 日本語混じりのコードでも桁がそろう。無い環境では MS Gothic → Consolas の順に落ちる。
+// コードブロック・インラインコード（```…``` と `…`）の書体。
+// 満たしたい条件は2つ:
+//   (a) 完全な等幅 … 欧文が和文のちょうど半分幅（10pt なら 5pt / 10pt）。
+//       グリッド表や図の例をコードとして貼ったときに桁がそろう。
+//   (b) `\` がバックスラッシュの字形で出る（円記号 `¥` にならない）。
 //
-// **注意1**: typst には英語のファミリ名で指定する。"BIZ UDゴシック" では一致せず、
-//   別の書体にフォールバックして等幅にならない（実測で確認）。
-// **注意2**: BIZ UDGothic / MS Gothic は JIS 系の字形で、**バックスラッシュ `\` が
-//   円記号 `¥` として描かれる**（Windows 日本語環境の慣習どおり）。`\` の字形で
-//   出したいときは Consolas を先頭に置く:
-//     #let MONO = ("Consolas", "BIZ UDGothic", "MS Gothic")
-//   ただし Consolas の欧文は 0.55em、BIZ UDGothic の欧文は 0.5em なので、
-//   和文と欧文が混じるコードでは桁が厳密にはそろわなくなる。
-#let MONO = ("BIZ UDGothic", "MS Gothic", "Consolas", "Courier New")
+// Windows 標準の書体では、この2つを**1つの書体では両立できない**（実測）:
+//   BIZ UDGothic / MS Gothic / MS Mincho / BIZ UDMincho … 等幅だが `\` が `¥`
+//   Consolas 0.55em / Cascadia Mono 0.586em / Courier New 0.6em … `\` は出るが
+//     和文（1em）の半分でないため、和文混じりで桁がずれる
+//   NSimSun / SimSun … 等幅（0.5em）で `\` も出るが、和文が中国語字形になる
+//
+// そこで **ASCII だけ NSimSun、それ以外（和文）は BIZ UDGothic** に振り分ける。
+// covers は「この書体を使う文字の範囲」を絞る typst の機能。
+//
+// **注意**: typst には英語のファミリ名で指定する。"BIZ UDゴシック" では一致せず、
+// 別の書体にフォールバックして等幅にならない（実測で確認）。
+//
+// 好みに応じて次のようにも書ける:
+//   ("BIZ UDGothic", …)                     … 全部ゴシック。ただし `\` は `¥`
+//   ((name: "Consolas", covers: regex("[ -~]")), "BIZ UDGothic", …)
+//                                           … 欧文は Consolas。桁そろえは犠牲
+#let MONO = (
+  (name: "NSimSun", covers: regex("[ -~]")),   // ASCII（0.5em・`\` の字形）
+  "BIZ UDGothic",                              // 和文（1em）
+  "MS Gothic",                                 // 予備（和文）
+  "Consolas",                                  // 予備（欧文）
+)
 // spec: true の表題欄（ヘッダ領域）の書体。MS Gothic を既定にし、無い環境では JP-SANS に落ちる。
 #let SPEC-HEAD-FONT = ("MS Gothic", "Yu Gothic", "MS PGothic")
 
