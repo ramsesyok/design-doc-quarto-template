@@ -1,7 +1,7 @@
 ## 様式のリポジトリ（保守者）
 
 ```text
-design-doc-quarto-template/
+quarto-template/
 ├── README.md                … 役割ごとの最短手順（入口）
 ├── ADVANCED.md              … 構成・配布の単位・ビルド詳細（発行者・保守者）
 ├── .gitignore
