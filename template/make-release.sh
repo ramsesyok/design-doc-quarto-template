@@ -15,7 +15,8 @@
 # 発行者はこの ZIP を展開したフォルダを**そのまま**使う（中身を取り出さない）。
 # 版がフォルダ名に入るので、新旧を並べて置ける。
 #
-# 中身は README.md / ADVANCED.md / manual（PDF と HTML）/ template 一式。
+# 中身は README.md / manual（PDF と HTML）/ template 一式。
+# ADVANCED.md は保守者専用（版の上げ方・リリースの作り方）なので同梱しない。
 # manual の原稿（.qmd）と .git は入れない（発行者は本文を編集しないため）。
 set -euo pipefail
 
@@ -63,7 +64,7 @@ mkdir -p "$STAGE/manual" "$STAGE/template"
 
 cp "$TEMPLATE_ROOT/release-README.md" "$STAGE/README-release.md"
 cp "$REPO_ROOT/README.md"             "$STAGE/README.md"
-cp "$REPO_ROOT/ADVANCED.md"           "$STAGE/ADVANCED.md"
+# ADVANCED.md は保守者専用なので同梱しない（発行者は README + manual で足りる）
 
 cp "$REPO_ROOT/manual/design-doc.pdf" "$STAGE/manual/利用マニュアル.pdf"
 cp -r "$REPO_ROOT/manual/_book"       "$STAGE/manual/html"
@@ -160,7 +161,7 @@ echo "完了しました（テンプレート $VERSION）"
 echo "  フォルダ: $STAGE"
 [ -n "$ZIP" ] && echo "  ZIP     : $ZIP"
 echo
-echo "同梱: README / ADVANCED / manual（PDF・HTML）/ template"
+echo "同梱: README / manual（PDF・HTML）/ template"
 [ "$WITH_NM" = "1" ]     && echo "      ＋ template/node_modules"
 [ "$WITH_SAMPLE" = "1" ] && echo "      ＋ docs（サンプル文書）"
 exit 0

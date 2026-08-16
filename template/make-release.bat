@@ -71,7 +71,7 @@ mkdir "%STAGE%\template"
 
 copy /Y "%TEMPLATE_ROOT%\release-README.md" "%STAGE%\README-release.md" >nul
 copy /Y "%REPO_ROOT%\README.md"             "%STAGE%\README.md" >nul
-copy /Y "%REPO_ROOT%\ADVANCED.md"           "%STAGE%\ADVANCED.md" >nul
+rem ADVANCED.md is maintainer-only, so it is NOT shipped in the release.
 
 copy /Y "%REPO_ROOT%\manual\design-doc.pdf" "%STAGE%\manual\利用マニュアル.pdf" >nul
 rem NOTE: robocopy, not xcopy. xcopy fails with "Insufficient memory" on long
@@ -136,7 +136,7 @@ echo Done (template %VERSION%)
 echo   folder: %STAGE%
 if defined ZIP echo   zip   : %ZIP%
 echo.
-echo Contains: README / ADVANCED / manual (PDF + HTML) / template
+echo Contains: README / manual (PDF + HTML) / template
 if "%WITH_NM%"=="1"     echo           + template\node_modules
 if "%WITH_SAMPLE%"=="1" echo           + docs (sample document)
 endlocal

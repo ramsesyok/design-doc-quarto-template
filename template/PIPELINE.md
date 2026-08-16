@@ -4,7 +4,8 @@
 変わるかをまとめる。テンプレートを改修するとき最初に読む。
 
 - 対象読者は**テンプレートを保守する人**（このファイルは `template/` に置く）。
-  執筆者向けの記法は利用マニュアル（`manual/`）、配布・ビルド環境の詳細は `ADVANCED.md` を参照。
+  執筆者向けの記法と発行者のビルド手順は利用マニュアル（`manual/`）、
+  リポジトリの構成・版の上げ方・リリースの作り方は `ADVANCED.md` を参照。
 - 用語: 「様式」= 会社の紙のフォーマット（外枠・資料番号欄・社名・ページ番号）。
 
 ## 0. フォルダの分担
@@ -19,7 +20,7 @@ quarto-template-<版>/ ← リリース ZIP を展開したもの（発行者は
     ├── lib.typ, typst-template.typ, typst-show.typ, quarto-publish.yml,
     ├── design-doc.lua, design-doc.css, postprocess-html.js, mermaid-config.json,
     ├── package.json, VERSION, scaffold/,
-    ├── init-doc.*, update-doc.*, setup.*, build-qmd.*, build-html.*, render-diagrams.sh,
+    ├── init-doc.*, update-doc.*, setup.*, build-qmd.*, build-html.*, render-diagrams.*,
     └── (setup 実行後: puppeteer.json / node_modules … いずれも .gitignore)
 
 order-design/     ← 設計書リポジトリ（git 共有。執筆者はこれだけ clone する）
