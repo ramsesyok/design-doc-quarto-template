@@ -1,0 +1,16 @@
+# モジュール仕様
+
+本章では、サブプログラムごとに機能概要・モジュール構造・モジュール詳細を記述する。
+記述の様式は @sec-documentation に示した凡例による。
+
+{{< include 01-diagnose/index.qmd >}}
+
+{{< include 02-tbl/index.qmd >}}
+
+{{< include 03-headings/index.qmd >}}
+
+{{< include 04-split/index.qmd >}}
+
+{{< include 05-pdfsvg/index.qmd >}}
+
+{{< include 06-pptxtext/index.qmd >}}

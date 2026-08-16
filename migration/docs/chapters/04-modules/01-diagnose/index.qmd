@@ -1,0 +1,7 @@
+## SP-01 `diagnose.py`
+
+{{< include 01-diagnose/01-summary.qmd >}}
+
+{{< include 01-diagnose/02-structure.qmd >}}
+
+{{< include 01-diagnose/03-details.qmd >}}

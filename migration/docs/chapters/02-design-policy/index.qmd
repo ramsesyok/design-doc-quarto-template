@@ -1,0 +1,10 @@
+# 設計方針
+
+本章では、本プログラムの設計に用いた技法、本書の文書化の方法、
+及びその他の設計上の取決めを述べる。
+
+{{< include 01-technique.qmd >}}
+
+{{< include 02-documentation.qmd >}}
+
+{{< include 03-others.qmd >}}

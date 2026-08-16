@@ -1,0 +1,96 @@
+## 起動方法及び使用手順 {#sec-usage}
+
+### 起動形式
+
+すべてのサブプログラムは、次の形式で起動する。
+
+```
+python migration/<スクリプト名> <対象> [オプション]
+```
+
+標準出力は UTF-8 に切り替えたうえで書き出す（@sec-cond の設計条件 C-05）。
+処理結果の要約は**標準エラー出力**へ書くため、変換結果をパイプで受けても混ざらない。
+
+### 事前診断（SP-01）
+
+原本を1つも変換しないまま、移行コストの内訳を数字にする。
+
+```bash
+python migration/diagnose.py C:/work/原本 --out shindan.md
+```
+
+::: {.tbl caption="SP-01 の主なオプション" label="tbl-usage-01" widths="26,16,58"}
+| オプション | 既定 | 内容 |
+|---|---|---|
+| `--format {md,csv,json}` | `md` | 出力形式 |
+| `--out FILE` | 標準出力 | 出力先（UTF-8） |
+| `--no-recurse` | 再帰する | フォルダを再帰的に探さない |
+:::
+
+### Word 1冊の変換（SP-02 → SP-03 → SP-04）
+
+まず本プログラムの外で pandoc により markdown 化する。表の書式を固定し、
+行を折り返さないことが**後段の前提**である。
+
+```bash
+quarto pandoc -f docx -t markdown-simple_tables-multiline_tables --wrap=none --track-changes=accept --extract-media=diagrams/ch01 設計書.docx -o step0.md
+```
+
+::: {.tbl caption="pandoc に与える指定とその理由" label="tbl-usage-pandoc" widths="42,58"}
+| 指定 | 理由 |
+|---|---|
+| `-t markdown-simple_tables-multiline_tables` | 既定では罫線を空白で揃えた simple table になり、SP-02 が表を検出できない |
+| `--wrap=none` | 折り返されると画像記法が行をまたぎ、SP-02 の画像処理が壊れる |
+| `--track-changes=accept` | 変更履歴が残っていると本文が二重になる |
+| `--extract-media=diagrams/ch01` | ファイルごとに別フォルダにしないと、画像が無警告で上書きされる |
+:::
+
+続いて3本を順に適用する。
+
+```bash
+python migration/tbl.py      step0.md -o step1.md --map refs.tsv
+python migration/headings.py step1.md
+python migration/headings.py step1.md -o step2.md --apply
+python migration/split.py    step2.md -o C:/work/order-design/docs
+```
+
+SP-03 は既定では書き換えを行わない。1回目の実行で削除候補を確認し、
+2回目に `--apply` を付けて適用する。
+
+最後に、SP-04 が出力した `_chapters.yml` の内容を執筆フォルダの `_quarto.yml` の
+`chapters:` へ転記し、`diagrams/` に画像を配置する。
+
+### PowerPoint を含む原本の変換（SP-05・SP-06）
+
+図と文字を別々の入力元から取り、人手で統合する。
+
+```bash
+python migration/pdfsvg.py 提出版.pdf --list
+python migration/pdfsvg.py 提出版.pdf -o docs/diagrams --exclude-body --md figures.md
+python migration/pptxtext.py 資料.pptx -o draft.md --media docs/diagrams/ppt
+```
+
+SP-05 は `--list` でページごとの用紙サイズ・向き・文字数・描画数を提示する。
+最も多い用紙サイズを本文とみなし、それ以外を図の候補として挙げるので、
+その結果を見てから対象ページを絞る。
+
+### フォルダ名を後から付ける手順（SP-04）
+
+SP-04 は既定では番号だけのフォルダ名で生成し、対応表 `_names.tsv` を出力する。
+その3列目に ASCII 名を記入して再実行すると、意味のある名前で生成し直す。
+
+```bash
+python migration/split.py step2.md -o C:/work/order-design/docs --names _names.tsv --force
+```
+
+### 実行に要する環境
+
+::: {.tbl caption="サブプログラムごとの依存" label="tbl-usage-dep" widths="20,26,54"}
+| サブプログラム | 依存 | 備考 |
+|---|---|---|
+| SP-01・SP-02・SP-03・SP-04 | 標準ライブラリのみ | 追加のインストールを要しない |
+| SP-05 | PyMuPDF | `pip install pymupdf` |
+| SP-06 | python-pptx | `pip install python-pptx` |
+:::
+
+{{< pagebreak >}}

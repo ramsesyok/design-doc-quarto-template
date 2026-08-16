@@ -1,0 +1,7 @@
+## SP-06 `pptxtext.py`
+
+{{< include 06-pptxtext/01-summary.qmd >}}
+
+{{< include 06-pptxtext/02-structure.qmd >}}
+
+{{< include 06-pptxtext/03-details.qmd >}}
