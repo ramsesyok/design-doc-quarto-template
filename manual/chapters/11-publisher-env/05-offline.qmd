@@ -19,7 +19,7 @@
 閉域環境では `npm ci` が実行できないため、接続可能な環境であらかじめ導入しておく。
 
 ```bat
-cd C:\tools\quarto-template-1.1.0\template
+cd C:\tools\quarto-template-1.1.1\template
 set "PUPPETEER_SKIP_DOWNLOAD=true"
 npm ci
 ```
@@ -35,7 +35,7 @@ npm ci
 3. ビルド準備を行う。
 
    ```bat
-   cd C:\tools\quarto-template-1.1.0
+   cd C:\tools\quarto-template-1.1.1
    .\template\setup.bat C:\work\order-design\docs
    ```
 
