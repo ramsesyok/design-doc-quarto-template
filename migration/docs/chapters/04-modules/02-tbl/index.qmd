@@ -1,0 +1,7 @@
+## SP-02 `tbl.py`
+
+{{< include 02-tbl/01-summary.qmd >}}
+
+{{< include 02-tbl/02-structure.qmd >}}
+
+{{< include 02-tbl/03-details.qmd >}}

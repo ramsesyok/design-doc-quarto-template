@@ -1,0 +1,7 @@
+## SP-05 `pdfsvg.py`
+
+{{< include 05-pdfsvg/01-summary.qmd >}}
+
+{{< include 05-pdfsvg/02-structure.qmd >}}
+
+{{< include 05-pdfsvg/03-details.qmd >}}

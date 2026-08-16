@@ -1,0 +1,7 @@
+## SP-04 `split.py`
+
+{{< include 04-split/01-summary.qmd >}}
+
+{{< include 04-split/02-structure.qmd >}}
+
+{{< include 04-split/03-details.qmd >}}
