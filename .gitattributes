@@ -7,6 +7,8 @@
 # 揃っていないと「発行者が setup を走らせるたびに差分が出る」ため、必ず LF にする。
 *.js text eol=lf
 *.lua text eol=lf
+# 移行支援スクリプト。shebang を持つので .sh と同じ理由で LF にする。
+*.py text eol=lf
 *.typ text eol=lf
 *.css text eol=lf
 *.json text eol=lf

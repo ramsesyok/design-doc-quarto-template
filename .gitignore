@@ -56,6 +56,10 @@ page-*.png
 # make-release の出力先（既定）
 /release/
 
+# ==== 移行支援スクリプト（migration/）====
+__pycache__/
+*.pyc
+
 # ==== OS / エディタ ====
 .DS_Store
 Thumbs.db
