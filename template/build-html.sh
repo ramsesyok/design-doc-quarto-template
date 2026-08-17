@@ -10,7 +10,8 @@
 #       _book/ 単体で自己完結する。
 #
 # 執筆者も同じ HTML を `quarto preview` で出せる。違いは mermaid だけで、
-# ここでは PDF と同じベクター SVG に焼く（MERMAID_SVG=1。node と Chrome/Edge が要る）。
+# ここでは PDF と同じベクター SVG に焼く（MERMAID_SVG=1。mermaid-cli（node_modules）と
+# Chrome/Edge が要る。mermaid-cli は Quarto 同梱の Deno で走るので node は要らない）。
 # 図表番号の振り直しは _quarto.yml の post-render（postprocess-html.js）が行うので、
 # このスクリプトからは呼ばない（二重に走らせない）。
 set -euo pipefail

@@ -4,14 +4,15 @@
 | 追加するもの        | 必要になる条件           | 用途                              |
 |---------------------|--------------------------|-----------------------------------|
 | `template/` 一式    | 常に                     | 様式・変換・ビルドの実体          |
-| node ＋ mermaid-cli | mermaid 図を含む文書のとき | mermaid をベクター SVG に焼き込む |
+| mermaid-cli         | mermaid 図を含む文書のとき | mermaid をベクター SVG に焼き込む |
 | Chrome / Edge       | mermaid 図を含む文書のとき | mermaid の SVG 化（描画エンジン） |
 :::
 
 ::: {.callout-note}
-**図表番号の後処理に node は要らない。** 「図 3.2-1」形式への振り直しは Quarto に
-同梱された実行環境で動くため、mermaid を使わない文書なら **Quarto だけで PDF も
-配布 HTML も出力できる**。
+**発行者の端末にも Node.js は要らない。** mermaid-cli も、図表番号の後処理も、
+Quarto に同梱された実行環境（Deno）で動く。したがって mermaid を使わない文書なら
+**Quarto だけで PDF も配布 HTML も出力できる**。mermaid を使う場合に増えるのは
+mermaid-cli の実体（`template/node_modules`）とブラウザだけである（@sec-mermaid-setup）。
 :::
 
 自分が扱う文書に mermaid が含まれるかは、原稿を検索すれば分かる。

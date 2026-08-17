@@ -4,7 +4,8 @@
 --   1) ```mermaid フェンス → 出力先で振る舞いを変える:
 --        - PDF(typst) と 配布 HTML(MERMAID_SVG=1) … mermaid-cli で SVG 化して画像に
 --          置換（diagrams/ に内容ハッシュでキャッシュ。ブラウザは setup 生成の
---          template/puppeteer.json、または EXECUTABLE_BROWSER の Chrome/Edge。node 要）
+--          template/puppeteer.json、または EXECUTABLE_BROWSER の Chrome/Edge）。
+--          mermaid-cli は **Quarto 同梱の Deno**（`quarto run`）で走らせるので node は要らない
 --        - 執筆者プレビュー HTML(既定) … Quarto 同梱 mermaid でクライアント描画（node 不要）
 --   2) ::: {.landscape} div → #landscape[...]（横向きページ）
 --   3) ::: {.ipo} div → #ipo(...)（IPO図。最初の見出し = 機能名 / 処理名、
@@ -107,13 +108,23 @@ local function render_mermaid(code)
     pp = DIAG .. '/puppeteer.json'
     local pf = assert(io.open(pp, 'w')); pf:write('{}'); pf:close()
   end
-  os.execute('node "' .. MMDC .. '" -i "' .. mmd .. '" -o "' .. svg ..
-    '" -b transparent -c "' .. mermaid_conf_path() .. '" -p "' .. pp .. '"')
+  -- mermaid-cli は **Quarto 同梱の Deno**（`quarto run`）で走らせる。node を入れずに
+  -- 済むので、閉域環境へは node_modules を持ち込むだけで SVG 化できる（実測で node
+  -- 実行時と同一の SVG が出る）。quarto が PATH に無い環境のために、失敗したときだけ
+  -- 従来どおり node でも試す（どちらも無ければ下でエラー）。
+  local args = ' -i "' .. mmd .. '" -o "' .. svg ..
+    '" -b transparent -c "' .. mermaid_conf_path() .. '" -p "' .. pp .. '"'
+  os.execute('quarto run "' .. MMDC .. '"' .. args)
+  if not file_exists(svg) then
+    os.execute('node "' .. MMDC .. '"' .. args)
+  end
   if not file_exists(svg) then
     error('mermaid の変換に失敗しました: ' .. mmd ..
-      '\n  ブラウザ設定を確認してください（Chrome/Edge が必要）。' ..
-      '\n  `./template/setup.sh <執筆フォルダのパス>` を実行するか、' ..
-      '\n  EXECUTABLE_BROWSER=<chrome/msedge の実行ファイル> を指定してください。')
+      '\n  1) mermaid-cli はありますか（' .. MMDC .. '）。' ..
+      '\n     無ければ閉域向けリリース（node_modules 同梱版）を使うか、template/ で npm ci してください。' ..
+      '\n  2) ブラウザ設定を確認してください（Chrome/Edge が必要）。' ..
+      '\n     `./template/setup.sh <執筆フォルダのパス>` を実行するか、' ..
+      '\n     EXECUTABLE_BROWSER=<chrome/msedge の実行ファイル> を指定してください。')
   end
   return rel, svg
 end

@@ -8,7 +8,9 @@ rem  Usage:  template\render-diagrams.bat <path-to-writing-folder>
 rem    e.g.  template\render-diagrams.bat C:\work\order-design\docs
 rem  - Only for static diagrams referenced from qmd as images. The ```mermaid
 rem    fences inside chapters are converted at build time by design-doc.lua.
-rem  - Needs node + mermaid-cli (run npm ci in template\) and Chrome/Edge.
+rem  - Needs mermaid-cli (bundled node_modules, or run npm ci in template\) and
+rem    Chrome/Edge. mermaid-cli runs on Quarto's bundled Deno (`quarto run`), so
+rem    Node.js is NOT required; node is used only as a fallback.
 rem  - Pass the writing folder as an ABSOLUTE path; a relative one resolves
 rem    against the current directory, not this script's location.
 rem  NOTE: keep this file ASCII only. cmd.exe misparses multibyte (Japanese)
@@ -35,12 +37,19 @@ if not exist "diagrams\" (
   exit /b 1
 )
 
+rem Runner for mermaid-cli: Quarto's bundled Deno first, node only as a fallback.
+rem Use goto labels rather than if/else blocks (see the note on setup.bat below).
+set "RUNNER="
+where quarto >nul 2>&1
+if not errorlevel 1 set "RUNNER=quarto run"
+if defined RUNNER goto :runner_done
 where node >nul 2>&1
-if errorlevel 1 (
-  echo ERROR: node not found. Install Node.js ^(publisher only^). 1>&2
-  popd
-  exit /b 1
-)
+if not errorlevel 1 set "RUNNER=node"
+if defined RUNNER goto :runner_done
+echo ERROR: neither quarto nor node found. Install Quarto ^(publisher only^). 1>&2
+popd
+exit /b 1
+:runner_done
 
 set "MMDC=%TEMPLATE_ROOT%\node_modules\@mermaid-js\mermaid-cli\src\cli.js"
 if not exist "%MMDC%" (
@@ -90,7 +99,7 @@ set "FAILED=0"
 for %%F in (diagrams\*.mmd) do (
   echo mermaid: diagrams\%%~nxF to diagrams\%%~nF.svg
   rem Theme etc. live in mermaid-config.json (-t would disable -c).
-  node "%MMDC%" -i "%%F" -o "diagrams\%%~nF.svg" -b transparent -p "%PP%" -c "%MMDC_CONF%"
+  %RUNNER% "%MMDC%" -i "%%F" -o "diagrams\%%~nF.svg" -b transparent -p "%PP%" -c "%MMDC_CONF%"
   if errorlevel 1 set "FAILED=1"
   set /a COUNT+=1
 )

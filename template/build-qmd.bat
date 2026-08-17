@@ -6,7 +6,8 @@ rem  PDF build (Windows / cmd). See build-qmd.sh for details.
 rem  Usage:  template\build-qmd.bat <path-to-writing-folder>
 rem   - qmd -> typst -> PDF. Quarto bundles typst, so Quarto alone is enough.
 rem   - The deliverable PDF is written to <content-dir>\design-doc.pdf (_book\ is rebuilt).
-rem   - mermaid is baked to vector SVG (typst path; needs node + Chrome/Edge).
+rem   - mermaid is baked to vector SVG (typst path; needs Chrome/Edge. mermaid-cli
+rem     runs on Quarto's bundled Deno, so Node.js is not required).
 rem   - typst settings live in _quarto-publish.yml, hence --profile publish.
 rem   - TEMPLATE_ROOT is exported so template/ may sit outside the doc repository.
 rem  NOTE: keep this file ASCII only. cmd.exe misparses multibyte (Japanese)

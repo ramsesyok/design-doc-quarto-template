@@ -106,7 +106,7 @@ findstr /S /C:"quarto-template-1." README.md ADVANCED.md template\PIPELINE.md ma
 | 引数・オプション | 効果 |
 |---|---|
 | 第1引数 | 出力先フォルダ（既定は `release/`） |
-| `--with-node-modules` | `template/node_modules` も同梱する（閉域向け。約 330MB 増える） |
+| `--with-node-modules` | `template/node_modules` も同梱する（閉域向け。約 400MB 増える） |
 | `--with-sample` | サンプル文書（`docs/`）も同梱する（原稿と図だけ。生成物は除く）。発行者へ記法の実例を渡したいときに使う |
 | `--no-build` | マニュアルを再ビルドせず、既にある成果物を使う |
 
@@ -119,6 +119,23 @@ quarto-template-<版>/
 ├── manual/利用マニュアル.pdf, manual/html/   … 発行者が読む・執筆者へ配る
 └── template/           … node_modules と puppeteer.json は除く
 ```
+
+### 閉域（オフライン）環境向けに作る
+
+`--with-node-modules` を付けた一式を渡せば、発行者は **Quarto と Chrome/Edge だけ**で
+PDF・配布 HTML（mermaid の SVG 化を含む）を作れます。Node.js の導入は要りません
+（mermaid-cli は Quarto 同梱の Deno で走る）。ネットワークを遮断し `node` を PATH から
+外した状態で、ZIP の展開 → `init-doc` → PDF・配布 HTML までを通して確認済みです。
+
+- `node_modules` は保守者が**接続できる環境で** `npm ci` して作る（`package-lock.json`
+  による再現性を保つため。Deno の `deno install` でも作れるが、ロックが `deno.lock` に
+  変わり、`node_modules` の形も `.deno` ストア＋リンク方式になる）。
+- typst の `@preview` パッケージ（`lib.typ` が callout アイコンに使う `fontawesome`）は
+  **Quarto 本体が同梱**しており、render のたびに `<執筆フォルダ>/.quarto/typst/packages`
+  へ展開して `--package-cache-path` で渡す。したがって閉域でも追加作業は要らない。
+  ただし **Quarto が同梱していない `@preview` パッケージを文書側で import すると、
+  閉域ではダウンロードに失敗して PDF が作れない**（同梱物は
+  `<Quarto>/share/formats/typst/packages/preview/` で確認できる）。
 
 **このファイル（`ADVANCED.md`）は同梱されません。** 保守者専用であり、発行者は
 `README-release.md`・`README.md`・利用マニュアルで足ります。

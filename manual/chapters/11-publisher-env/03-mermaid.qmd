@@ -3,9 +3,15 @@
 mermaid 図を含む文書の PDF・配布 HTML を作るには、**mermaid-cli と Chrome / Edge**が
 要る。図をベクター SVG に焼き込み、PDF と HTML で図を一致させるためである。
 
+::: {.callout-note}
+`template/node_modules` が同梱されたリリースを受け取っている場合、`npm ci` は不要で
+ある。`setup` だけを実行すればよい（ブラウザの検出のみ行う）。
+:::
+
 ### 手順
 
-リリースを展開したフォルダで次を実行する。
+リリースを展開したフォルダで次を実行する。`npm ci` は mermaid-cli を取得するための
+操作で、**ここでだけ Node.js と npm が要る**（出力時には使わない）。
 
 ```bat
 cd C:\tools\quarto-template-1.1.1\template

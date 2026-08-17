@@ -4,7 +4,9 @@
 # 使い方（template/ の位置はどこでもよい。執筆フォルダのパスを渡す）:
 #   ./template/render-diagrams.sh <執筆フォルダのパス>    # 省略時は docs
 #
-# mermaid-cli と設定は template/（このスクリプトと同じ場所）を使う（npm ci 済みであること）。
+# mermaid-cli と設定は template/（このスクリプトと同じ場所）を使う（node_modules 同梱版か、
+# 接続できる環境で npm ci 済みであること）。mermaid-cli は Quarto 同梱の Deno（`quarto run`）
+# で走らせるので node は要らない。
 # ブラウザは EXECUTABLE_BROWSER（既存 Edge/Chromium）を指定可能。
 # 章本文の ```mermaid フェンスはビルド時に design-doc.lua が自動変換するので対象外。
 set -euo pipefail
@@ -39,8 +41,11 @@ cd "$CONTENT_ROOT"
 for mmd in diagrams/*.mmd; do
   svg="${mmd%.mmd}.svg"
   echo "mermaid: $mmd -> $svg"
-  # テーマ等は mermaid-config.json に集約（-t を併用すると -c が無効化される）
-  node "$MMDC" -i "$mmd" -o "$svg" \
-    -b transparent -p "$PUPPETEER_JSON" -c "$MMDC_CONF"
+  # テーマ等は mermaid-config.json に集約（-t を併用すると -c が無効化される）。
+  # Quarto 同梱の Deno で走らせる。quarto が使えない環境のためだけに node を残す。
+  quarto run "$MMDC" -i "$mmd" -o "$svg" \
+    -b transparent -p "$PUPPETEER_JSON" -c "$MMDC_CONF" \
+    || node "$MMDC" -i "$mmd" -o "$svg" \
+         -b transparent -p "$PUPPETEER_JSON" -c "$MMDC_CONF"
 done
 echo "OK"

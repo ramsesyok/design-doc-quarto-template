@@ -61,7 +61,7 @@ stateDiagram-v2
 
 ::: {.callout-warning}
 **発行版 PDF・配布 HTML を作るときだけ**、mermaid をベクター SVG に焼き込む処理が走り、
-node と Chrome / Edge が必要になる。この処理は発行者の環境で行う（11章）。
+mermaid-cli と Chrome / Edge が必要になる。この処理は発行者の環境で行う（11章）。
 :::
 
 ### プレビューと最終成果物の見た目
@@ -89,7 +89,7 @@ cd ~/tools/quarto-template-1.1.1
 図を頻繁に描き直さない場合や、図だけを別途レビューしたい場合に使う。
 
 ::: {.callout-note}
-この操作は mermaid の SVG 化を行うため、**発行者の環境**（node と Chrome / Edge）が
+この操作は mermaid の SVG 化を行うため、**発行者の環境**（mermaid-cli と Chrome / Edge）が
 要る。執筆者は実行しない。
 
 対象は `diagrams/` 直下の `*.mmd` だけである。章本文の ```` ```mermaid ```` フェンスは
