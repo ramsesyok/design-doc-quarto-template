@@ -110,19 +110,42 @@ if "%WITH_SAMPLE%"=="1" (
 )
 
 rem 3) Zip it.
-rem NOTE: tar.exe (bsdtar) ships with Windows 10 1803+ / 11 and creates zip via -a.
-rem       PowerShell's Compress-Archive is used only as a fallback: it fails with
-rem       "DirectoryNotFoundException" on long paths inside _book (measured).
+rem **The zipper must set the UTF-8 name flag (general purpose bit 11).**
+rem manual\ holds a Japanese file name. bsdtar (tar.exe -a) writes names in the
+rem local ANSI code page WITHOUT that flag, so every UTF-8 based extractor
+rem (Expand-Archive, 7-Zip, macOS, Linux unzip) shows mojibake (measured).
+rem .NET's ZipFile sets the flag, so try it first. But it throws
+rem DirectoryNotFoundException once a member path exceeds MAX_PATH (260) and
+rem **leaves a truncated zip behind**, so check the exit code (never "if exist")
+rem and delete the partial file before falling back to bsdtar.
 set "ZIP=%OUT_ROOT%\%NAME%.zip"
 if exist "%ZIP%" del /Q "%ZIP%"
 pushd "%OUT_ROOT%" || exit /b 1
-where tar >nul 2>&1
-if errorlevel 1 goto :zip_ps
-tar -a -c -f "%NAME%.zip" "%NAME%"
-if not errorlevel 1 goto :zip_done
 
-:zip_ps
-powershell -NoProfile -Command "Compress-Archive -Path '%STAGE%' -DestinationPath '%ZIP%' -CompressionLevel Optimal"
+powershell -NoProfile -Command "Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::CreateFromDirectory('%STAGE%', '%ZIP%', 'Optimal', $true)"
+if not errorlevel 1 goto :zip_verify
+if exist "%ZIP%" del /Q "%ZIP%"
+
+echo WARNING: .NET zip failed (a member path over MAX_PATH?); using bsdtar. 1>&2
+echo          bsdtar does not set the UTF-8 name flag, so the Japanese manual 1>&2
+echo          file name WILL be mojibake for anyone extracting the zip. 1>&2
+echo          Shorten the output path ^(1st argument^) and re-run to avoid this. 1>&2
+where tar >nul 2>&1
+if errorlevel 1 goto :zip_done
+tar -a -c -f "%NAME%.zip" "%NAME%"
+if errorlevel 1 if exist "%ZIP%" del /Q "%ZIP%"
+
+:zip_verify
+rem The .NET writer truncates silently when it throws, so always confirm that
+rem every staged file made it into the archive before handing the zip over.
+rem NOTE: inside cmd's double quotes a bare "|" is literal and must NOT be
+rem       caret-escaped (a "^|" would reach PowerShell and fail to parse).
+if not exist "%ZIP%" goto :zip_done
+powershell -NoProfile -Command "Add-Type -AssemblyName System.IO.Compression.FileSystem; $z=[System.IO.Compression.ZipFile]::OpenRead('%ZIP%'); $n=($z.Entries | Where-Object { $_.Name -ne '' }).Count; $z.Dispose(); $disk=(Get-ChildItem -LiteralPath '%STAGE%' -Recurse -File).Count; if ($n -ne $disk) { Write-Host ('  files in zip: ' + $n + ' / on disk: ' + $disk); exit 2 }"
+if errorlevel 2 (
+  echo ERROR: the zip is missing files. Do not distribute it. 1>&2
+  del /Q "%ZIP%"
+)
 
 :zip_done
 popd
