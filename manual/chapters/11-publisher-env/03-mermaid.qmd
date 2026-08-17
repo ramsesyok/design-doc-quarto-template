@@ -5,7 +5,7 @@ mermaid 図を含む文書の PDF・配布 HTML を作るには、**mermaid-cli 
 
 ::: {.callout-note}
 `template/node_modules` が同梱されたリリースを受け取っている場合、`npm ci` は不要で
-ある。`setup` だけを実行すればよい（ブラウザの検出のみ行う）。
+ある。ブラウザの検出はビルド時に自動で行われるため、この節の準備そのものが要らない。
 :::
 
 ### 手順
@@ -17,23 +17,36 @@ mermaid 図を含む文書の PDF・配布 HTML を作るには、**mermaid-cli 
 cd C:\tools\quarto-template-1.1.1\template
 set "PUPPETEER_SKIP_DOWNLOAD=true"
 npm ci
-cd ..
-.\template\setup.bat C:\work\order-design\docs
 ```
 
 | 行 | 意味 |
 |----|------|
 | `PUPPETEER_SKIP_DOWNLOAD=true` | Chromium をダウンロードしない（手元の Chrome / Edge を使う） |
 | `npm ci` | mermaid-cli を `template/node_modules` に導入する |
-| `setup` | Chrome / Edge を検出し `template/puppeteer.json` に記録する |
 
 bash（macOS / Linux / Git Bash）では次のとおりである。
 
 ```bash
 cd ~/tools/quarto-template-1.1.1/template
 PUPPETEER_SKIP_DOWNLOAD=true npm ci
-cd ..
-./template/setup.sh ~/work/order-design/docs
+```
+
+準備はこれで終わりである。Chrome / Edge の検出は `setup` が行うが、**ビルドスクリプト
+が先頭で自動的に呼ぶ**ため、明示的に実行する必要はない（@sec-update-doc）。
+
+### ブラウザが見つかるか確認する {#sec-mermaid-check}
+
+ビルドを待たずにこの時点で確かめたい場合は、`setup` だけを単独で実行できる。
+
+```bat
+cd C:\tools\quarto-template-1.1.1
+.\template\setup.bat C:\work\order-design\docs
+```
+
+次のように表示されれば、ブラウザを検出できている。
+
+```text
+mermaid browser: C:/Program Files/Google/Chrome/Application/chrome.exe
 ```
 
 ### Chromium をダウンロードしない理由
@@ -47,7 +60,9 @@ Chromium 自体をダウンロードしないのは、npm とは別の Google �
 
 ### 自動検出できないとき
 
-`setup` の実行時に次の警告が出た場合、ブラウザのパスを明示して再実行する。
+上の確認時、またはビルド時に次の警告が出た場合、ブラウザのパスを明示して `setup` を
+実行する。ここで書かれた `template/puppeteer.json` は残るため、以降のビルドでは
+環境変数を立て直さなくてよい。
 
 ```text
 WARNING: Chrome / Edge not found.
