@@ -33,7 +33,7 @@
 ## 本書の表記 {.unnumbered}
 
 - コマンドは Windows のコマンドプロンプト（`cmd`）を基準に示す。macOS / Linux では
-  `.bat` を `.sh` に読み替える（`.\template\setup.bat docs` → `./template/setup.sh docs`）。
+  `.bat` を `.sh` に読み替える（`.\template\build-qmd.bat docs` → `./template/build-qmd.sh docs`）。
 - ファイル名・フォルダ名・コマンド・記法は `等幅` で示す。
 - 実際に入力する箇所のうち、環境に応じて変える部分は `<…>` で囲んで示す。
 

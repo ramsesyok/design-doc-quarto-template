@@ -43,16 +43,11 @@ PDF の組版に使う typst と、callout アイコンに使う typst の外部
 1. Quarto をインストールする。
 2. リリース展開フォルダと設計書リポジトリを、**それぞれ別のフォルダ**に配置する
    （展開フォルダを設計書リポジトリの中に入れない）。パスは ASCII だけにする。
-3. ビルド準備を行う。
+3. 出力する（@sec-build）。
 
-   ```bat
-   cd C:\tools\quarto-template-1.1.1
-   .\template\setup.bat C:\work\order-design\docs
-   ```
-
-4. 出力する（@sec-build）。
-
-`setup` はブラウザの検出とファイルの配置だけを行い、**ネットワーク接続を必要としない**。
+ビルドスクリプトが先頭で行う準備（機構ファイルと PDF 用部品の配置、Chrome / Edge の
+検出）は、いずれも**ネットワーク接続を必要としない**。持ち込んだ直後に配置と検出だけを
+確かめたい場合は、`setup` を単独で実行できる（@sec-mermaid-check）。
 
 ### Chrome / Edge が無い環境
 
