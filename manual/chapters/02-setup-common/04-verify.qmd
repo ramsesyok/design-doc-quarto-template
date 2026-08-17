@@ -45,7 +45,7 @@ cd C:\tools\quarto-template-1.1.1
 ```
 
 ::: {.callout-warning}
-mermaid 図を含む文書では、**PDF 出力に node と Chrome / Edge が必要**である。
+mermaid 図を含む文書では、**PDF 出力に mermaid-cli と Chrome / Edge が必要**である。
 未導入の環境ではここで失敗するが、Quarto 自体の導入に問題があるわけではない。
 準備の手順は @sec-publisher-env に示す。
 :::

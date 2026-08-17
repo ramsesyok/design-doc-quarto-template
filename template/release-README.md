@@ -44,15 +44,29 @@ quarto-template-<版>/
 
 ## mermaid 図を使う場合
 
-発行版 PDF・配布 HTML で mermaid をベクター化する経路にだけ、node と Chrome / Edge が
-要ります。`template/node_modules/` が同梱されていない版では、接続できる環境で
-次を実行してから持ち込んでください。
+発行版 PDF・配布 HTML で mermaid をベクター化する経路にだけ、mermaid-cli
+（`template/node_modules/`）と Chrome / Edge が要ります。**mermaid-cli は Quarto 同梱の
+Deno で動くので、Node.js を入れる必要はありません。**
+
+`template/node_modules/` が同梱されていない版では、**接続できる環境で**次を実行し
+（この取得のときだけ Node.js と npm が要ります）、フォルダごと持ち込んでください。
 
 ```bat
 cd C:\tools\quarto-template-<版>\template
 set "PUPPETEER_SKIP_DOWNLOAD=true"
 npm ci
 ```
+
+## 閉域（オフライン）環境で使う場合
+
+次の3つが揃えば、PDF も配布 HTML（mermaid の SVG 化を含む）もオフラインで作れます。
+
+1. **Quarto のインストーラ**（typst・Deno を同梱しているので、これ1本で足ります）
+2. **`template/node_modules/` を同梱した版**（mermaid を使う場合。保守者に依頼してください）
+3. **Chrome または Edge**（mermaid の SVG 化に使います。通常は Edge が入っています）
+
+PDF の組版に使う typst と、その外部パッケージ（callout アイコン）はいずれも Quarto に
+同梱されているため、別途の持ち込みは要りません。
 
 ## 版の確認
 

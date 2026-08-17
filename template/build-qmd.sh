@@ -8,7 +8,8 @@
 # 執筆者が編集するのは <執筆フォルダ>/chapters 以下の qmd と _quarto.yml だけ。
 # 様式・変換・テンプレートの実体はすべて template/（このスクリプトと同じ場所）にある。
 # Quarto は typst バイナリを同梱しているため、Quarto さえ導入すれば動く。
-# mermaid を使う場合のみ template/ での npm ci と Chrome/Edge が要る（setup が設定）。
+# mermaid を使う場合のみ mermaid-cli（node_modules 同梱版か template/ での npm ci）と
+# Chrome/Edge が要る（setup が設定）。mermaid-cli は Quarto 同梱の Deno で走るので node は不要。
 #
 # 先頭で setup を呼ぶので、機構ファイル・PDF 用 partial・mermaid 用ブラウザ設定は
 # 自動で整う。typst の設定は _quarto-publish.yml にあるので --profile publish を付ける。

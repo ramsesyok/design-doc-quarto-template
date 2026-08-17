@@ -107,7 +107,8 @@ cd C:\tools\quarto-template-1.1.1
 
 PDF は**中間版**としてコミットします。改ページ・横向きページ・紙の様式は HTML では
 確認できないため、執筆者はこの PDF で紙面を見ます。
-mermaid 図を PDF に載せる場合だけ、この環境に node と Chrome/Edge が要ります。
+mermaid 図を PDF に載せる場合だけ、この環境に mermaid-cli（`template/node_modules`）と
+Chrome/Edge が要ります（mermaid-cli は Quarto 同梱の Deno で動くので Node.js は不要）。
 → 利用マニュアル 11章・12章
 
 ### テンプレートを更新するとき

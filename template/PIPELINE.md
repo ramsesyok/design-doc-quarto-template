@@ -328,11 +328,18 @@ HTML では div 構造として組み立て直している。
 執筆者は多数・PDF/配布 HTML を作るのは少数、という運用に合わせ、mermaid の変換先を
 **出力とフラグで切り替える**。`WANT_SVG = (FORMAT == 'typst') or (MERMAID_SVG == '1')`。
 
-| 実行者 | 経路 | mermaid の扱い | node |
+| 実行者 | 経路 | mermaid の扱い | 追加で要るもの |
 |---|---|---|---|
-| 執筆者 | `quarto preview`（HTML, env なし） | `<pre class="mermaid mermaid-js">` を出し、Quarto 同梱ランタイムでブラウザ内描画 | **不要** |
-| ビルド係 | `build-html.sh`（`MERMAID_SVG=1`） | mermaid-cli でベクター SVG 化して `image()` | 要 |
-| ビルド係 | `build-qmd.sh`（typst/PDF） | 同上 | 要 |
+| 執筆者 | `quarto preview`（HTML, env なし） | `<pre class="mermaid mermaid-js">` を出し、Quarto 同梱ランタイムでブラウザ内描画 | **なし** |
+| ビルド係 | `build-html.sh`（`MERMAID_SVG=1`） | mermaid-cli でベクター SVG 化して `image()` | `node_modules` ＋ Chrome/Edge |
+| ビルド係 | `build-qmd.sh`（typst/PDF） | 同上 | 同左 |
+
+- **mermaid-cli を動かすのは Quarto 同梱の Deno**（`quarto run <mermaid-cli>/src/cli.js`）。
+  Node.js の導入は要らず、閉域環境へは `node_modules` を持ち込むだけで足りる
+  （node 実行時とバイト単位で同じ SVG が出ることを実測で確認済み。差が出るのは
+  classDiagram のように mermaid 自身が乱数描画する図で、これは node 同士でも一致しない）。
+  `quarto` が PATH に無い環境のために、失敗したときだけ `node` でも試す
+  （`design-doc.lua` の `render_mermaid`／`render-diagrams.*`）。
 
 - **クライアント描画の仕組み**: Quarto native の ` ```{mermaid} ` は typst では
   フィルタが走る前に PNG へラスタライズされ、自前のベクター SVG に差し替えられない
