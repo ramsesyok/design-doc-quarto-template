@@ -127,8 +127,22 @@ quarto-template-<版>/
 
 - 配布物の中の `.bat` は CRLF、`.sh` は LF に正規化されます。**LF のままの `.bat` は
   cmd.exe が `for` / `if` の複数行ブロックを解釈できず壊れます**（実測）。
-- zip 化は `zip` → bsdtar（Windows 同梱の `tar.exe`）→ python の順に試します。
-  **GNU tar は zip を作れません**（`tar -a -c -f x.zip` は中身が tar のままになる）。
+- **zip 化ツールは UTF-8 名フラグ（general purpose bit 11）を立てるものを使います。**
+  `manual/利用マニュアル.pdf` が日本語名のためです。**bsdtar（`tar -a`）はローカルの
+  ANSI コードページで名前を書き、このフラグを立てません**。その zip を
+  `Expand-Archive`・7-Zip・macOS・Linux の `unzip` で展開すると**文字化けします**（実測）。
+  - `.bat` … .NET の `ZipFile` → bsdtar（警告つき）
+  - `.sh` … python の `zipfile` → Info-ZIP `zip` → bsdtar（警告つき）
+- **出力先のパスは短く保ってください。** .NET と python はどちらも、メンバーの
+  パスが MAX_PATH（260文字）を超えると失敗します。`.bat` はそのとき bsdtar に
+  切り替わるため、**日本語名が文字化けした zip ができます**（警告は出ます）。
+  既定の出力先 `release/` は問題ありませんが、第1引数で深い場所を指定すると起こります。
+- **`.NET` の `ZipFile` は失敗時に不完全な zip を残します**（実測: 79件中34件で打ち切り）。
+  そのため成否は終了コードで判定し、失敗したら残骸を消しています。さらに zip 作成後に
+  **ファイル数が展開フォルダと一致するか検査**し、欠けていればエラーにして zip を消します。
+  「ファイルがあるかどうか」で成否を判定してはいけません。
+- **GNU tar は zip を作れません**（`tar -a -c -f x.zip` は中身が tar のままになる）。
+  `.sh` 側は `--version` に `bsdtar` / `libarchive` が含まれるかで判定しています。
 - `--no-build` を使うときは、`manual/design-doc.pdf` と `manual/_book/` の**両方**が
   最新であることを確かめてください（片方だけ古いまま同梱される事故を防ぐため）。
 

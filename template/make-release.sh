@@ -122,20 +122,17 @@ PY
 fi
 
 # 3) zip に固める。
+# **zip 作成ツールは UTF-8 名フラグ（general purpose bit 11）を立てるものを使う。**
+# manual/ に日本語ファイル名があり、bsdtar（tar -a）はローカルの ANSI コードページで
+# 名前を書きフラグを立てないため、UTF-8 前提の展開ツール（Expand-Archive・7-Zip・
+# macOS・Linux の unzip）で文字化けする（実測）。python の zipfile はフラグを立てる。
+#
 # **注意**: GNU tar は zip を作れない。`tar -a -c -f x.zip` は拡張子が .zip でも
 # 中身は tar のままで、zip として開けないものができる（Git Bash で実測）。
-# zip → bsdtar（libarchive。Windows 10/11 同梱の tar.exe はこちら）→ python の順に試す。
+# python → zip → bsdtar（警告つき）の順に試す。
 ZIP="$OUT_ROOT/$NAME.zip"
 rm -f "$ZIP"
 make_zip() {
-  if command -v zip > /dev/null 2>&1; then
-    (cd "$OUT_ROOT" && zip -qr "$NAME.zip" "$NAME") && return 0
-  fi
-  for t in tar /c/Windows/System32/tar.exe; do
-    if command -v "$t" > /dev/null 2>&1 && "$t" --version 2>&1 | grep -qi 'bsdtar\|libarchive'; then
-      (cd "$OUT_ROOT" && "$t" -a -c -f "$NAME.zip" "$NAME") && return 0
-    fi
-  done
   if command -v python > /dev/null 2>&1; then
     python - "$OUT_ROOT" "$NAME" <<'PY' && return 0
 import os, sys, zipfile
@@ -148,12 +145,42 @@ with zipfile.ZipFile(os.path.join(root, name + '.zip'), 'w', zipfile.ZIP_DEFLATE
             z.write(p, os.path.join(name, os.path.relpath(p, base)))
 PY
   fi
+  # Info-ZIP。UTF-8 ロケールなら名前を UTF-8 で書きフラグも立てる。
+  if command -v zip > /dev/null 2>&1; then
+    (cd "$OUT_ROOT" && zip -qr "$NAME.zip" "$NAME") && return 0
+  fi
+  for t in tar /c/Windows/System32/tar.exe; do
+    if command -v "$t" > /dev/null 2>&1 && "$t" --version 2>&1 | grep -qi 'bsdtar\|libarchive'; then
+      echo "警告: python も zip も無いため bsdtar を使います。" >&2
+      echo "      bsdtar は UTF-8 名フラグを立てないため、日本語のマニュアル名が" >&2
+      echo "      展開時に文字化けします。python を入れて作り直してください。" >&2
+      (cd "$OUT_ROOT" && "$t" -a -c -f "$NAME.zip" "$NAME") && return 0
+    fi
+  done
   return 1
 }
 if ! make_zip; then
-  echo "警告: zip を作れませんでした（zip / bsdtar / python のいずれも使えません）。" >&2
+  echo "警告: zip を作れませんでした（python / zip / bsdtar のいずれも使えません）。" >&2
   echo "      展開済みフォルダはできているので、手で固めてください。" >&2
   ZIP=""
+fi
+
+# 取りこぼしが無いかを確かめる（黙って不完全な zip を配らないため）。
+if [ -n "$ZIP" ] && command -v python > /dev/null 2>&1; then
+  if ! python - "$ZIP" "$STAGE" <<'PY'
+import os, sys, zipfile
+zp, stage = sys.argv[1], sys.argv[2]
+n = len([i for i in zipfile.ZipFile(zp).infolist() if not i.filename.endswith('/')])
+disk = sum(len(f) for _d, _s, f in os.walk(stage))
+if n != disk:
+    print(f"  zip 内 {n} 件 / 実体 {disk} 件", file=sys.stderr)
+    sys.exit(1)
+PY
+  then
+    echo "エラー: zip にファイルの取りこぼしがあります。配布しないでください。" >&2
+    rm -f "$ZIP"
+    ZIP=""
+  fi
 fi
 
 echo
