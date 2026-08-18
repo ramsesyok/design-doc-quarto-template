@@ -129,17 +129,28 @@ local function render_mermaid(code)
   return rel, svg
 end
 
--- 図の幅（本文幅に対する %）。縦長の図をそのまま 90% で貼ると、高さが本文領域を
--- 超えて**枠からはみ出し、上下が切れる**（実測）。SVG の viewBox から縦横比を読み、
--- 高すぎる図は幅を絞って収める。
---   本文領域は A4 縦で 168 x 246mm（lib.typ の PAGE-P-MARGIN から）。
---   幅 90% = 151mm のとき、高さが 234mm を超えると収まらない → 比の上限 ≒ 1.55。
+-- 図の幅（本文幅に対する %）の上限が2つある。
+-- (1) 縦長すぎる図の切れ: そのまま 90% で貼ると高さが本文領域を超えて
+--     **枠からはみ出し、上下が切れる**（実測）。
+--       本文領域は A4 縦で 168 x 246mm（lib.typ の PAGE-P-MARGIN から）。
+--       幅 90% = 151mm のとき、高さが 234mm を超えると収まらない → 比の上限 ≒ 1.55。
+-- (2) 小さい図の引き伸ばし: mermaid は図の中身に応じた自然な大きさを SVG に書く
+--     （viewBox と style="max-width: NNNpx"）。これを無視して一律 90% で貼ると、
+--     箱が数個だけの図が本文幅いっぱいまで拡大され、文字だけ巨大になる。
+--     ブラウザ描画（執筆者プレビュー）は SVG 自身の max-width で自然サイズに
+--     止まるので、PDF・配布 HTML だけが引き伸ばされて見た目が食い違っていた。
 -- lib.typ の余白を変えたら、この 2 定数も見直すこと。
 local FIG_W_PCT = 90
 local FIG_MAX_ASPECT = 1.55
+-- 本文幅（A4 縦。lib.typ の PAGE-P-MARGIN から）。自然幅を % に直すのに使う。
+local FIG_BODY_MM = 168
+-- mermaid が SVG に書く座標は CSS px。紙面 mm へは 96dpi で換算する
+-- （＝ブラウザで 100% 表示したときの実寸と PDF が一致する）。
+local FIG_MM_PER_PX = 25.4 / 96
 
--- SVG の縦横比（高さ/幅）。viewBox → width/height 属性の順に見る。読めなければ nil。
-local function svg_aspect(path)
+-- SVG の自然な大きさ（幅, 高さ）。viewBox → width/height 属性の順に見る。
+-- 読めなければ nil（呼び出し側は従来どおり 90% にフォールバックする）。
+local function svg_size(path)
   local head = nil
   local f = io.open(path, 'r')
   if f then head = f:read(2048); f:close() end
@@ -150,18 +161,35 @@ local function svg_aspect(path)
     h = head:match('<svg[^>]-%sheight%s*=%s*"([%d%.]+)')
   end
   w, h = tonumber(w or ''), tonumber(h or '')
-  if not w or not h or w <= 0 then return nil end
-  return h / w
+  if not w or not h or w <= 0 or h <= 0 then return nil end
+  return w, h
 end
 
--- 図に付ける width 属性（例 '90%'）。縦長なら上限比に収まるまで絞る。
+-- 図に付ける width 属性。
+--   typst … 本文幅に対する %（例 '70%'）。上の (1)(2) はどちらも上限なので
+--           min で合成する。どちらにも当たらなければ従来どおり 90%。
+--   html  … 自然幅の px（例 '607px'）。% にすると HTML の本文幅（既定 1560px）は
+--           A4 の本文幅（168mm ≒ 635px）よりずっと広いため、同じ % でも紙より
+--           大きく描かれてしまう。px で出せば執筆者プレビューのクライアント描画と
+--           一致し、広すぎる図は design-doc.css の max-width が抑える。
 local function fig_width(path)
-  local a = svg_aspect(path)
+  local w, h = svg_size(path)
+  if not w then return FIG_W_PCT .. '%' end
+  if FORMAT ~= 'typst' then return string.format('%.0fpx', w) end
+
   local pct = FIG_W_PCT
-  if a and a > FIG_MAX_ASPECT then
+  -- (1) 縦長は高さが本文領域に収まるまで絞る。下限 20% はこの式が極端な値を
+  --     出さないための歯止めで、(2) には掛けない。
+  local a = h / w
+  if a > FIG_MAX_ASPECT then
     pct = math.floor(FIG_W_PCT * FIG_MAX_ASPECT / a + 0.5)
     if pct < 20 then pct = 20 end
   end
+  -- (2) 自然幅を超えて引き伸ばさない。小さい図は小さいまま出すのが正しいので
+  --     ここには下限を掛けない（0% にだけならないようにする）。
+  local nat = math.floor(w * FIG_MM_PER_PX / FIG_BODY_MM * 100 + 0.5)
+  if nat < 1 then nat = 1 end
+  if nat < pct then pct = nat end
   return pct .. '%'
 end
 
