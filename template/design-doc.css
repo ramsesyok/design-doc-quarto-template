@@ -116,5 +116,10 @@ td[rowspan], th[rowspan] { vertical-align: middle; }
    PDF は lib.typ 側で組むのでこの指定の影響を受けない。 */
 #quarto-document-content img { max-width: min(100%, 900px); height: auto; }
 #quarto-document-content p:has(> img) { text-align: center; }
+/* 図番号のキャプションも中央寄せにする（表・.tbl・PDF と揃える）。
+   Quarto の既定 CSS は figure.quarto-float-tbl（表）の figcaption にしか
+   text-align: center を当てないため、図（quarto-float-fig）や
+   コードリスト（quarto-float-lst）のキャプションだけ左寄せで残ってしまう。 */
+#quarto-document-content figcaption { text-align: center; }
 /* IPO の各欄の中だけは枠いっぱいに使う（上の上限を打ち消す） */
 #quarto-document-content .ipo-col img { max-width: 100%; }
