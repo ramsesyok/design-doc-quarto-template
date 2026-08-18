@@ -179,9 +179,20 @@ for (const [file, { html, repl }] of staged) {
   // 見出し参照(@sec-x): Quarto 既定の「チャプター 5 / セクション 5.3」を、番号＋章/節の
   // 後置表記へ。番号にドットが無い（＝章）→「5章」、ドットあり（＝節以下）→「5.3節」。
   // 言語に依存しないよう、番号の前の語（チャプター/セクション等）は捨てて番号だけ使う。
+  //
+  // href に #sec- は要求できない。章ファイルの h1 に付けた id（`# 章題 {#sec-ipo}`）を
+  // 参照すると、Quarto はフラグメントを省いて章ページ自体へリンクするためである:
+  //   節を指す → <a href="../05-review/index.html#sec-preview-diff" class="quarto-xref">…
+  //   章を指す → <a href="../10-ipo/index.html" class="quarto-xref">…（#sec- が無い）
+  // そこで href は問わず「中身が <span>非数字の語＋番号</span> だけ」で拾い、フラグメントが
+  // 付いている場合だけ sec- を要求する（＝図表など他種の参照は素通しする）。
+  // 冪等性: 変換後は <span>10章</span> となり、番号の直後が </span> でなくなるので
+  // 二度目の実行では一致しない（「10章章」にはならない）。
   out = out.replace(
-    /(<a href="[^"]*#sec-[^"]+"[^>]*class="[^"]*quarto-xref[^"]*"[^>]*>)<span>[^0-9<]*([\d.]+)<\/span>(<\/a>)/g,
-    (whole, open, num, close) => {
+    /(<a href="([^"]*)"[^>]*class="[^"]*quarto-xref[^"]*"[^>]*>)<span>[^0-9<]*([\d.]+)<\/span>(<\/a>)/g,
+    (whole, open, href, num, close) => {
+      const frag = href.split('#')[1];
+      if (frag && !frag.startsWith('sec-')) return whole;   // 図表など見出し以外の参照
       const suffix = num.includes('.') ? '節' : '章';
       refCount += 1;
       return `${open}<span>${num}${suffix}</span>${close}`;
