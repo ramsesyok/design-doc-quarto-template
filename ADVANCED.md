@@ -77,7 +77,7 @@ HTML の図表番号を後処理で直している理由は利用マニュアル
 設計書リポジトリ側の `.template-version` と突き合わせて、発行者が更新要否を判断します。
 
 版を上げたら、**実行例に埋め込まれた版番号も揃えてください。** 展開フォルダ名に版が
-入るため（`cd C:\tools\quarto-template-1.1.2`）、ずれていると発行者が手元のフォルダ名と
+入るため（`cd C:\tools\quarto-template-1.1.3`）、ずれていると発行者が手元のフォルダ名と
 合わない手順を読むことになります。全体で30箇所ほどあります。
 
 ```bat
@@ -171,9 +171,9 @@ PDF・配布 HTML（mermaid の SVG 化を含む）を作れます。Node.js の
 （タグの指すコミットと配布物を一致させるため）。
 
 ```bash
-gh release create v1.1.2 "release/quarto-template-1.1.2.zip" \
+gh release create v1.1.3 "release/quarto-template-1.1.3.zip" \
   --target main \
-  --title "v1.1.2 — （変更の要約）" \
+  --title "v1.1.3 — （変更の要約）" \
   --notes-file <リリースノートのファイル>
 ```
 
