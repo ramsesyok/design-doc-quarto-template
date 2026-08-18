@@ -38,7 +38,7 @@ Typst テンプレートと Pandoc の Lua フィルタとして実装してあ�
 
 ```
 C:\tools\
-└── quarto-template-1.1.2/   ← リリース ZIP を展開したもの（git 管理外）
+└── quarto-template-1.1.3/   ← リリース ZIP を展開したもの（git 管理外）
     ├── README-release.md    ← 発行者向けのはじめかた
     ├── manual/              ← 利用マニュアル（手順の正。執筆者へも配る）
     └── template/            ← ここのスクリプトを実行する
@@ -82,7 +82,7 @@ C:\work\
 ZIP を展開し、**展開したフォルダで**実行します。
 
 ```bat
-cd C:\tools\quarto-template-1.1.2
+cd C:\tools\quarto-template-1.1.3
 .\template\init-doc.bat C:\work\order-design
 ```
 
@@ -100,7 +100,7 @@ cd C:\tools\quarto-template-1.1.2
 ### 4. 発行者が PDF・配布 HTML を出す
 
 ```bat
-cd C:\tools\quarto-template-1.1.2
+cd C:\tools\quarto-template-1.1.3
 .\template\build-qmd.bat  C:\work\order-design\docs
 .\template\build-html.bat C:\work\order-design\docs
 ```
@@ -116,7 +116,7 @@ Chrome/Edge が要ります（mermaid-cli は Quarto 同梱の Deno で動くの
 新しい版は別のフォルダに展開されるので、そちらから機構ファイルを入れ直します。
 
 ```bat
-cd C:\tools\quarto-template-1.2.2
+cd C:\tools\quarto-template-1.2.3
 .\template\update-doc.bat C:\work\order-design\docs
 ```
 
