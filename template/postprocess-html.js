@@ -66,7 +66,12 @@ const SP = String.raw`(?:\s|&nbsp;)*`;
 // 図表では章番号が拾えず 0 になってしまう。サイドバー／パンくずにも chapter-number は
 // あるが、それらは <h1 class="title"> に包まれないので誤って拾うことはない。
 // 番号なし章（{.unnumbered}）は chapter-number を持たず、章番号 0（例 図 0-1）になる。
-const CHAP = String.raw`<h1 class="title">(?:<span class="chapter-number">(\d+)</span>)?`;
+// 章見出しに id を付けた（`# タイトル {#sec-x}`）ときは、Quarto が中身を
+// <span class="quarto-section-identifier"> で包むので chapter-number が
+// <h1 class="title"> の直後に来ない。包みの span を読み飛ばせるようにしておく
+// （読み飛ばす側に chapter-number 自体を食わせないよう否定先読みで除く）。
+// これを怠ると章直下（節なし）の図表が「表 0-1」になる。
+const CHAP = String.raw`<h1 class="title">(?:<span(?![^>]*\bclass="chapter-number")[^>]*>)*(?:<span class="chapter-number">(\d+)</span>)?`;
 const HEAD = String.raw`<h[2-6][^>]*\bdata-number="([\d.]+)"`;
 // 「図 1.1: 」（Quarto 既定＝未処理）と「図 3.2-1　」（前回この後処理が書いた形）の
 // どちらにも一致させる（冪等性のため。ヘッダのコメント参照）。
