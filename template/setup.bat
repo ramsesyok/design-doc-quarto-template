@@ -35,6 +35,16 @@ copy /Y "%TEMPLATE_ROOT%\typst-show.typ"     "%CONTENT_DIR%\typst-show.typ" >nul
 copy /Y "%TEMPLATE_ROOT%\quarto-publish.yml" "%CONTENT_DIR%\_quarto-publish.yml" >nul
 echo Placed: lib.typ, typst-template.typ, typst-show.typ, _quarto-publish.yml
 
+rem 2') cover.typ holds the cover / front matter and is edited per document, so it is
+rem     NEVER overwritten (it is committed in a doc repository). typst-show.typ always
+rem     imports it, so create it here when missing.
+if exist "%CONTENT_DIR%\cover.typ" (
+  echo Kept: cover.typ ^(per-document cover; not overwritten^)
+) else (
+  copy /Y "%TEMPLATE_ROOT%\cover.typ" "%CONTENT_DIR%\cover.typ" >nul
+  echo Created: cover.typ ^(cover / front matter; edit it and commit^)
+)
+
 rem 3) Browser for mermaid (detect Chrome, then Edge). EXECUTABLE_BROWSER takes priority.
 set "BROWSER=%EXECUTABLE_BROWSER%"
 if not defined BROWSER (

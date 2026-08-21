@@ -17,7 +17,7 @@
 ```
 quarto-template-<版>/ ← リリース ZIP を展開したもの（発行者はここで作業する）
 └── template/     ← 様式・変換・ビルドの実体（このフォルダ。git 共有しない）
-    ├── lib.typ, typst-template.typ, typst-show.typ, quarto-publish.yml,
+    ├── lib.typ, typst-template.typ, typst-show.typ, cover.typ, quarto-publish.yml,
     ├── design-doc.lua, design-doc.css, postprocess-html.js, mermaid-config.json,
     ├── package.json, VERSION, scaffold/,
     ├── init-doc.*, update-doc.*, setup.*, build-qmd.*, build-html.*, render-diagrams.*,
@@ -28,6 +28,7 @@ order-design/     ← 設計書リポジトリ（git 共有。執筆者はこれ
     ├── _quarto.yml, index.qmd, chapters/, diagrams/     … 原稿
     ├── design-doc.lua, design-doc.css, postprocess-html.js,
     │   mermaid-config.json, .template-version           … 機構（コミットする）
+    ├── cover.typ                                        … 表紙・前付け（コミットする）
     ├── design-doc.pdf                                   … 中間版（コミットする）
     └── (setup 後: lib.typ, typst-*.typ, _quarto-publish.yml, _book/ … .gitignore)
 ```
@@ -56,6 +57,9 @@ order-design/     ← 設計書リポジトリ（git 共有。執筆者はこれ
     `_quarto-publish.yml`）を置き、mermaid 用の Chrome/Edge を検出して
     `template/puppeteer.json` に記録する。PDF 用部品は `.gitignore`。
     ビルドスクリプトが先頭で呼ぶ。
+    **例外が `cover.typ`**（表紙・前付け）で、これだけは「無ければ作る」であり
+    既存を上書きしない。文書ごとに書き換えるファイルで、doc リポジトリでは
+    コミット対象（`scaffold/repo/gitignore` にも載せていない）。
   - `init-doc` … 設計書リポジトリの雛形（`scaffold/`）を展開し、`update-doc` を呼び、
     最後に HTML を1回ビルドして検証する。既存ファイルは上書きしない。
 - なぜ `lib.typ` と typst partials を執筆フォルダへ置くのか: typst の import は
@@ -139,6 +143,7 @@ HTML が出て、図表番号の振り直しまで `post-render` が自動で行
 | `design-doc.pdf` | doc | ○ | 中間版（発行者が定期的に作る） | — |
 | `typst-show.typ` | tpl→doc | × | フロントマター → `design-doc()` の引数 | PDF |
 | `typst-template.typ` | tpl→doc | × | Quarto 既定テンプレートの差し替え口（`lib.typ` を import） | PDF |
+| `cover.typ` | tpl→doc | ○ | 表紙・前付けの中身（`front-matter()`）。**文書ごとに書き換える**。`setup` は無いときだけ置く | PDF |
 | `lib.typ` | tpl→doc | × | **様式の単一ソース**（枠・採番・IPO・横向き） | PDF |
 | `quarto-publish.yml` | tpl→doc | × | typst 用プロファイル（`_quarto-publish.yml` として置かれる） | PDF |
 | `VERSION` | tpl | — | テンプレートの版。更新したら上げる | — |
@@ -163,12 +168,35 @@ setup が `template/quarto-publish.yml` から置く）。
 
 ```
 title / subtitle / author / doc-number / company / toc …
-        ↓ typst-show.typ
-#show: design-doc.with(title: …, doc-number: …, toc: true, …)
+        ↓ typst-show.typ         cover.typ の front-matter() も引数として渡す
+#show: design-doc.with(title: …, doc-number: …, toc: true, front-matter: front-matter, …)
 ```
 
 **注意**: Quarto 既定の目次生成は `typst-template.typ` 側にあり、差し替えた
 結果として機能しない。目次は `lib.typ` の `#outline()` が出している。
+
+### 3.1.1 表紙・前付け（cover.typ）
+
+表紙の体裁は会社・文書ごとに違うので、**中身は `lib.typ` に持たせない**。
+執筆フォルダの `cover.typ` が `front-matter(meta)` を定義し、`design-doc()` が
+`cover: true` のときだけ目次の前で呼ぶ。
+
+- `meta` は `_quarto.yml` の値をまとめた辞書（`title` / `subtitle` / `author` /
+  `doc-number` / `doc-revision` / `doc-id` / `spec` / `company-ja` / `company-en` /
+  `page-start`）。表紙に資料番号や社名を出すのに二重管理が要らない。
+- `lib.typ` 側が持つのは部品だけ:
+  - `default-cover(meta)` … 既定の表紙（本文と同じ様式）
+  - `bare-page(body, margin:)` … 外枠・資料番号を出さない独立ページ。
+    `set page` ではなく `page()` を**関数として**呼ぶので、後続の本文は自動で
+    元の様式に戻る（戻し忘れが起きない）。
+  - 寸法・色は【1】の `COVER-*`
+- `front-matter()` の後ろは `pagebreak(weak: true)`。`front-matter()` が
+  `bare-page()` や `pagebreak()` で自分の最後のページを閉じていても空ページが増えない。
+- **`typst-show.typ` は `cover.typ` を常に import する。** typst に条件付き import は
+  無いので、`cover.typ` は必ず存在しなければならない（`setup` / `init-doc` が
+  「無ければ作る」で担保する）。
+- 前付けで見出しを使うときは `numbering: none, outlined: false` が要る。
+  素の h1 は章カウンタを消費し、目次にも載る。
 
 ### 3.2 lib.typ の構成
 
@@ -398,6 +426,8 @@ HTML では div 構造として組み立て直している。
         （**無視しない**）、このリポジトリの `.gitignore`（無視する＋`!/template/...`）
       - 発行時だけ要る（PDF）… `setup.sh`/`.bat` のコピー対象、`scaffold/repo/gitignore`
         （無視する）、このリポジトリの `.gitignore`
+      - 文書ごとに書き換えるもの（`cover.typ` 型）… `setup`/`init-doc` は「無ければ作る」
+        に留め、`scaffold/repo/gitignore` には**載せない**（doc リポジトリでコミットする）
 - [ ] `template/VERSION` を上げたか（設計書リポジトリ側の `.template-version` に反映され、
       発行者が `update-doc` した差分として見える）
 - [ ] `postprocess-html.js` を触ったなら、**同じ `_book/` に2回流しても結果が変わらない**

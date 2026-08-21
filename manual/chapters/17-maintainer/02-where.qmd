@@ -8,6 +8,8 @@
 | 章番号・図表番号の書式           | `lib.typ`                   | 採番の実装                             |
 | 番号付きリストの記号             | `lib.typ`                   | `ENUM-NUMBERING`                       |
 | IPO 図の欄割り・横向きの体裁     | `lib.typ`                   | ―                                     |
+| 表紙・前付けの中身               | `<執筆フォルダ>/cover.typ`  | **文書ごと**。既定は `template/cover.typ` |
+| 既定の表紙の寸法・文字サイズ     | `lib.typ`                   | `COVER-*`（「【1】調整パラメータ」）    |
 | 独自記法の追加・変更             | `design-doc.lua`            | `.tbl` / `.landscape` / `.ipo` / mermaid |
 | HTML の見た目                    | `design-doc.css`            | ―                                     |
 | HTML の図表番号の振り直し        | `postprocess-html.js`       | Quarto の採番より後段で走る必要がある   |
@@ -26,3 +28,10 @@
 
 様式の調整パラメータは `template/lib.typ` の冒頭「【1】調整パラメータ」に
 集約してある。まずここを見ればよい。
+
+::: {.callout-note}
+**表紙だけは `lib.typ` に無い。** 表紙の体裁は文書ごとに違うため、中身は執筆フォルダの
+`cover.typ` に切り出してある（@sec-cover-typ）。`template/cover.typ` はその既定であり、
+既にある `cover.typ` を `setup` が上書きすることはない。全社の既定を変えたいときだけ
+`template/cover.typ` を直す。
+:::

@@ -102,7 +102,7 @@ if "%WITH_NM%"=="1" (
 )
 
 if "%WITH_SAMPLE%"=="1" (
-  robocopy "%REPO_ROOT%\docs" "%STAGE%\docs" /E /NFL /NDL /NJH /NJS /NP /XD _book .quarto /XF design-doc.pdf lib.typ typst-template.typ typst-show.typ _quarto-publish.yml mmd-* >nul
+  robocopy "%REPO_ROOT%\docs" "%STAGE%\docs" /E /NFL /NDL /NJH /NJS /NP /XD _book .quarto /XF design-doc.pdf lib.typ typst-template.typ typst-show.typ cover.typ _quarto-publish.yml mmd-* >nul
   if errorlevel 8 (
     echo ERROR: copying the sample failed. 1>&2
     exit /b 1

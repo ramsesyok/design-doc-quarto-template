@@ -39,6 +39,16 @@ cp -f "$TEMPLATE_ROOT/typst-show.typ"      "$CONTENT_ROOT/typst-show.typ"
 cp -f "$TEMPLATE_ROOT/quarto-publish.yml"  "$CONTENT_ROOT/_quarto-publish.yml"
 echo "配置: $CONTENT_DIR/lib.typ, typst-template.typ, typst-show.typ, _quarto-publish.yml"
 
+# 2') 表紙・前付け（cover.typ）は**文書ごとに書き換えるファイル**なので、
+#     既にあれば上書きしない（doc リポジトリではコミット対象）。
+#     typst-show.typ が常に import するので、無い場合はここで作る。
+if [ -e "$CONTENT_ROOT/cover.typ" ]; then
+  echo "既存: $CONTENT_DIR/cover.typ（文書ごとの表紙。上書きしません）"
+else
+  cp "$TEMPLATE_ROOT/cover.typ" "$CONTENT_ROOT/cover.typ"
+  echo "作成: $CONTENT_DIR/cover.typ（表紙・前付け。この文書用に書き換えてコミットする）"
+fi
+
 # 3) mermaid 用ブラウザ（Chrome → Edge の順に検出）。EXECUTABLE_BROWSER があれば優先。
 to_win_path() { printf '%s' "$1" | sed -E 's#^/([a-zA-Z])/#\1:/#; s#\\#/#g'; }
 BROWSER="${EXECUTABLE_BROWSER:-}"

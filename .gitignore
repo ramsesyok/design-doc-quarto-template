@@ -16,6 +16,10 @@ lib.typ
 typst-template.typ
 typst-show.typ
 _quarto-publish.yml
+# cover.typ（表紙・前付け）は doc リポジトリでは文書ごとに書き換えてコミットする。
+# このリポジトリでは docs/ も manual/ も template/cover.typ の写しのままなので載せない。
+# ここ（docs/ や manual/）で表紙を作り込むなら !/docs/cover.typ のように除外解除する。
+cover.typ
 design-doc.css
 design-doc.lua
 postprocess-html.js
@@ -24,6 +28,7 @@ mermaid-config.json
 !/template/lib.typ
 !/template/typst-template.typ
 !/template/typst-show.typ
+!/template/cover.typ
 !/template/design-doc.css
 !/template/design-doc.lua
 !/template/postprocess-html.js

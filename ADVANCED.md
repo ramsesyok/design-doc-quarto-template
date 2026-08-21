@@ -62,7 +62,13 @@ quarto-template/                 … このリポジトリ（保守者が持つ�
 |---|:---:|---|
 | `design-doc.lua` / `design-doc.css` / `postprocess-html.js` / `mermaid-config.json` | ○ | `init-doc` / `update-doc` / ビルド時の `setup` |
 | `.template-version`（`VERSION` の写し） | ○ | 同上 |
+| `cover.typ`（表紙・前付け） | ○ | `init-doc` / `setup` が**無いときだけ**置く。以後は文書ごとの資産（上書きしない） |
 | `lib.typ` / `typst-template.typ` / `typst-show.typ` / `_quarto-publish.yml` | × | `setup`（PDF を出すときだけ。`.gitignore`） |
+
+`cover.typ`（表紙・前付け）だけは**上書きされない**ため、`template/cover.typ` を直しても
+既存の設計書には伝わりません（効くのはこれから作る文書だけです）。全社の既定の表紙を
+変えるときはここを、個々の文書の表紙を変えるときは設計書リポジトリ側の `cover.typ` を
+直します。
 
 配置コマンド（`init-doc` / `update-doc` / `setup`）の責務分担と、なぜ PDF 用の設定を
 プロファイル（`_quarto-publish.yml`）に分けるのかは

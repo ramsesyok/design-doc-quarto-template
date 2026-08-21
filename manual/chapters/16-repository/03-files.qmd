@@ -6,6 +6,7 @@
 | `lib.typ`               | PDF           | 様式の単一ソース。外枠・採番・IPO・横向きの実装             |
 | `typst-template.typ`    | PDF           | Quarto 既定テンプレートの差し替え口。`lib.typ` を取り込む   |
 | `typst-show.typ`        | PDF           | `_quarto.yml` の設定を様式の引数へ渡す                      |
+| `cover.typ`             | PDF           | 表紙・前付けの中身。**文書ごとに書き換える**（無ければ置かれるだけ） |
 | `quarto-publish.yml`    | PDF           | typst 用の設定。`_quarto-publish.yml` として置かれる        |
 | `design-doc.lua`        | PDF ＋ HTML   | 独自記法（`.tbl` / `.landscape` / `.ipo` / mermaid）の変換  |
 | `design-doc.css`        | HTML          | HTML の見た目                                               |

@@ -6,6 +6,8 @@
 #   - 本文（_quarto.yml / index.qmd / chapters/ / diagrams/）
 #   - 機構ファイル（design-doc.lua / design-doc.css / postprocess-html.js /
 #     mermaid-config.json / .template-version）… 発行者が init-doc・update-doc で置く
+#   - cover.typ … 表紙・前付けの中身。文書ごとに書き換えるのでコミットする
+#     （init-doc・setup は「無ければ作る」だけで、既にあるものは上書きしない）
 #   - design-doc.pdf … 発行者が定期的に作る「中間版」。レビューの基準になるので残す
 
 # ==== ビルド生成物 ====
@@ -15,6 +17,7 @@ index.typ
 
 # ==== 発行者の setup がビルド前に置く PDF 用の機構ファイル ====
 # 実体は発行者が持つ template/ にある。doc リポジトリでは管理しない。
+# cover.typ はここに書かないこと（文書ごとの表紙なのでコミットする）。
 lib.typ
 typst-template.typ
 typst-show.typ

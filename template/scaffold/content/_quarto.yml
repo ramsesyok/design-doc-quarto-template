@@ -43,6 +43,8 @@ doc-revision: ""       # 改訂記号（A〜Z / NC）。doc-number の末尾に�
 spec: false            # スペック様式（全ページ上部に表題欄）にするか。true でスペック様式
 company-ja: ○○株式会社            # 様式フッターの会社名（日本語）
 company-en: ○○ Co., Ltd.          # 様式フッターの会社名（英語）
+cover: false           # 表紙・前付け（まえがき・承認欄・改訂履歴など）を出すか。true で出す
+                       # 中身は同じフォルダの cover.typ に書く（PDF のみ。HTML には出ない）
 page-start: 1          # PDF の開始ページ番号。表紙・前書きを別文書で作り、その続きとして綴じるときに使う（前付けが4ページなら 5）
 
 toc: true

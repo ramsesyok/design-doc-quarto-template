@@ -17,6 +17,7 @@ quarto-template/
     ├── lib.typ               … 様式の単一ソース（外枠・採番・IPO・横向き）
     ├── typst-template.typ    … Quarto 既定テンプレートの差し替え口
     ├── typst-show.typ        … _quarto.yml の設定を様式の引数へ渡す
+    ├── cover.typ             … 表紙・前付けの中身（文書ごとに書き換える。既定の写し）
     ├── quarto-publish.yml    … PDF 用プロファイルの元
     ├── design-doc.lua        … 独自記法（.tbl / .landscape / .ipo / mermaid）の変換
     ├── design-doc.css        … HTML の見た目

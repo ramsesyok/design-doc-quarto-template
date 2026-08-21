@@ -92,7 +92,7 @@ if [ "$WITH_SAMPLE" = "1" ]; then
   for f in "$REPO_ROOT"/docs/*; do
     base="$(basename "$f")"
     case "$base" in
-      _book|.quarto|design-doc.pdf|lib.typ|typst-template.typ|typst-show.typ|_quarto-publish.yml) continue ;;
+      _book|.quarto|design-doc.pdf|lib.typ|typst-template.typ|typst-show.typ|cover.typ|_quarto-publish.yml) continue ;;
     esac
     cp -r "$f" "$STAGE/docs/"
   done

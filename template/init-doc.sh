@@ -93,6 +93,11 @@ while IFS= read -r rel; do
   copy_new "$SCAFFOLD/content/$rel" "$CONTENT_ROOT/$rel"
 done < <(cd "$SCAFFOLD/content" && find . -type f | sed 's|^\./||' | sort)
 
+# 2') 表紙・前付け（cover.typ）。文書ごとに書き換えてコミットするファイルなので、
+#     雛形（scaffold）ではなく template/ から直接置く（実体を1か所にするため）。
+#     既にあれば上書きしない。
+copy_new "$TEMPLATE_ROOT/cover.typ" "$CONTENT_ROOT/cover.typ"
+
 # 3) 機構ファイル（毎回上書き。実体は template/ の1か所）
 "$TEMPLATE_ROOT/update-doc.sh" "$CONTENT_ROOT"
 
@@ -108,6 +113,7 @@ cat <<EOS
 完了しました。次にやること:
   1) $CONTENT_NAME/_quarto.yml の表題・資料番号・会社名・章の並びを直す
   2) $CONTENT_NAME/index.qmd（前付け）と $CONTENT_NAME/chapters/ を文書に合わせて作る
-  3) cd "$REPO_ROOT" && git init && git add -A && git commit -m "初回セットアップ"
-  4) 執筆者に共有する（利用マニュアルの PDF/HTML も一緒に配る）
+  3) 表紙・前書きを出すなら _quarto.yml に cover: true を書き、$CONTENT_NAME/cover.typ を直す
+  4) cd "$REPO_ROOT" && git init && git add -A && git commit -m "初回セットアップ"
+  5) 執筆者に共有する（利用マニュアルの PDF/HTML も一緒に配る）
 EOS

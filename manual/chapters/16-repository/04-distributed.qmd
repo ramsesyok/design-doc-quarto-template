@@ -6,6 +6,7 @@
 | `design-doc.lua`・`design-doc.css`・`postprocess-html.js`・`mermaid-config.json` | ○ | `init-doc`／`update-doc`／ビルド時の `setup` |
 | `.template-version` | ○ | 同上（`template/VERSION` の写し） |
 | `design-doc.pdf` | ○ | 発行者が中間版・発行版を作ったとき |
+| `cover.typ`（表紙・前付け） | ○ | `init-doc`／`setup` が**無いときだけ**置く。以後は文書ごとの資産 |
 | `lib.typ`・`typst-template.typ`・`typst-show.typ`・`_quarto-publish.yml` | × | 発行者の `setup`（PDF を出すときだけ） |
 | `_book/`・`diagrams/mmd-*.svg` | × | ビルド |
 :::

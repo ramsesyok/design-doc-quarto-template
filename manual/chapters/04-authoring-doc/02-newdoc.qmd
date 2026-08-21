@@ -62,6 +62,7 @@ OK -> docs\_book\index.html
 | `<執筆フォルダ>/index.qmd` | 前付けの雛形（改正履歴・用語） |
 | `<執筆フォルダ>/chapters/01-overview/index.qmd` | 章の雛形（1章分） |
 | `<執筆フォルダ>/diagrams/` | 図の置き場（空） |
+| `<執筆フォルダ>/cover.typ` | 表紙・前付けの雛形（`cover: true` のときだけ使われる。@sec-cover-typ） |
 | 機構ファイル5点 | `design-doc.lua` / `design-doc.css` / `postprocess-html.js` / `mermaid-config.json` / `.template-version` |
 :::
 
@@ -106,7 +107,7 @@ spec: false               # スペック様式（表題欄）にするか
 company-ja: ソフト開発株式会社          # スペック様式フッターの会社名（日本語）
 company-en: Soft Development Co., Ltd.  # スペック様式フッターの会社名（英語）
 
-cover: false              # 表紙（タイトルページ）を出す。true で出す
+cover: false              # 表紙・前付けを出す。true で出す（中身は cover.typ）
 page-start: 1             # PDF の開始ページ番号。前付けを別文書で作るとき使う
 toc: true                 # 目次を出す
 toc-title: 目 次          # 目次の見出し
@@ -126,7 +127,7 @@ toc-depth: 3              # 目次に載せる見出しの深さ
 | `spec`         | `false` | `true` でスペック様式に切り替える                                 |
 | `company-ja`   | ―      | スペック様式フッターの会社名（日本語）                            |
 | `company-en`   | ―      | スペック様式フッターの会社名（英語）                              |
-| `cover`        | `false` | 表紙（タイトルページ）を出すか                                    |
+| `cover`        | `false` | 表紙・前付け（`cover.typ` の内容）を目次の前に出すか               |
 | `page-start`   | `1`     | PDF の開始ページ番号。表紙・前書きを別文書で作り、その続きとして綴じるときに使う |
 | `toc`          | `true`  | 目次を出すか                                                      |
 | `toc-depth`    | `3`     | 目次に載せる見出しの深さ                                          |
@@ -147,6 +148,60 @@ toc-depth: 3              # 目次に載せる見出しの深さ
 ::: {.callout-note}
 執筆する Markdown（本文の書き方）は `spec` の値に関係なく同じである。
 様式を切り替えても原稿を書き直す必要はない。
+:::
+
+#### 表紙・前付け（`cover.typ`） {#sec-cover-typ}
+
+表紙の体裁は会社・文書の種類ごとに違う。そこで**表紙と前書きの中身だけは
+`_quarto.yml` から切り離し、執筆フォルダの `cover.typ` に置いてある**。
+このファイルは**文書ごとに書き換えてよい**（テンプレートを更新しても上書きされない）。
+
+- 出るのは `_quarto.yml` に `cover: true` を書いたときだけ。`cover: false`（既定）なら
+  何も出ない。
+- 出る位置は**目次の前**。表紙・承認ページ・改訂履歴・まえがきなど、目次より前に
+  置きたい前付けはすべてここに書く（目次より後ろでよいものは `index.qmd`）。
+- **PDF だけに効く。** HTML には表紙が無いので、書き換えても HTML は変わらない。
+- 設計書リポジトリでは**コミットする**。`init-doc` と `setup` は「無ければ作る」だけで、
+  既にあるものは上書きしない。
+
+```typst
+// cover.typ（既定）
+#import "lib.typ": *
+
+#let front-matter(meta) = {
+  default-cover(meta)     // 表題・副題・作成者を中央に置くだけの既定の表紙
+}
+```
+
+`meta` から `_quarto.yml` の値を受け取れる（`meta.title` / `meta.subtitle` /
+`meta.author` / `meta.doc-number` / `meta.doc-revision` / `meta.doc-id` /
+`meta.company-ja` / `meta.company-en` / `meta.spec` / `meta.page-start`）。
+表紙に資料番号や会社名を出すときは、`_quarto.yml` の値をそのまま使えばよく、
+二重に書く必要はない。
+
+`lib.typ` から次の部品が使える。
+
+::: {.tbl caption="cover.typ から使える部品" label="tbl-cover-parts" widths="34,66"}
+| 部品                            | 内容                                                       |
+|---------------------------------|------------------------------------------------------------|
+| `default-cover(meta)`           | 既定の表紙（本文と同じ様式＝外枠・資料番号つき）           |
+| `bare-page(body)`               | 外枠・資料番号を出さない独立ページ。表紙を紙面いっぱいに使うとき |
+| `pagebreak()`                   | ページを分ける（前付けを複数ページにするとき）             |
+| `JP-SANS` / `RULE` / `BORDER`   | 書体・罫線。本文と体裁をそろえるために使う                 |
+:::
+
+書き換え例は `cover.typ` 自身にコメントで入れてある（承認欄つきの表紙・まえがき・
+改訂履歴の3例）。コメントを外して使う。
+
+::: {.callout-important}
+前付けで見出しを使うときは `#heading(level: 1, numbering: none, outlined: false)[まえがき]`
+と書く。素の `= まえがき` にすると章カウンタを消費して**本文が2章から始まり**、
+目次にも「まえがき」が載ってしまう。
+:::
+
+::: {.callout-note}
+表紙は1ページ目として数えられる。表紙を含めたページ番号にしたくないときは、
+次の `page-start` を使うか、表紙を別文書として作る。
 :::
 
 #### 開始ページ番号（`page-start`） {#sec-page-start}

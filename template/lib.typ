@@ -128,6 +128,19 @@
 #let HEAD-INDENT-STEP = 1em    // 見出しの字下げ量。レベル n を (n-1) 段字下げする
                                // （L1=0, L2=1, L3=2, L4=3, L5=4。1em はその見出しの1文字ぶん）
 
+// ---- 表紙・前付け（cover: true のときだけ出る）----
+// 中身そのものは cover.typ（文書ごとに差し替えられる）にあり、ここはその
+// 既定の表紙 default-cover() が使う寸法。
+#let COVER-TITLE-SIZE = 24pt        // 表題
+#let COVER-TITLE-GAP = 6pt          // 表題と副題の間隔
+#let COVER-SUBTITLE-SIZE = 13pt     // 副題
+#let COVER-AUTHOR-GAP = 24pt        // 副題と作成者の間隔
+#let COVER-AUTHOR-SIZE = 11pt       // 作成者
+#let COVER-SUB-COLOR = rgb("#666")  // 副題・作成者の文字色
+// 様式（外枠・資料番号）を出さないページ（bare-page）の余白。表紙を紙面いっぱいに
+// 使いたいときに使う。既定の表紙は本文と同じ様式のままなのでこの値を使わない。
+#let COVER-MARGIN = 30mm
+
 // ---- 縦ページ（ポートレート）----
 // 本文は外枠の内側 5mm に流し込む（外枠と本文の間隔を上下左右で 5mm に統一）。
 //   左 = 外枠左23 + 5 = 28 / 右 = 210 - (外枠右201 - 5) = 14
@@ -392,6 +405,38 @@
   }
 }
 
+// ------------------------------------------------------------
+//  表紙・前付けの部品（cover.typ から使う）
+//
+//  表紙と前書きの「中身」は文書ごとに違うので、実装は執筆フォルダの cover.typ に
+//  逃がしてある（差し替えても lib.typ は触らない）。ここに置くのは、その cover.typ
+//  から呼べる共通部品だけ。
+// ------------------------------------------------------------
+
+// 様式（外枠・資料番号・スペック表題欄）を出さない独立ページ。
+// 罫線だけの承認欄や、社内様式と違う体裁の表紙・中扉に使う。
+//
+// page() を「関数として」呼ぶと、その中身だけが指定の設定で別ページに組まれ、
+// 後続の本文は元の設定に戻る（set page と違って戻し忘れが起きない）。
+#let bare-page(body, margin: COVER-MARGIN) = page(
+  margin: margin, background: none, header: none, footer: none, body,
+)
+
+// 既定の表紙。表題・副題・作成者をページ中央に置くだけの最小構成で、
+// 様式は本文と同じ（外枠・資料番号が出る）。
+// cover.typ から部品として呼べる（既定のまま使う／一部だけ足す、のどちらも可）。
+#let default-cover(meta) = {
+  align(center + horizon)[
+    #text(font: JP-SANS, size: COVER-TITLE-SIZE, weight: "bold", meta.title)
+    #v(COVER-TITLE-GAP)
+    #if meta.subtitle != "" {
+      text(size: COVER-SUBTITLE-SIZE, fill: COVER-SUB-COLOR, meta.subtitle)
+    }
+    #v(COVER-AUTHOR-GAP)
+    #text(size: COVER-AUTHOR-SIZE, fill: COVER-SUB-COLOR, meta.author)
+  ]
+}
+
 // ============================================================
 //  【3】文書全体のセットアップ（本文はポートレート）
 //
@@ -404,7 +449,9 @@
   doc-revision: "",                    // 改訂記号（A〜Z / NC）。既定は空。資料番号の末尾に結合
   spec: false,                         // スペック様式（全ページ上部に表題欄）にするか。既定 false
   company-ja: "", company-en: "",      // スペック様式のフッターに出す会社名（日本語/英語）
-  cover: false,                        // 表紙（タイトルページ）を出すか。既定は出さない
+  cover: false,                        // 表紙・前付けを出すか。既定は出さない
+  front-matter: none,                  // 表紙・前付けを組む関数（cover.typ の front-matter）。
+                                       // none なら既定の表紙 default-cover() を使う
   page-start: 1,                       // 開始ページ番号。表紙・前書きを別文書で作り、その
                                        // 続きとして綴じるときに使う。既定 1（＝1から振る）
   toc: false, toc-title: "目 次", toc-depth: 3,
@@ -626,19 +673,26 @@
   // 番号だから、ずらせば N は綴じ上がり全体の総ページ数と一致する。
   counter(page).update(page-start)
 
-  // ---- タイトルページ（cover: true のときだけ出す。既定は出さない）----
-  // 見出し（heading）にはしない。h1 にすると章カウンタを消費し、
-  // 目次にも項目として載ってしまう。
+  // ---- 表紙・前付け（cover: true のときだけ出す。既定は出さない）----
+  // 中身は cover.typ の front-matter() が決める（文書ごとに差し替えられる）。
+  // 渡していないとき（素の Typst で書くとき等）は既定の表紙 default-cover()。
   // 表紙を出さないときは pagebreak も打たない（先頭の空ページを避けるため）。
+  //
+  // 前書き（まえがき・承認ページ・改訂履歴など）も front-matter() の中に書く。
+  // 目次より前に置きたい前付けはすべてここ、目次より後ろでよいものは index.qmd。
+  // 見出し（heading）を使うときは numbering: none / outlined: false を付けること。
+  // 素の h1 にすると章カウンタを消費し、目次にも項目として載ってしまう。
   if cover {
-    align(center + horizon)[
-      #text(font: JP-SANS, size: 24pt, weight: "bold", title)
-      #v(6pt)
-      #if subtitle != "" { text(size: 13pt, fill: rgb("#666"), subtitle) }
-      #v(24pt)
-      #text(size: 11pt, fill: rgb("#666"), author)
-    ]
-    pagebreak()
+    let meta = (
+      title: title, subtitle: subtitle, author: author,
+      doc-number: doc-number, doc-revision: doc-revision, doc-id: doc-id,
+      spec: spec, company-ja: company-ja, company-en: company-en,
+      page-start: page-start,
+    )
+    if front-matter != none { front-matter(meta) } else { default-cover(meta) }
+    // weak: true にしておくと、front-matter() が bare-page() や pagebreak() で
+    // 自分の最後のページを閉じている場合に空ページが増えない。
+    pagebreak(weak: true)
   }
 
   // 目次（toc: true のとき）。章番号・ページ番号・リーダー線は outline が自動生成する。

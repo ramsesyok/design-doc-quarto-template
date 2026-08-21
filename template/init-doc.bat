@@ -79,6 +79,10 @@ for /r "%SRCDIR%" %%F in (*) do (
   call :copy_new "%%F" "%CONTENT_ROOT%\!REL!"
 )
 
+rem 2') Cover / front matter. Edited per document and committed, so it comes straight
+rem     from template\ (single source) and is never overwritten.
+call :copy_new "%TEMPLATE_ROOT%\cover.typ" "%CONTENT_ROOT%\cover.typ"
+
 rem 3) Mechanism files (always overwritten; single source is template\)
 call "%TEMPLATE_ROOT%\update-doc.bat" "%CONTENT_ROOT%"
 if errorlevel 1 exit /b 1
@@ -101,8 +105,9 @@ echo.
 echo Done. Next:
 echo   1) edit %CONTENT_NAME%\_quarto.yml (title, doc-number, company, chapters)
 echo   2) write %CONTENT_NAME%\index.qmd and %CONTENT_NAME%\chapters\
-echo   3) cd "%REPO_ROOT%" ^&^& git init ^&^& git add -A ^&^& git commit -m "init"
-echo   4) share with the authors (hand out the manual PDF/HTML as well)
+echo   3) for a cover: set cover: true in _quarto.yml and edit %CONTENT_NAME%\cover.typ
+echo   4) cd "%REPO_ROOT%" ^&^& git init ^&^& git add -A ^&^& git commit -m "init"
+echo   5) share with the authors (hand out the manual PDF/HTML as well)
 endlocal
 exit /b 0
 

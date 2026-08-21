@@ -8,7 +8,8 @@
 | 改訂記号を付ける       | `doc-revision: A`                        | 4章  |
 | 会社名を変える         | `company-ja:` ／ `company-en:`           | 4章  |
 | スペック様式にする     | `spec: true`                             | 4章  |
-| 表紙を出す             | `cover: true`                            | 4章  |
+| 表紙・前付けを出す     | `cover: true`                            | 4章  |
+| 表紙・前書きの中身を作る | `cover.typ` を書き換える               | 4章  |
 | 途中のページから始める | `page-start: 5`                          | 4章  |
 | 章を増減・並べ替える   | `book: chapters:` の一覧                 | 4章  |
 :::
