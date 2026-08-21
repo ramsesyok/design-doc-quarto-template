@@ -9,5 +9,6 @@
 | 会社名を変える         | `company-ja:` ／ `company-en:`           | 4章  |
 | スペック様式にする     | `spec: true`                             | 4章  |
 | 表紙を出す             | `cover: true`                            | 4章  |
+| 途中のページから始める | `page-start: 5`                          | 4章  |
 | 章を増減・並べ替える   | `book: chapters:` の一覧                 | 4章  |
 :::
