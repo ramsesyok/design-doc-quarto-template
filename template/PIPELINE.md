@@ -233,7 +233,9 @@ cover.typ:  front-matter(meta, front) の front（= query して組む content�
   が `query(<df-front>).len() > 0` で判定する。既定の `cover.typ` はこれを使う。
 - `front-matter()` が `front` を置かなければ、その中身は PDF に出ない。これは仕様で、
   「`index.qmd` に書くことが無い」文書（章はすべて `chapters/` に分ける構成）で
-  見出しだけのページを消すのに使う。
+  見出しだけのページを消すのに使う。**`cover: false` のときは `front-matter()` 自体が
+  呼ばれない**ので同じく出ない（表紙なしで前付けだけ本文に出したいなら
+  `front-in-cover` を書かない）。`front-slot` は状態を見ずに常に印だけを置く。
 - 囲めるのは1文書に1か所（`query` の先頭だけを使う）。
 - HTML 側はこの div を素通しする（`IS_HTML` で分岐）。トップページの先頭に出る。
 

@@ -432,14 +432,14 @@
 // body の木を組み替えて切り出す手も一見できそうだが、Quarto は本文の直前に
 // show ルール（図表カウンタのリセット）を挿すため body 全体が styled 要素1つに
 // 包まれており、children を辿っても中身に手が届かない（実測）。
-#let _cover-on = state("design-cover-on", false)
-
-// 前付けの受け口。cover: true のときは何も描かず、内容にラベル付きの metadata で
-// 印を付けるだけ。cover: false のときは表紙が無いので、その場にそのまま出す
-// （囲んだせいで中身が消えることはない）。
-#let front-slot(body) = context {
-  if _cover-on.get() { [#metadata(body)<df-front>] } else { body }
-}
+// 前付けの受け口。その場では何も描かず、内容にラベル付きの metadata で印を付けるだけ。
+// どこに出すか（出さないか）は表紙側＝ cover.typ が決める。
+//
+// **表紙を出さない（cover: false）ときは PDF に出ない。** これは仕様である。
+// 「index.qmd に書くことが無い（章はすべて chapters/ に分ける）」文書では、
+// 表紙の有無にかかわらず前付けの痕跡（空ページ・目次項目）を消したいため。
+// 中身を本文に出したいなら front-in-cover を書かない（＝囲まない）。
+#let front-slot(body) = [#metadata(body)<df-front>]
 
 // 前付けの体裁。本文の「章（h1）は常に新しいページから始める」ルールを外す。
 // 前付けを表紙のページへ流し込んだとき、見出しで改ページされて表紙が2ページに
@@ -518,8 +518,6 @@
   _company-ja.update(company-ja)
   _company-en.update(company-en)
   _spec.update(spec)
-  // 前付けの受け口（front-slot）が「印だけ置く／その場に出す」を切り替えるのに使う。
-  _cover-on.update(cover)
   set page(
     paper: "a4",
     // スペック様式は表題欄（2行）のぶん本文の上マージンを下げる。

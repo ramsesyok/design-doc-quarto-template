@@ -73,16 +73,23 @@ front-in-cover: true   # index.qmd の中身を表紙側（cover.typ）へ回す
 ::: {.tbl caption="用途と書き方" label="tbl-front-usecase" widths="22,22,56"}
 | `index.qmd`    | 表紙       | 書き方                                                   |
 |----------------|------------|----------------------------------------------------------|
+| 書くことが無い | 表紙なし   | `front-in-cover: true`（`cover: false` のままでよい）      |
 | 書くことが無い | 表紙のみ   | `front-in-cover: true` ＋ `cover.typ` で `front` を置かない |
 | 書くことが無い | 前書きつき | 同上。前書きの文は `cover.typ` に直接書く                 |
 | 前書きを書く   | 表紙のみ   | 何も書かない（目次の後ろ）／`front-in-cover: true` ＋ `front-on-new-page(front)`（表紙の次） |
 | 前書きを書く   | 前書きつき | `front-in-cover: true` ＋ `bare-page[ … #front ]`（表紙の中に流し込む） |
 :::
 
+::: {.callout-important}
+`front-in-cover: true` は「**`index.qmd` の中身を本文から外す**」設定である。
+外したものをどこに出すかは `cover.typ` が決めるので、**表紙を出さない
+（`cover: false`）ときは PDF のどこにも出ない**。表紙が無く、かつ前書きを本文に
+出したいときは、この設定を書かない（＝従来どおり目次の後ろに出る）。
+:::
+
 ::: {.callout-note}
-効くのは PDF で `cover: true` のときだけである。`cover: false` のときは
-`front-in-cover: true` を書いても位置は変わらない。HTML でも位置は変わらず、
-`index.qmd` はトップページのまま、章番号も変わらない。
+効くのは PDF だけである。HTML では位置も章番号も変わらず、`index.qmd` は
+トップページのままである。
 :::
 
 #### 一部だけ回したいとき（`::: {.front-matter}`）

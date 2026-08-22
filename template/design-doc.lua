@@ -1003,10 +1003,14 @@ function Pandoc(doc)
   if stop == nil then return nil end
 
   local out = pandoc.Blocks({ pandoc.RawBlock('typst', '#front-slot[') })
+  local head_done = false
   for i = 1, stop - 1 do
     local b = blocks[i]
-    if i == 1 and b.t == 'Header' and b.level == 1 then
-      local h = front_heading(b)      -- 章見出しは目次に出さない形へ。空なら捨てる
+    -- 章見出し（index.qmd の先頭の h1）は目次に出さない形へ。空なら捨てる。
+    -- 先頭ブロックとは限らないので「最初に現れた h1」を対象にする。
+    if not head_done and b.t == 'Header' and b.level == 1 then
+      head_done = true
+      local h = front_heading(b)
       if h then out:insert(h) end
     else
       out:insert(b)
