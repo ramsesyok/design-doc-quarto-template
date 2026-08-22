@@ -25,16 +25,19 @@
 //    meta.company-en   会社名（英）  meta.page-start   開始ページ番号
 //
 //  front … **index.qmd に書いた前付けの本文**（Markdown で書いたもの）。
-//    index.qmd の中を `::: {.front-matter}` … `:::` で囲むと、その中身が本文から
-//    抜き出されてここへ届く。**置き場所はこのファイルが決める**:
-//      (1) bare-page[ … #front ] … 表紙のページの中に流し込む（文章のある表紙）
-//      (2) 表紙 → pagebreak() → front … 表紙の次のページに置く
-//      (3) 囲まない … 従来どおり目次の後ろ（本文の先頭）に出る。front は none
+//    index.qmd の中を `::: {.front-matter}` … `:::` で囲むと、その中身がここへ届く。
+//    **置き場所はこのファイルが決める**:
+//      (1) bare-page[ … #front ]   … 表紙のページの中に流し込む（文章のある表紙）
+//      (2) front-on-new-page(front) … 表紙の次のページに置く（無ければ何もしない）
+//      (3) 囲まない                 … 従来どおり目次の後ろ（本文の先頭）に出る
 //    囲んだのにここで front を置き忘れると、その中身は**どこにも出ない**ので注意。
+//    front は「前付けがあれば組み、無ければ何も出さない」content なので、
+//    `if front != none` のような判定はできない（判定は front-on-new-page が行う）。
 //
 //  lib.typ から使える部品（`#import "lib.typ": *` で入る）:
 //    default-cover(meta)          既定の表紙（下で使っているもの）
 //    bare-page(body, margin: 30mm) 外枠・資料番号を出さない独立ページ
+//    front-on-new-page(front)     前付けがあれば改ページして置く（無ければ何もしない）
 //    JP-SANS / JP-SERIF           書体
 //    RULE / FRAME / BORDER        罫線（太さ＋色）
 //    COVER-TITLE-SIZE ほか        既定の表紙の寸法（lib.typ 冒頭【1】）
@@ -62,11 +65,8 @@
   default-cover(meta)
 
   // index.qmd を `::: {.front-matter}` で囲んだときは、その中身を表紙の次のページへ。
-  // 囲んでいなければ front は none で、ここは何もしない。
-  if front != none {
-    pagebreak()
-    front
-  }
+  // 囲んでいなければ何もしない（空のページも作らない）。
+  front-on-new-page(front)
 
   // ------------------------------------------------------------
   // 差し替え例1: 文章を載せる表紙（index.qmd の前付けを表紙ページの中に入れる）
@@ -108,7 +108,7 @@
   //   #v(6pt)
   //   #text(size: 12pt)[#meta.company-ja]
   // ]
-  // if front != none { front }            // 表紙の次のページに前付けを置く
+  // front-on-new-page(front)              // 表紙の次のページに前付けを置く
 
   // ------------------------------------------------------------
   // 差し替え例3: cover.typ 側に直接まえがきを書く（index.qmd を使わない場合）

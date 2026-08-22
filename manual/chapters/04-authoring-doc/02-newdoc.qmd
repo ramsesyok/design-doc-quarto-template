@@ -169,11 +169,8 @@ toc-depth: 3              # 目次に載せる見出しの深さ
 #import "lib.typ": *
 
 #let front-matter(meta, front) = {
-  default-cover(meta)     // 表題・副題・作成者を中央に置くだけの既定の表紙
-  if front != none {      // index.qmd から回した前付け（@sec-front-to-cover）
-    pagebreak()
-    front
-  }
+  default-cover(meta)        // 表題・副題・作成者を中央に置くだけの既定の表紙
+  front-on-new-page(front)   // 前付け（@sec-front-to-cover）があれば次のページへ
 }
 ```
 
@@ -186,8 +183,8 @@ toc-depth: 3              # 目次に載せる見出しの深さ
 `front` は **`index.qmd` に Markdown で書いた前付けの本文**である。book では
 `index.qmd` が必須で、その中身は既定では目次の後ろに出るが、`index.qmd` の中を
 `::: {.front-matter}` で囲むと、その範囲がここへ渡される（@sec-front-to-cover）。
-`#front` を表紙の中に置けば**文章を載せた表紙**になり、`pagebreak()` の後に置けば
-**表紙の次のページ**になる。囲んでいないときは `none` が渡る。
+`#front` を表紙の中に置けば**文章を載せた表紙**になり、`front-on-new-page(front)`
+とすれば**表紙の次のページ**に置かれる（前付けが無ければ何も出ない）。
 
 `lib.typ` から次の部品が使える。
 
@@ -196,6 +193,7 @@ toc-depth: 3              # 目次に載せる見出しの深さ
 |---------------------------------|------------------------------------------------------------|
 | `default-cover(meta)`           | 既定の表紙（本文と同じ様式＝外枠・資料番号つき）           |
 | `bare-page(body)`               | 外枠・資料番号を出さない独立ページ。表紙を紙面いっぱいに使うとき |
+| `front-on-new-page(front)`      | 前付けがあれば改ページして置く（無ければ空ページも作らない） |
 | `pagebreak()`                   | ページを分ける（前付けを複数ページにするとき）             |
 | `JP-SANS` / `RULE` / `BORDER`   | 書体・罫線。本文と体裁をそろえるために使う                 |
 :::

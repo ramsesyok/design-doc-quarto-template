@@ -1,5 +1,13 @@
 ## Quarto のインストール {#sec-quarto-install}
 
+::: {.callout-important}
+**PDF を出すには Quarto 1.9.20 以上が要る。** これより前の版では、Quarto 自身が
+book プロジェクトの typst 出力に対応しておらず、`build-qmd` を実行しても
+`WARN: The typst format is not supported by book projects` と出て PDF ができない
+（1.9.15 で不可、1.9.20 で可を実測）。HTML（執筆者のプレビュー・配布 HTML）は
+それより前の版でも出せる。
+:::
+
 ### 手順
 
 1. Quarto の公式サイト（<https://quarto.org/docs/get-started/>）からインストーラを
@@ -17,7 +25,8 @@
 quarto --version
 ```
 
-バージョン番号（例: `1.6.39`）が表示されればインストールできている。
+バージョン番号（例: `1.9.38`）が表示されればインストールできている。PDF を出す
+発行者の環境では、**1.9.20 以上**であることを確かめる。
 
 ::: {.callout-warning}
 `'quarto' は、内部コマンドまたは外部コマンド…として認識されていません` と出る場合は、

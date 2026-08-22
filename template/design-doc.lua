@@ -11,9 +11,8 @@
 --   3) ::: {.ipo} div → #ipo(...)（IPO図。最初の見出し = 機能名 / 処理名、
 --      入力/処理/出力（Input/Process/Output 可）の見出しで3列に分割）
 --   4) ::: {.tbl} div → 統一テーブル（採番・分割・セル結合・列幅・相互参照）
---   5) ::: {.front-matter} div → 前後に印（#metadata）を置く。lib.typ の design-doc()
---      がその範囲を本文から切り出し、表紙（cover.typ）へ渡す（index.qmd の中身を
---      表紙の中／表紙の次ページに置けるようにするため）
+--   5) ::: {.front-matter} div → #front-slot[...]（前付けを表紙側へ渡す。index.qmd の
+--      中身を表紙の中／表紙の次ページに置けるようにするため）
 --   6) すべての表の列幅を本文幅いっぱいに正規化（内容量に比例して配分）
 -- ============================================================
 
@@ -631,17 +630,19 @@ function Div(el)
   if el.classes:includes('front-matter') then
     -- ::: {.front-matter} … 表紙側（cover.typ）へ回す本文。index.qmd に書く。
     -- book では index.qmd が必須で、その中身は既定では目次の後ろに出る。表紙に文章を
-    -- 載せる様式・表紙の次に置く様式もあるので、囲んだ範囲を本文から抜き出して
-    -- cover.typ の front-matter(meta, front) に渡し、置き場所を cover.typ に決めさせる。
+    -- 載せる様式・表紙の次に置く様式もあるので、囲んだ範囲を cover.typ の
+    -- front-matter(meta, front) へ渡し、置き場所を cover.typ に決めさせる。
     --
-    -- typst: 前後に印（#metadata）だけを置き、中身はそのまま流す。lib.typ の
-    --        design-doc() が本文（body）を組む前に、この印の間を切り出す。
-    --        印は cover: true のときだけ使われる（false なら中身はその場に残る）。
+    -- typst: #front-slot[...] に変換する。lib.typ の front-slot は cover: true のとき
+    --        その場では何も描かず、内容にラベル付きの印を置くだけ。表紙側はそれを
+    --        query して組む（typst は組版順にしか流せないので、後ろの内容を前へ
+    --        出すにはこの形しかない。詳細は lib.typ の front-slot のコメント）。
+    --        cover: false のときは front-slot がその場に出すので中身は消えない。
     -- HTML : 表紙が無いので div のまま。index.html の先頭にそのまま出る。
     if IS_HTML then return el end
-    local out = pandoc.Blocks({ pandoc.RawBlock('typst', '#metadata("df-front-begin")') })
+    local out = pandoc.Blocks({ pandoc.RawBlock('typst', '#front-slot[') })
     out:extend(el.content)
-    out:insert(pandoc.RawBlock('typst', '#metadata("df-front-end")'))
+    out:insert(pandoc.RawBlock('typst', ']'))
     return out
   end
 

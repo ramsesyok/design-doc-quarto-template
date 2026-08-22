@@ -422,31 +422,38 @@
   margin: margin, background: none, header: none, footer: none, body,
 )
 
-// ---- 本文から「前付けに回す部分」を切り出す ----
+// ---- 前付け（index.qmd の中身）を表紙側へ渡す ----
 // book では index.qmd が必須で、その中身は既定では目次の後ろ（本文の先頭）に出る。
-// 表紙に文章を載せる様式や、表紙の次のページに置く様式もあるので、
-// index.qmd を `::: {.front-matter}` で囲むと design-doc.lua が本文の中に
-//   #metadata("df-front-begin") … 中身 … #metadata("df-front-end")
-// を置く。ここではその印の間を抜き出して cover.typ へ渡し、置き場所を決めさせる。
-// 印が無ければ本文はそのまま（従来どおり index.qmd の中身は目次の後ろ）。
-#let _marker-index(cs, name) = {
-  let idx = -1
-  for (i, c) in cs.enumerate() {
-    // and は短絡するので、metadata 以外で .value を触ることはない。
-    if idx == -1 and c.func() == metadata and c.value == name { idx = i }
-  }
-  idx
+// 表紙に文章を載せる様式や、表紙の次のページに置く様式もあるので、index.qmd を
+// `::: {.front-matter}` で囲むと design-doc.lua がそれを #front-slot[...] に変える。
+//
+// **本文の中身を前へ動かす方法はこれしかない。** typst は組版順にしか流せないので、
+// 「その場では出さずに印だけ置き、表紙から参照して組む」形にしてある。
+// body の木を組み替えて切り出す手も一見できそうだが、Quarto は本文の直前に
+// show ルール（図表カウンタのリセット）を挿すため body 全体が styled 要素1つに
+// 包まれており、children を辿っても中身に手が届かない（実測）。
+#let _cover-on = state("design-cover-on", false)
+
+// 前付けの受け口。cover: true のときは何も描かず、内容にラベル付きの metadata で
+// 印を付けるだけ。cover: false のときは表紙が無いので、その場にそのまま出す
+// （囲んだせいで中身が消えることはない）。
+#let front-slot(body) = context {
+  if _cover-on.get() { [#metadata(body)<df-front>] } else { body }
 }
 
-#let _split-front(body) = {
-  let cs = if body.has("children") { body.children } else { (body,) }
-  let b = _marker-index(cs, "df-front-begin")
-  let e = _marker-index(cs, "df-front-end")
-  if b >= 0 and e > b {
-    // 印そのものは捨てる。前半・後半を連結したものが残りの本文。
-    (cs.slice(b + 1, e).join(), (cs.slice(0, b) + cs.slice(e + 1)).join())
-  } else {
-    (none, body)
+// 前付けの内容。cover.typ には第2引数 front としてこれが渡る。
+// 囲んでいない文書では query が空になり、何も出ない。
+#let front-content = context {
+  let q = query(<df-front>)
+  if q.len() > 0 { q.first().value }
+}
+
+// 前付けがあるときだけ改ページして置く（無ければ空ページも作らない）。
+// 既定の cover.typ が使う。表紙ページの中に流し込むときは front をそのまま置けばよい。
+#let front-on-new-page(front) = context {
+  if query(<df-front>).len() > 0 {
+    pagebreak()
+    front
   }
 }
 
@@ -497,6 +504,8 @@
   _company-ja.update(company-ja)
   _company-en.update(company-en)
   _spec.update(spec)
+  // 前付けの受け口（front-slot）が「印だけ置く／その場に出す」を切り替えるのに使う。
+  _cover-on.update(cover)
   set page(
     paper: "a4",
     // スペック様式は表題欄（2行）のぶん本文の上マージンを下げる。
@@ -701,10 +710,6 @@
   // 番号だから、ずらせば N は綴じ上がり全体の総ページ数と一致する。
   counter(page).update(page-start)
 
-  // 本文のうち `::: {.front-matter}` で囲まれた部分を取り出し、表紙側へ回す。
-  // 表紙を出さないときは切り出さない（囲んでいても中身はその場に残る）。
-  let (front-body, body) = if cover { _split-front(body) } else { (none, body) }
-
   // ---- 表紙・前付け（cover: true のときだけ出す。既定は出さない）----
   // 中身は cover.typ の front-matter() が決める（文書ごとに差し替えられる）。
   // 渡していないとき（素の Typst で書くとき等）は既定の表紙 default-cover()。
@@ -722,12 +727,12 @@
       page-start: page-start,
     )
     if front-matter != none {
-      front-matter(meta, front-body)
+      front-matter(meta, front-content)
     } else {
       // front-matter を渡していないとき（素の Typst で書くとき等）の既定。
-      // front-body を落とさないよう、表紙の次のページに置く。
+      // 前付けを落とさないよう、あれば表紙の次のページに置く。
       default-cover(meta)
-      if front-body != none { pagebreak(); front-body }
+      front-on-new-page(front-content)
     }
     // weak: true にしておくと、front-matter() が bare-page() や pagebreak() で
     // 自分の最後のページを閉じている場合に空ページが増えない。

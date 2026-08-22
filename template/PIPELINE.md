@@ -104,6 +104,15 @@ order-design/     ← 設計書リポジトリ（git 共有。執筆者はこれ
 **同じ qmd から2系統が出る**のが要点。執筆者の記法は完全に共通で、
 分岐は `design-doc.lua` の `FORMAT` 判定1か所に閉じている。
 
+### 必要な Quarto の版
+
+**PDF は Quarto 1.9.20 以上でないと出ない。** それより前の版は book プロジェクトの
+typst 出力に対応しておらず、`--to typst` を付けても
+`WARN: The typst format is not supported by book projects` と出て何も生成されない
+（1.4.557 / 1.5.57 / 1.6.42 / 1.7.32 / 1.8.24 / 1.9.10 / 1.9.15 で不可、
+1.9.20 / 1.9.38 で可を実測）。同梱 typst が 0.14.2 になった版と一致する。
+HTML は古い版でも出る。
+
 ### ビルドコマンド
 
 ```
@@ -206,21 +215,25 @@ book では `index.qmd` が必須で、その中身は本文の先頭＝**目次
 ```
 index.qmd:  ::: {.front-matter} … :::
               ↓ design-doc.lua（typst 出力のときだけ）
-本文の中に  #metadata("df-front-begin") … 中身 … #metadata("df-front-end")
-              ↓ lib.typ の _split-front(body)
-front-matter(meta, front) の第2引数として cover.typ へ
+本文の中に  #front-slot[ … 中身 … ]        ← その場では何も描かない
+              ↓ lib.typ: [#metadata(body)<df-front>] として印だけ置く
+cover.typ:  front-matter(meta, front) の front（= query して組む content）
 ```
 
-- **content を後ろから前へ動かす方法はこれしかない。** typst は組版順にしか流せない
-  ので、`design-doc()` が `body` を受け取った直後（＝まだ組む前）に
-  `body.children` を走査し、印の間を切り出して残りと分ける。
-- 印は `#metadata(...)`（何も描かない要素）。`_marker-index()` が
-  `c.func() == metadata and c.value == "…"` で探す（`and` は短絡するので
-  metadata 以外で `.value` を触らない）。
-- 切り出すのは **`cover: true` のときだけ**。`false` なら本文をそのまま組むので、
-  囲んだままでも中身はその場（目次の後ろ）に残る。
-- `front-matter()` が `front` を置き忘れると中身は出力から消える。既定の
-  `cover.typ` は `if front != none { pagebreak(); front }` で拾っている。
+- **content を後ろから前へ出す方法はこれしかない。** typst は組版順にしか流せない
+  ので、「その場では出さず、表紙から `query(<df-front>)` で引いて組む」形にしてある
+  （総ページ数を `counter(page).final()` で先に出すのと同じ、introspection の使い方）。
+- **body の木を組み替えて切り出す手は使えない。** Quarto は本文の直前に show ルール
+  （図表カウンタのチャプタリセット）を挿すので、`design-doc()` が受け取る `body` は
+  **`styled` 要素1つに包まれており**、`body.children` を辿っても中身に手が届かない
+  （book 出力で実測。単一文書出力では包まれないので、これを見落としやすい）。
+- `front-slot` は `cover: true` のときだけ「印だけ置く」。`false` のときはその場に
+  中身を出すので、囲んだせいで消えることはない（判定は `_cover-on` 状態）。
+- `front` は content であって `none` にはならない（前付けが無ければ何も出さない
+  content になる）。「あるときだけ改ページして置く」は `front-on-new-page(front)`
+  が `query(<df-front>).len() > 0` で判定する。既定の `cover.typ` はこれを使う。
+- `front-matter()` が `front` を置き忘れると中身は出力から消える。
+- 囲めるのは1文書に1か所（`query` の先頭だけを使う）。
 - HTML 側はこの div を素通しする（`IS_HTML` で分岐）。トップページの先頭に出る。
 
 ### 3.2 lib.typ の構成
@@ -371,7 +384,7 @@ HTML では div 構造として組み立て直している。
 | 記法 | typst 出力 | html 出力 |
 |---|---|---|
 | ` ```mermaid ` | SVG 化して `image()` | **`MERMAID_SVG=1` 時**は同左（同じ SVG）／**既定**は `<pre class="mermaid mermaid-js">` を出しクライアント描画（§5.1） |
-| `::: {.front-matter}` | 前後に `#metadata("df-front-…")` を置くだけ（中身はそのまま）。`design-doc()` が本文から切り出して `cover.typ` へ渡す | div のまま（トップページの先頭に出る） |
+| `::: {.front-matter}` | `#front-slot[...]`（その場では描かず、表紙が `query` して組む） | div のまま（トップページの先頭に出る） |
 | `::: {.landscape}` | `#landscape[...]` | div のまま（CSS で横スクロール） |
 | `::: {.ipo}` | `#ipo(...)` | `.ipo` div 構造 |
 | `::: {.tbl}` | 自前採番のキャプション＋表（分割は `#pagebreak`、`merge-cols=` で rowspan 結合） | `<div class="split-caption">` ＋表（採番は postprocess、結合は同左） |
