@@ -10,7 +10,7 @@
 | IPO 図の欄割り・横向きの体裁     | `lib.typ`                   | ―                                     |
 | 表紙・前付けの中身               | `<執筆フォルダ>/cover.typ`  | **文書ごと**。既定は `template/cover.typ` |
 | 既定の表紙の寸法・文字サイズ     | `lib.typ`                   | `COVER-*`（「【1】調整パラメータ」）    |
-| 独自記法の追加・変更             | `design-doc.lua`            | `.tbl` / `.landscape` / `.ipo` / mermaid |
+| 独自記法の追加・変更             | `design-doc.lua`            | `.tbl` / `.landscape` / `.ipo` / `.front-matter` / mermaid |
 | HTML の見た目                    | `design-doc.css`            | ―                                     |
 | HTML の図表番号の振り直し        | `postprocess-html.js`       | Quarto の採番より後段で走る必要がある   |
 | mermaid のテーマ・フォント       | `mermaid-config.json`       | SVG 化とプレビューの共通ソース          |

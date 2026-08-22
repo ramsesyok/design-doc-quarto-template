@@ -422,6 +422,34 @@
   margin: margin, background: none, header: none, footer: none, body,
 )
 
+// ---- 本文から「前付けに回す部分」を切り出す ----
+// book では index.qmd が必須で、その中身は既定では目次の後ろ（本文の先頭）に出る。
+// 表紙に文章を載せる様式や、表紙の次のページに置く様式もあるので、
+// index.qmd を `::: {.front-matter}` で囲むと design-doc.lua が本文の中に
+//   #metadata("df-front-begin") … 中身 … #metadata("df-front-end")
+// を置く。ここではその印の間を抜き出して cover.typ へ渡し、置き場所を決めさせる。
+// 印が無ければ本文はそのまま（従来どおり index.qmd の中身は目次の後ろ）。
+#let _marker-index(cs, name) = {
+  let idx = -1
+  for (i, c) in cs.enumerate() {
+    // and は短絡するので、metadata 以外で .value を触ることはない。
+    if idx == -1 and c.func() == metadata and c.value == name { idx = i }
+  }
+  idx
+}
+
+#let _split-front(body) = {
+  let cs = if body.has("children") { body.children } else { (body,) }
+  let b = _marker-index(cs, "df-front-begin")
+  let e = _marker-index(cs, "df-front-end")
+  if b >= 0 and e > b {
+    // 印そのものは捨てる。前半・後半を連結したものが残りの本文。
+    (cs.slice(b + 1, e).join(), (cs.slice(0, b) + cs.slice(e + 1)).join())
+  } else {
+    (none, body)
+  }
+}
+
 // 既定の表紙。表題・副題・作成者をページ中央に置くだけの最小構成で、
 // 様式は本文と同じ（外枠・資料番号が出る）。
 // cover.typ から部品として呼べる（既定のまま使う／一部だけ足す、のどちらも可）。
@@ -673,6 +701,10 @@
   // 番号だから、ずらせば N は綴じ上がり全体の総ページ数と一致する。
   counter(page).update(page-start)
 
+  // 本文のうち `::: {.front-matter}` で囲まれた部分を取り出し、表紙側へ回す。
+  // 表紙を出さないときは切り出さない（囲んでいても中身はその場に残る）。
+  let (front-body, body) = if cover { _split-front(body) } else { (none, body) }
+
   // ---- 表紙・前付け（cover: true のときだけ出す。既定は出さない）----
   // 中身は cover.typ の front-matter() が決める（文書ごとに差し替えられる）。
   // 渡していないとき（素の Typst で書くとき等）は既定の表紙 default-cover()。
@@ -689,7 +721,14 @@
       spec: spec, company-ja: company-ja, company-en: company-en,
       page-start: page-start,
     )
-    if front-matter != none { front-matter(meta) } else { default-cover(meta) }
+    if front-matter != none {
+      front-matter(meta, front-body)
+    } else {
+      // front-matter を渡していないとき（素の Typst で書くとき等）の既定。
+      // front-body を落とさないよう、表紙の次のページに置く。
+      default-cover(meta)
+      if front-body != none { pagebreak(); front-body }
+    }
     // weak: true にしておくと、front-matter() が bare-page() や pagebreak() で
     // 自分の最後のページを閉じている場合に空ページが増えない。
     pagebreak(weak: true)

@@ -168,8 +168,12 @@ toc-depth: 3              # 目次に載せる見出しの深さ
 // cover.typ（既定）
 #import "lib.typ": *
 
-#let front-matter(meta) = {
+#let front-matter(meta, front) = {
   default-cover(meta)     // 表題・副題・作成者を中央に置くだけの既定の表紙
+  if front != none {      // index.qmd から回した前付け（@sec-front-to-cover）
+    pagebreak()
+    front
+  }
 }
 ```
 
@@ -178,6 +182,12 @@ toc-depth: 3              # 目次に載せる見出しの深さ
 `meta.company-ja` / `meta.company-en` / `meta.spec` / `meta.page-start`）。
 表紙に資料番号や会社名を出すときは、`_quarto.yml` の値をそのまま使えばよく、
 二重に書く必要はない。
+
+`front` は **`index.qmd` に Markdown で書いた前付けの本文**である。book では
+`index.qmd` が必須で、その中身は既定では目次の後ろに出るが、`index.qmd` の中を
+`::: {.front-matter}` で囲むと、その範囲がここへ渡される（@sec-front-to-cover）。
+`#front` を表紙の中に置けば**文章を載せた表紙**になり、`pagebreak()` の後に置けば
+**表紙の次のページ**になる。囲んでいないときは `none` が渡る。
 
 `lib.typ` から次の部品が使える。
 
@@ -190,8 +200,8 @@ toc-depth: 3              # 目次に載せる見出しの深さ
 | `JP-SANS` / `RULE` / `BORDER`   | 書体・罫線。本文と体裁をそろえるために使う                 |
 :::
 
-書き換え例は `cover.typ` 自身にコメントで入れてある（承認欄つきの表紙・まえがき・
-改訂履歴の3例）。コメントを外して使う。
+書き換え例は `cover.typ` 自身にコメントで入れてある（文章を載せる表紙・査印欄だけの
+表紙・`cover.typ` に直接書くまえがき の3例）。コメントを外して使う。
 
 ::: {.callout-important}
 前付けで見出しを使うときは `#heading(level: 1, numbering: none, outlined: false)[まえがき]`

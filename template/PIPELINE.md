@@ -135,7 +135,7 @@ HTML が出て、図表番号の振り直しまで `post-render` が自動で行
 | `index.qmd` | doc | ○ | 前付け（採番なし）。HTML のトップページ | 両方 |
 | `chapters/**.qmd` | doc | ○ | 本文 | 両方 |
 | `diagrams/` | doc | ○ | qmd が直接貼る静的図 + mermaid 生成 SVG の置き場（`mmd-*` は除外） | 両方 |
-| `design-doc.lua` | tpl→doc | ○ | mermaid / `.landscape` / `.ipo` / セル結合 / 表幅 | 両方 |
+| `design-doc.lua` | tpl→doc | ○ | mermaid / `.landscape` / `.ipo` / `.front-matter` / セル結合 / 表幅 | 両方 |
 | `design-doc.css` | tpl→doc | ○ | HTML の見た目 | HTML |
 | `postprocess-html.js` | tpl→doc | ○ | 図表番号を「章.節-連番」に振り直す（`post-render` で自動実行） | HTML |
 | `mermaid-config.json` | tpl→doc | ○ | mermaid のテーマ・`htmlLabels: false`（SVG 化とプレビューの共通ソース） | 両方 |
@@ -197,6 +197,31 @@ title / subtitle / author / doc-number / company / toc …
   「無ければ作る」で担保する）。
 - 前付けで見出しを使うときは `numbering: none, outlined: false` が要る。
   素の h1 は章カウンタを消費し、目次にも載る。
+
+#### index.qmd の中身を表紙側へ回す（`::: {.front-matter}`）
+
+book では `index.qmd` が必須で、その中身は本文の先頭＝**目次の後ろ**に出る。
+表紙に文章を載せる様式もあるので、本文の一部を表紙側へ移せるようにしてある。
+
+```
+index.qmd:  ::: {.front-matter} … :::
+              ↓ design-doc.lua（typst 出力のときだけ）
+本文の中に  #metadata("df-front-begin") … 中身 … #metadata("df-front-end")
+              ↓ lib.typ の _split-front(body)
+front-matter(meta, front) の第2引数として cover.typ へ
+```
+
+- **content を後ろから前へ動かす方法はこれしかない。** typst は組版順にしか流せない
+  ので、`design-doc()` が `body` を受け取った直後（＝まだ組む前）に
+  `body.children` を走査し、印の間を切り出して残りと分ける。
+- 印は `#metadata(...)`（何も描かない要素）。`_marker-index()` が
+  `c.func() == metadata and c.value == "…"` で探す（`and` は短絡するので
+  metadata 以外で `.value` を触らない）。
+- 切り出すのは **`cover: true` のときだけ**。`false` なら本文をそのまま組むので、
+  囲んだままでも中身はその場（目次の後ろ）に残る。
+- `front-matter()` が `front` を置き忘れると中身は出力から消える。既定の
+  `cover.typ` は `if front != none { pagebreak(); front }` で拾っている。
+- HTML 側はこの div を素通しする（`IS_HTML` で分岐）。トップページの先頭に出る。
 
 ### 3.2 lib.typ の構成
 
@@ -346,6 +371,7 @@ HTML では div 構造として組み立て直している。
 | 記法 | typst 出力 | html 出力 |
 |---|---|---|
 | ` ```mermaid ` | SVG 化して `image()` | **`MERMAID_SVG=1` 時**は同左（同じ SVG）／**既定**は `<pre class="mermaid mermaid-js">` を出しクライアント描画（§5.1） |
+| `::: {.front-matter}` | 前後に `#metadata("df-front-…")` を置くだけ（中身はそのまま）。`design-doc()` が本文から切り出して `cover.typ` へ渡す | div のまま（トップページの先頭に出る） |
 | `::: {.landscape}` | `#landscape[...]` | div のまま（CSS で横スクロール） |
 | `::: {.ipo}` | `#ipo(...)` | `.ipo` div 構造 |
 | `::: {.tbl}` | 自前採番のキャプション＋表（分割は `#pagebreak`、`merge-cols=` で rowspan 結合） | `<div class="split-caption">` ＋表（採番は postprocess、結合は同左） |
