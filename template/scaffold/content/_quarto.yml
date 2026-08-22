@@ -45,6 +45,9 @@ company-ja: ○○株式会社            # 様式フッターの会社名（日
 company-en: ○○ Co., Ltd.          # 様式フッターの会社名（英語）
 cover: false           # 表紙・前付け（まえがき・承認欄・改訂履歴など）を出すか。true で出す
                        # 中身は同じフォルダの cover.typ に書く（PDF のみ。HTML には出ない）
+front-in-cover: false  # index.qmd の中身を表紙側（cover.typ）へ回すか。true で回す
+                       # 表紙に前書きを載せる／index.qmd に書くことが無い（PDF に出さない）とき
+                       # 置き場所は cover.typ が決める。cover: true のときだけ効く
 page-start: 1          # PDF の開始ページ番号。表紙・前書きを別文書で作り、その続きとして綴じるときに使う（前付けが4ページなら 5）
 
 toc: true

@@ -108,6 +108,7 @@ company-ja: ソフト開発株式会社          # スペック様式フッタ�
 company-en: Soft Development Co., Ltd.  # スペック様式フッターの会社名（英語）
 
 cover: false              # 表紙・前付けを出す。true で出す（中身は cover.typ）
+front-in-cover: false     # index.qmd の中身を表紙側へ回す。true で回す
 page-start: 1             # PDF の開始ページ番号。前付けを別文書で作るとき使う
 toc: true                 # 目次を出す
 toc-title: 目 次          # 目次の見出し
@@ -128,6 +129,7 @@ toc-depth: 3              # 目次に載せる見出しの深さ
 | `company-ja`   | ―      | スペック様式フッターの会社名（日本語）                            |
 | `company-en`   | ―      | スペック様式フッターの会社名（英語）                              |
 | `cover`        | `false` | 表紙・前付け（`cover.typ` の内容）を目次の前に出すか               |
+| `front-in-cover` | `false` | `index.qmd` の中身を表紙側（`cover.typ`）へ回すか（@sec-front-to-cover） |
 | `page-start`   | `1`     | PDF の開始ページ番号。表紙・前書きを別文書で作り、その続きとして綴じるときに使う |
 | `toc`          | `true`  | 目次を出すか                                                      |
 | `toc-depth`    | `3`     | 目次に載せる見出しの深さ                                          |
@@ -181,8 +183,8 @@ toc-depth: 3              # 目次に載せる見出しの深さ
 二重に書く必要はない。
 
 `front` は **`index.qmd` に Markdown で書いた前付けの本文**である。book では
-`index.qmd` が必須で、その中身は既定では目次の後ろに出るが、`index.qmd` の中を
-`::: {.front-matter}` で囲むと、その範囲がここへ渡される（@sec-front-to-cover）。
+`index.qmd` が必須で、その中身は既定では目次の後ろに出るが、`_quarto.yml` に
+`front-in-cover: true` と書くとここへ渡される（@sec-front-to-cover）。
 `#front` を表紙の中に置けば**文章を載せた表紙**になり、`front-on-new-page(front)`
 とすれば**表紙の次のページ**に置かれる（前付けが無ければ何も出ない）。
 

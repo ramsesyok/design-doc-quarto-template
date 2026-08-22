@@ -26,21 +26,37 @@ book では執筆フォルダ直下の `index.qmd` が必須で、その中身�
   1枚できてしまう。
 - **表紙に前書きを載せたい**ことがある（「本文書は○○に基づき…」）。
 
-そこで `index.qmd` を `::: {.front-matter}` で囲むと、その範囲が本文から抜き出され、
+そこで `_quarto.yml` に次の1行を書くと、`index.qmd` の中身が**丸ごと**本文から外れ、
 表紙を組む `cover.typ` へ渡される（@sec-cover-typ）。**章の見出し（`index.qmd` の
 先頭の `#`）も一緒に回る**ので、本文側にも目次にも残らない。
 
-```markdown
-# 本書について {.unnumbered}
-
-::: {.front-matter}
-本文書は○○規程に基づき作成したものである。
-:::
+```yaml
+front-in-cover: true   # index.qmd の中身を表紙側（cover.typ）へ回す
 ```
 
 置き場所は `cover.typ` が決める。**置かなければ PDF には出ない**（HTML のトップ
 ページには従来どおり出る）。この「置かない」が、`index.qmd` に書くことが無いときの
 答えになる。
+
+#### `index.qmd` は省けない
+
+`chapters:` から外したり、ファイルを消したりすると、Quarto が
+`Book contents must include a home page (e.g. index.md)` で止まる。**必ず置く。**
+
+中身は次の1行でよい。
+
+```markdown
+# 本書について {.unnumbered}
+```
+
+::: {.callout-important}
+**`{.unnumbered}` を必ず付ける。** 付けないと `index.qmd` が第1章になり、本文の
+最初の章が2章から始まる。空ファイルにした場合や、YAML の `title:` だけ書いた場合も
+同じく番号を消費する（いずれも実測）。見出しは HTML のトップページの表題にもなるので、
+書いておいて損はない。
+:::
+
+#### 置き場所と用途
 
 ::: {.tbl caption="前付けの置き場所" label="tbl-front-place" widths="38,62"}
 | 置き場所                             | `cover.typ` の書き方              |
@@ -48,30 +64,49 @@ book では執筆フォルダ直下の `index.qmd` が必須で、その中身�
 | 表紙のページの中（文章を載せる表紙） | `bare-page[ … #front ]`           |
 | 表紙の次のページ                     | `front-on-new-page(front)`        |
 | PDF には出さない                     | `front` をどこにも置かない        |
-| 目次の後ろ（既定）                   | `::: {.front-matter}` で囲まない  |
+| 目次の後ろ（既定）                   | `front-in-cover` を書かない       |
 :::
 
-用途との対応は @tbl-front-usecase のとおり。
+用途との対応は @tbl-front-usecase のとおり。いずれも `_quarto.yml` の1行と
+`cover.typ` の書き方だけで決まり、原稿（`index.qmd`）は書き換えなくてよい。
 
-::: {.tbl caption="用途と書き方" label="tbl-front-usecase" widths="26,26,48"}
-| `index.qmd`  | 表紙       | 書き方                                                   |
-|--------------|------------|----------------------------------------------------------|
-| 書くことが無い | 表紙のみ   | 見出しだけ書いて空の `::: {.front-matter}` で囲み、`cover.typ` では `front` を置かない |
+::: {.tbl caption="用途と書き方" label="tbl-front-usecase" widths="22,22,56"}
+| `index.qmd`    | 表紙       | 書き方                                                   |
+|----------------|------------|----------------------------------------------------------|
+| 書くことが無い | 表紙のみ   | `front-in-cover: true` ＋ `cover.typ` で `front` を置かない |
 | 書くことが無い | 前書きつき | 同上。前書きの文は `cover.typ` に直接書く                 |
-| 前書きを書く   | 表紙のみ   | 囲まない（目次の後ろ）／囲んで `front-on-new-page(front)`（表紙の次） |
-| 前書きを書く   | 前書きつき | 囲んで `bare-page[ … #front ]`（表紙の中に流し込む）      |
-:::
-
-::: {.callout-important}
-`index.qmd` の見出しには `{.unnumbered}` を付けること。付けないと章番号を消費し、
-本文が2章から始まる（**囲む・囲まないに関係なく**、見出しの無い空の `index.qmd` でも
-同じことが起きる）。囲めるのは**1文書に1か所**で、2つ目以降はその場に残る。
+| 前書きを書く   | 表紙のみ   | 何も書かない（目次の後ろ）／`front-in-cover: true` ＋ `front-on-new-page(front)`（表紙の次） |
+| 前書きを書く   | 前書きつき | `front-in-cover: true` ＋ `bare-page[ … #front ]`（表紙の中に流し込む） |
 :::
 
 ::: {.callout-note}
-効くのは PDF で `cover: true` のときだけである。`cover: false` のときは囲んでも
-位置は変わらない。HTML でも位置は変わらず、トップページの先頭に出る
-（`index.qmd` は HTML のトップページなので、見出しは残しておくとよい）。
+効くのは PDF で `cover: true` のときだけである。`cover: false` のときは
+`front-in-cover: true` を書いても位置は変わらない。HTML でも位置は変わらず、
+`index.qmd` はトップページのまま、章番号も変わらない。
+:::
+
+#### 一部だけ回したいとき（`::: {.front-matter}`）
+
+`index.qmd` の**一部だけ**を表紙側へ回し、残り（改正履歴一覧表など）は目次の後ろに
+置きたいときは、`front-in-cover` の代わりに回したい範囲を `::: {.front-matter}` で
+囲む。囲みがあるとそちらが優先される。
+
+```markdown
+# 本書について {.unnumbered}
+
+::: {.front-matter}
+本文書は○○規程に基づき作成したものである。
+:::
+
+## 改正履歴一覧表 {.unnumbered}
+
+（この表は目次の後ろに残る）
+```
+
+::: {.callout-important}
+囲んだ場合も、直前の章見出しは一緒に回る。囲めるのは**1文書に1か所**で、
+2つ目以降はその場に残る。`cover.typ` 側で `front` を置き忘れると、その中身は
+**どこにも出ない**（PDF に出したくないときは、これが意図した使い方になる）。
 :::
 
 ### 採番しない章に図表を置かないこと

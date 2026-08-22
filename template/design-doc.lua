@@ -11,8 +11,9 @@
 --   3) ::: {.ipo} div → #ipo(...)（IPO図。最初の見出し = 機能名 / 処理名、
 --      入力/処理/出力（Input/Process/Output 可）の見出しで3列に分割）
 --   4) ::: {.tbl} div → 統一テーブル（採番・分割・セル結合・列幅・相互参照）
---   5) ::: {.front-matter} div → #front-slot[...]（前付けを表紙側へ渡す。index.qmd の
---      中身を表紙の中／表紙の次ページに置けるようにするため）
+--   5) 前付け（index.qmd の中身）を表紙側へ渡す → #front-slot[...]
+--      `front-in-cover: true`（_quarto.yml）で丸ごと、`::: {.front-matter}` で一部だけ。
+--      index.qmd の中身を表紙の中／表紙の次ページに置く・PDF に出さないため
 --   6) すべての表の列幅を本文幅いっぱいに正規化（内容量に比例して配分）
 -- ============================================================
 
@@ -951,25 +952,67 @@ end
 --  Pandoc フィルタは要素単位の関数がすべて走ったあとにこの関数を呼ぶので、
 --  ここでは Div 変換後（= RawBlock になった後）の並びを見ている。
 -- ============================================================
+-- 前付けの見出しを「目次に出さない見出し」の生 typst に置き換える。
+-- 空見出し（中身の無い index.qmd）は nil を返し、呼び出し側で捨てさせる。
+local function front_heading(header)
+  local title = pandoc.utils.stringify(header.content)
+  if title == '' then return nil end
+  title = title:gsub('\\', '\\\\'):gsub('"', '\\"')
+  return pandoc.RawBlock('typst',
+    '#heading(level: 1, numbering: none, outlined: false)[#("' .. title .. '")]')
+end
+
+-- _quarto.yml の真偽値。YAML の true は boolean、"true" と書かれた場合は文字列で届く。
+local function meta_true(v)
+  if v == nil then return false end
+  if v == true then return true end
+  return pandoc.utils.stringify(v):lower() == 'true'
+end
+
 function Pandoc(doc)
   if IS_HTML then return nil end
   local blocks = doc.blocks
+
+  -- (1) ::: {.front-matter} を使っている場合 … 直前の章見出しをスロットへ取り込む。
   for i = 1, #blocks do
     local b = blocks[i]
     if b.t == 'RawBlock' and b.format == 'typst' and b.text == '#front-slot[' then
       local prev = blocks[i - 1]
       if prev and prev.t == 'Header' and prev.level == 1 then
-        local title = pandoc.utils.stringify(prev.content)
         blocks:remove(i - 1)          -- 本文から外す（以降のブロックが1つ前へ詰まる）
-        if title ~= '' then           -- 空見出し（中身の無い index.qmd）は捨てるだけ
-          title = title:gsub('\\', '\\\\'):gsub('"', '\\"')
-          blocks:insert(i, pandoc.RawBlock('typst',
-            '#heading(level: 1, numbering: none, outlined: false)[#("' .. title .. '")]'))
-        end
+        local h = front_heading(prev)
+        if h then blocks:insert(i, h) end
         return pandoc.Pandoc(blocks, doc.meta)
       end
-      break
+      return nil                      -- 見出しが無ければそのまま
     end
   end
-  return nil
+
+  -- (2) front-in-cover: true … index.qmd（先頭の章）を丸ごと前付けとして表紙側へ回す。
+  --     div で囲む手間を省くための設定。囲みが1つでも在れば (1) を優先し、ここは通らない。
+  --     範囲は「2つめの h1 の直前まで」＝ index.qmd の中身（1ファイル=1章のため）。
+  --     h1 が1つ以下の文書（本文の章がまだ無い等）では何もしない。
+  if not meta_true(doc.meta['front-in-cover']) then return nil end
+  local stop, seen = nil, 0
+  for i = 1, #blocks do
+    if blocks[i].t == 'Header' and blocks[i].level == 1 then
+      seen = seen + 1
+      if seen == 2 then stop = i break end
+    end
+  end
+  if stop == nil then return nil end
+
+  local out = pandoc.Blocks({ pandoc.RawBlock('typst', '#front-slot[') })
+  for i = 1, stop - 1 do
+    local b = blocks[i]
+    if i == 1 and b.t == 'Header' and b.level == 1 then
+      local h = front_heading(b)      -- 章見出しは目次に出さない形へ。空なら捨てる
+      if h then out:insert(h) end
+    else
+      out:insert(b)
+    end
+  end
+  out:insert(pandoc.RawBlock('typst', ']'))
+  for i = stop, #blocks do out:insert(blocks[i]) end
+  return pandoc.Pandoc(out, doc.meta)
 end

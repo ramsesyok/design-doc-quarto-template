@@ -204,12 +204,20 @@ book では `index.qmd` が必須で、その中身は本文の先頭＝**目次
 表紙に文章を載せる様式もあるので、本文の一部を表紙側へ移せるようにしてある。
 
 ```
-index.qmd:  ::: {.front-matter} … :::
-              ↓ design-doc.lua（typst 出力のときだけ）
+_quarto.yml: front-in-cover: true      … index.qmd（先頭の章）を丸ごと
+index.qmd:   ::: {.front-matter} … ::: … 一部だけ（囲みがあればこちらを優先）
+              ↓ design-doc.lua の Pandoc(doc)（typst 出力のときだけ）
 本文の中に  #front-slot[ … 中身 … ]        ← その場では何も描かない
               ↓ lib.typ: [#metadata(body)<df-front>] として印だけ置く
 cover.typ:  front-matter(meta, front) の front（= query して組む content）
 ```
+
+- **`front-in-cover: true` の範囲**は「2つめの h1 の直前まで」＝ `index.qmd` の中身
+  （1ファイル=1章のため）。h1 が1つ以下の文書では何もしない（本文まで巻き込まないため）。
+- `index.qmd` は Quarto が必須にしている（外すと
+  `Book contents must include a home page` で止まる）。中身は
+  `# 本書について {.unnumbered}` の1行でよく、**`{.unnumbered}` が要る**
+  （空ファイルや YAML の `title:` だけでは第1章として番号を消費する。実測）。
 
 - **content を後ろから前へ出す方法はこれしかない。** typst は組版順にしか流せない
   ので、「その場では出さず、表紙から `query(<df-front>)` で引いて組む」形にしてある
