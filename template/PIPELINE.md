@@ -183,7 +183,17 @@ title / subtitle / author / doc-number / company / toc …
 
 - `meta` は `_quarto.yml` の値をまとめた辞書（`title` / `subtitle` / `author` /
   `doc-number` / `doc-revision` / `doc-id` / `spec` / `company-ja` / `company-en` /
-  `page-start`）。表紙に資料番号や社名を出すのに二重管理が要らない。
+  `page-start` / `fields`）。表紙に資料番号や社名を出すのに二重管理が要らない。
+- **`meta.fields` は `_quarto.yml` の `cover-fields:`（任意のマップ）をそのまま
+  辞書にしたもの。** 作成日・部署・機密区分のように文書ごとに増える記載は、
+  `typst-show.typ` と `lib.typ` を毎回直さずにここへ足せる（項目を1つ増やすのに
+  2ファイル直す、という従来の面倒を避けるための経路）。
+  - 受け渡しは pandoc テンプレートの `$for(cover-fields/pairs)$` による。
+  - **値は `design-doc.lua` の `Meta()` でエスケープしてから渡すこと。**
+    テンプレートは `"$it.value$"` と文字列リテラルに埋めるので、`"` や `\` が
+    そのまま来ると `index.typ` が壊れる。**曲がった引用符も対象にする**:
+    pandoc は YAML の `"` を smart 拡張で `“ ”` にしてから渡し、出力時に `"` へ
+    戻すため、ASCII だけ見ていると素通しになる（実測）。
 - `lib.typ` 側が持つのは部品だけ:
   - `default-cover(meta)` … 既定の表紙（本文と同じ様式）
   - `bare-page(body, margin:)` … 外枠・資料番号を出さない独立ページ。

@@ -23,6 +23,12 @@
 //    meta.author       作成者        meta.doc-id       資料番号＋改訂記号（連結ずみ）
 //    meta.company-ja   会社名（日）  meta.spec         スペック様式か（true/false）
 //    meta.company-en   会社名（英）  meta.page-start   開始ページ番号
+//    meta.fields.<キー> … `cover-fields:` に書いた**任意の項目**。作成日・部署・
+//      機密区分など表紙にしか出ない記載は、テンプレートを直さずここに増やせる:
+//        cover-fields:
+//          created: "2026-08-22"
+//          dept: 第一開発部
+//      → meta.fields.created / meta.fields.dept
 //
 //  front … **index.qmd に書いた前付けの本文**（Markdown で書いたもの）。
 //    `_quarto.yml` に `front-in-cover: true` と書くと index.qmd の中身が丸ごと
@@ -136,12 +142,15 @@
   // 固定文言は描画ツール側で「パスに変換」しておくと、ビルド環境の書体に左右されない。
   // 詳しい注意は lib.typ の svg-cover のコメントを参照。
   // ------------------------------------------------------------
+  // 差し込み口の名前は固定ではなく、**ここで渡した引数名がそのまま {{名前}} になる**。
+  // cover-fields に書いた項目は ..meta.fields でまとめて渡せる。
   // bare-page(margin: 0mm)[
   //   #place(top + left, svg-cover("cover.svg",
-  //     title: meta.title,
-  //     subtitle: meta.subtitle,
-  //     docid: meta.doc-id,
-  //     company: meta.company-ja))
+  //     ..meta.fields,                 // {{created}} {{dept}} … cover-fields の項目
+  //     title: meta.title,             // {{title}}
+  //     subtitle: meta.subtitle,       // {{subtitle}}
+  //     docid: meta.doc-id,            // {{docid}}
+  //     company: meta.company-ja))     // {{company}}
   //   // 差し込み口を使わず、あとから重ねてもよい（位置は mm 指定）
   //   // #place(top + left, dx: 120mm, dy: 30mm, text(size: 12pt)[#meta.doc-id])
   // ]

@@ -526,6 +526,9 @@
   spec: false,                         // スペック様式（全ページ上部に表題欄）にするか。既定 false
   company-ja: "", company-en: "",      // スペック様式のフッターに出す会社名（日本語/英語）
   cover: false,                        // 表紙・前付けを出すか。既定は出さない
+  fields: (:),                         // _quarto.yml の cover-fields（任意の項目）。
+                                       // 作成日・部署・機密区分など、表紙にだけ要る記載を
+                                       // テンプレートを直さずに増やせる。meta.fields で渡る
   front-matter: none,                  // 表紙・前付けを組む関数（cover.typ の front-matter）。
                                        // none なら既定の表紙 default-cover() を使う
   page-start: 1,                       // 開始ページ番号。表紙・前書きを別文書で作り、その
@@ -764,6 +767,7 @@
       doc-number: doc-number, doc-revision: doc-revision, doc-id: doc-id,
       spec: spec, company-ja: company-ja, company-en: company-en,
       page-start: page-start,
+      fields: fields,                  // _quarto.yml の cover-fields（任意の項目）
     )
     if front-matter != none {
       front-matter(meta, front-content)

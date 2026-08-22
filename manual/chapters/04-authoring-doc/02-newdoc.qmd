@@ -176,11 +176,50 @@ toc-depth: 3              # 目次に載せる見出しの深さ
 }
 ```
 
-`meta` から `_quarto.yml` の値を受け取れる（`meta.title` / `meta.subtitle` /
-`meta.author` / `meta.doc-number` / `meta.doc-revision` / `meta.doc-id` /
-`meta.company-ja` / `meta.company-en` / `meta.spec` / `meta.page-start`）。
-表紙に資料番号や会社名を出すときは、`_quarto.yml` の値をそのまま使えばよく、
-二重に書く必要はない。
+`meta` から `_quarto.yml` の値を受け取れる（@tbl-cover-meta）。表紙に資料番号や
+会社名を出すときは `_quarto.yml` の値をそのまま使えばよく、二重に書く必要はない。
+
+::: {.tbl caption="cover.typ が受け取れる値（meta）" label="tbl-cover-meta" widths="26,20,54"}
+| 書き方              | 元の設定        | 内容                                     |
+|---------------------|-----------------|------------------------------------------|
+| `meta.title`        | `book: title:`  | 表題                                     |
+| `meta.subtitle`     | `book: subtitle:` | 副題                                   |
+| `meta.author`       | `book: author:` | 作成者                                   |
+| `meta.doc-number`   | `doc-number:`   | 資料番号                                 |
+| `meta.doc-revision` | `doc-revision:` | 改訂記号                                 |
+| `meta.doc-id`       | ―              | 資料番号＋改訂記号を連結したもの         |
+| `meta.company-ja`   | `company-ja:`   | 会社名（日本語）                         |
+| `meta.company-en`   | `company-en:`   | 会社名（英語）                           |
+| `meta.spec`         | `spec:`         | スペック様式か（`true` / `false`）       |
+| `meta.page-start`   | `page-start:`   | 開始ページ番号                           |
+| `meta.fields.<キー>` | `cover-fields:` | **文書ごとに増やせる任意の項目**（下記） |
+:::
+
+#### 表紙だけに要る項目を増やす（`cover-fields`） {#sec-cover-fields}
+
+作成日・部署・機密区分・契約番号など、**表紙にしか出てこない記載**は文書によって
+まちまちである。これらは `_quarto.yml` の `cover-fields:` に好きなだけ足せる。
+テンプレート（`lib.typ` など）を直す必要はない。
+
+```yaml
+cover-fields:
+  created: 2026-08-22
+  dept: 第一開発部
+  classification: 社外秘
+```
+
+`cover.typ` からは `meta.fields.created` のように使う。SVG の差し込み口（下記
+@sec-cover-svg）へまとめて渡すこともできる。
+
+```typst
+#svg-cover("cover.svg", ..meta.fields, title: meta.title)
+```
+
+::: {.callout-note}
+値は素の文字列にする（`"` や `\` は避ける）。日付を `2026-08-22` のように書くと
+YAML が日付として解釈することがあるので、書式を固定したいときは
+`created: "2026-08-22"` と引用符でくくる。
+:::
 
 `front` は **`index.qmd` に Markdown で書いた前付けの本文**である。book では
 `index.qmd` が必須で、その中身は既定では目次の後ろに出るが、`_quarto.yml` に
@@ -225,8 +264,19 @@ toc-depth: 3              # 目次に載せる見出しの深さ
 }
 ```
 
-`{{title}}` `{{docid}}` `{{company}}` が `_quarto.yml` の値に置き換わる。差し込み口の
-名前は引数名がそのまま対応するので、好きに増やしてよい。座標の計算は要らない。
+`{{title}}` `{{docid}}` `{{company}}` が `_quarto.yml` の値に置き換わる。
+**差し込み口の名前は固定ではなく、`svg-cover` に渡した引数名がそのまま `{{名前}}` に
+対応する。** 上の例なら `title` / `docid` / `company` の3つで、増やしたいときは
+引数を足す。渡せる値は @tbl-cover-meta のとおりで、`cover-fields` に足した項目は
+`..meta.fields` でまとめて渡せる（@sec-cover-fields）。座標の計算は要らない。
+
+```typst
+#svg-cover("cover.svg",
+  ..meta.fields,                 // cover-fields の項目をまとめて（{{created}} など）
+  title: meta.title,             // → {{title}}
+  docid: meta.doc-id,            // → {{docid}}
+  today: datetime.today().display("[year]-[month]-[day]"))  // 固定値や式でもよい
+```
 
 ::: {.callout-important}
 **SVG 内の文字は、ビルドする環境のフォントで描かれる。** 発行者の環境に無い書体は

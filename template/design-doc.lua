@@ -969,6 +969,32 @@ local function meta_true(v)
   return pandoc.utils.stringify(v):lower() == 'true'
 end
 
+-- ============================================================
+--  cover-fields（_quarto.yml の任意項目）を typst の文字列に埋め込める形にする。
+--
+--  typst-show.typ は "$it.value$" として並べるので、値に " や \ が入っていると
+--  生成される index.typ が壊れる。ここでエスケープしておく。
+--  表紙で使う値（部署名・機密区分・日付など）なので文字列として扱えば足りる。
+--
+--  **曲がった引用符も対象にすること。** pandoc は YAML の " を smart 拡張で
+--  “ ” に変換してから渡してくるので、ASCII の " だけを見ていると素通しになり、
+--  出力側で " に戻されて typst の文字列が閉じてしまう（実測）。
+-- ============================================================
+function Meta(m)
+  if IS_HTML then return nil end
+  local f = m['cover-fields']
+  if f == nil then return nil end
+  for k, v in pairs(f) do
+    local s = pandoc.utils.stringify(v)
+    s = s:gsub('\\', '\\\\')
+    s = s:gsub('"', '\\"')
+    s = s:gsub('\u{201C}', '\\"'):gsub('\u{201D}', '\\"')
+    f[k] = pandoc.MetaString(s)
+  end
+  m['cover-fields'] = f
+  return m
+end
+
 function Pandoc(doc)
   if IS_HTML then return nil end
   local blocks = doc.blocks

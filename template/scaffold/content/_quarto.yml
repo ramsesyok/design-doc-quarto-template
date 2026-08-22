@@ -45,6 +45,13 @@ company-ja: ○○株式会社            # 様式フッターの会社名（日
 company-en: ○○ Co., Ltd.          # 様式フッターの会社名（英語）
 cover: false           # 表紙・前付け（まえがき・承認欄・改訂履歴など）を出すか。true で出す
                        # 中身は同じフォルダの cover.typ に書く（PDF のみ。HTML には出ない）
+# 表紙にだけ出す項目。好きなだけ足せる（cover.typ から meta.fields.<キー> で使う）。
+# テンプレート（lib.typ / typst-show.typ）を直さずに項目を増やせるのはこの経路だけ。
+# cover-fields:
+#   created: "2026-04-01"
+#   dept: ○○部
+#   classification: 社外秘
+
 front-in-cover: false  # index.qmd の中身を本文から外し、表紙側（cover.typ）へ回すか
                        # 表紙に前書きを載せる／index.qmd に書くことが無い（PDF に出さない）とき
                        # 置き場所は cover.typ が決める。cover: false なら PDF には出ない
