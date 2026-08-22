@@ -75,9 +75,23 @@ front-in-cover: true   # index.qmd の中身を表紙側（cover.typ）へ回す
 |----------------|------------|----------------------------------------------------------|
 | 書くことが無い | 表紙なし   | `front-in-cover: true`（`cover: false` のままでよい）      |
 | 書くことが無い | 表紙のみ   | `front-in-cover: true` ＋ `cover.typ` で `front` を置かない |
-| 書くことが無い | 前書きつき | 同上。前書きの文は `cover.typ` に直接書く                 |
 | 前書きを書く   | 表紙のみ   | 何も書かない（目次の後ろ）／`front-in-cover: true` ＋ `front-on-new-page(front)`（表紙の次） |
 | 前書きを書く   | 前書きつき | `front-in-cover: true` ＋ `bare-page[ … #front ]`（表紙の中に流し込む） |
+:::
+
+#### 前書きの文はどちらに書くか
+
+表紙に載せる前書きは、**`index.qmd` に Markdown で書く**のが基本である（上の表の
+最終行）。`index.qmd` に書けば「書くことが無い」ケースではなくなるだけで、
+`#front` を置いた位置にそのまま出る。
+
+`cover.typ` に直接書く方法もある。使い分けは @tbl-front-where のとおり。
+
+::: {.tbl caption="前書きの文の置き場所" label="tbl-front-where" widths="20,40,40"}
+| 置き場所    | 書き方       | 向いているもの                                   |
+|-------------|--------------|--------------------------------------------------|
+| `index.qmd` | Markdown     | 文書ごとに変わる前書き。**HTML のトップページにも同じ文が出る**。執筆者が直せる |
+| `cover.typ` | Typst        | PDF の表紙にだけ出す固定文言（様式の一部）。HTML には出ない |
 :::
 
 ::: {.callout-important}
