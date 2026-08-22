@@ -223,9 +223,25 @@ cover.typ:  front-matter(meta, front) の front（= query して組む content�
 - `front` は content であって `none` にはならない（前付けが無ければ何も出さない
   content になる）。「あるときだけ改ページして置く」は `front-on-new-page(front)`
   が `query(<df-front>).len() > 0` で判定する。既定の `cover.typ` はこれを使う。
-- `front-matter()` が `front` を置き忘れると中身は出力から消える。
+- `front-matter()` が `front` を置かなければ、その中身は PDF に出ない。これは仕様で、
+  「`index.qmd` に書くことが無い」文書（章はすべて `chapters/` に分ける構成）で
+  見出しだけのページを消すのに使う。
 - 囲めるのは1文書に1か所（`query` の先頭だけを使う）。
 - HTML 側はこの div を素通しする（`IS_HTML` で分岐）。トップページの先頭に出る。
+
+**章見出しの取り込み（`Pandoc` フィルタ）**: book では章ファイルの先頭見出しを
+Quarto が章題として扱い、**div の外へ持ち上げる**。そのため囲んでも見出しだけが本文に
+残り、目次に項目が出て、見出しだけのページができる（実測）。`design-doc.lua` の
+`Pandoc(doc)` が「`#front-slot[` の直前の h1」をスロットの中へ移し、
+`outlined: false` の見出しとして組み直す（前付けの見出しは目次に載せない）。
+見出しが空（＝中身の無い `index.qmd`）のときは捨てるだけにする。
+
+**`_front-style` の `it.body`**: 前付けの h1 は本文の「章は改ページ」ルールから
+外す必要がある（表紙に流し込むと表紙が2ページに割れる）。このとき
+`show heading.where(level: 1): it => block(..., it)` と **`it` を組み直してはいけない**。
+他の show ルール（`design-doc` 内の h1 ルール）が改めて適用され、その `pagebreak` が
+`block` の中で起きて `pagebreaks are not allowed inside of containers` になる。
+`it.body` を組めば見出し要素を再生成しないので他のルールは走らない（実測）。
 
 ### 3.2 lib.typ の構成
 

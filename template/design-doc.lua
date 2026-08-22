@@ -934,3 +934,42 @@ function RawInline(el)
     return pandoc.LineBreak()
   end
 end
+
+-- ============================================================
+--  前付けの章見出しを front-slot の中へ取り込む（typst 出力のみ）
+--
+--  book では、章ファイルの先頭見出しは Quarto が「章題」として扱い、**div の外へ
+--  持ち上げる**（`::: {.front-matter}` の中に見出しを書いても、AST では div の直前に
+--  出てくる。実測）。そのままだと前付けを表紙へ回しても見出しだけが本文に取り残され、
+--    - 目次に「本書について」の項目が残る
+--    - 見出しだけの空ページが1枚できる
+--  という結果になる。そこで「`#front-slot[` の直前にある h1」をスロットの中へ移す。
+--
+--  目次には出さない（outlined: false）。前付けの見出しは表紙側に置かれるので、
+--  目次から参照できても意味がないため。目次に載せたい前付けは div で囲まない。
+--
+--  Pandoc フィルタは要素単位の関数がすべて走ったあとにこの関数を呼ぶので、
+--  ここでは Div 変換後（= RawBlock になった後）の並びを見ている。
+-- ============================================================
+function Pandoc(doc)
+  if IS_HTML then return nil end
+  local blocks = doc.blocks
+  for i = 1, #blocks do
+    local b = blocks[i]
+    if b.t == 'RawBlock' and b.format == 'typst' and b.text == '#front-slot[' then
+      local prev = blocks[i - 1]
+      if prev and prev.t == 'Header' and prev.level == 1 then
+        local title = pandoc.utils.stringify(prev.content)
+        blocks:remove(i - 1)          -- 本文から外す（以降のブロックが1つ前へ詰まる）
+        if title ~= '' then           -- 空見出し（中身の無い index.qmd）は捨てるだけ
+          title = title:gsub('\\', '\\\\'):gsub('"', '\\"')
+          blocks:insert(i, pandoc.RawBlock('typst',
+            '#heading(level: 1, numbering: none, outlined: false)[#("' .. title .. '")]'))
+        end
+        return pandoc.Pandoc(blocks, doc.meta)
+      end
+      break
+    end
+  end
+  return nil
+end

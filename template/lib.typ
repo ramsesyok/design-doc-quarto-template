@@ -441,11 +441,25 @@
   if _cover-on.get() { [#metadata(body)<df-front>] } else { body }
 }
 
+// 前付けの体裁。本文の「章（h1）は常に新しいページから始める」ルールを外す。
+// 前付けを表紙のページへ流し込んだとき、見出しで改ページされて表紙が2ページに
+// 割れてしまうため（実測）。内側の show ルールが優先されるので、本文側の
+// ルールはそのままでよい。見出しの見た目は本文の h1 と同じにそろえる。
+// **it ではなく it.body を組むこと。** it を組み直すと「他の」show ルール
+// （design-doc 内の h1 ルール）が改めて適用され、その pagebreak が block の中で
+// 起きて "pagebreaks are not allowed inside of containers" になる（実測）。
+// it.body なら見出し要素そのものを再生成しないので、他のルールは走らない。
+#let _front-style(body) = {
+  show heading.where(level: 1): it => block(above: 1.4em, below: 0.8em,
+    text(size: HEAD-SIZES.at(0), weight: "bold", it.body))
+  body
+}
+
 // 前付けの内容。cover.typ には第2引数 front としてこれが渡る。
 // 囲んでいない文書では query が空になり、何も出ない。
 #let front-content = context {
   let q = query(<df-front>)
-  if q.len() > 0 { q.first().value }
+  if q.len() > 0 { _front-style(q.first().value) }
 }
 
 // 前付けがあるときだけ改ページして置く（無ければ空ページも作らない）。
