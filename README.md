@@ -109,10 +109,6 @@ cd C:\tools\quarto-template-1.1.3
 .\template\build-html.bat C:\work\order-design\docs
 ```
 
-**PDF を出す環境の Quarto は 1.9.20 以上が要ります**（安定版なら 1.10 系以降。
-それより前は Quarto 自身が book の typst 出力に対応しておらず PDF ができません）。
-執筆者の HTML だけなら古い版でも出せます。
-
 PDF は**中間版**としてコミットします。改ページ・横向きページ・紙の様式は HTML では
 確認できないため、執筆者はこの PDF で紙面を見ます。
 mermaid 図を PDF に載せる場合だけ、この環境に mermaid-cli（`template/node_modules`）と
