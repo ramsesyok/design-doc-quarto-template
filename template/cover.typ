@@ -42,6 +42,7 @@
 //    default-cover(meta)          既定の表紙（下で使っているもの）
 //    bare-page(body, margin: 30mm) 外枠・資料番号を出さない独立ページ
 //    front-on-new-page(front)     前付けがあれば改ページして置く（無ければ何もしない）
+//    svg-cover(path, ..差し込み)  描画ツールで作った SVG を表紙にする（差し替え例4）
 //    JP-SANS / JP-SERIF           書体
 //    RULE / FRAME / BORDER        罫線（太さ＋色）
 //    COVER-TITLE-SIZE ほか        既定の表紙の寸法（lib.typ 冒頭【1】）
@@ -122,5 +123,26 @@
   // heading(level: 1, numbering: none, outlined: false)[まえがき]
   // [
   //   本書は、#meta.title について記述したものである。
+  // ]
+
+  // ------------------------------------------------------------
+  // 差し替え例4: 描画ツールで作った SVG を表紙にする（罫線の多い表紙を手早く作る）
+  //
+  // Inkscape / Illustrator / PowerPoint などで A4（210×297mm）の表紙を描き、
+  // 差し込みたい箇所に {{title}} {{docid}} などと**文字で**書いて cover.svg として
+  // 執筆フォルダに置く（doc リポジトリではコミットする）。下の svg-cover が
+  // その文字を _quarto.yml の値に置き換えてから読み込む。座標計算は要らない。
+  //
+  // 固定文言は描画ツール側で「パスに変換」しておくと、ビルド環境の書体に左右されない。
+  // 詳しい注意は lib.typ の svg-cover のコメントを参照。
+  // ------------------------------------------------------------
+  // bare-page(margin: 0mm)[
+  //   #place(top + left, svg-cover("cover.svg",
+  //     title: meta.title,
+  //     subtitle: meta.subtitle,
+  //     docid: meta.doc-id,
+  //     company: meta.company-ja))
+  //   // 差し込み口を使わず、あとから重ねてもよい（位置は mm 指定）
+  //   // #place(top + left, dx: 120mm, dy: 30mm, text(size: 12pt)[#meta.doc-id])
   // ]
 }

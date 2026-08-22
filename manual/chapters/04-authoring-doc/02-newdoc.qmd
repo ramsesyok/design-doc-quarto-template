@@ -196,12 +196,50 @@ toc-depth: 3              # 目次に載せる見出しの深さ
 | `default-cover(meta)`           | 既定の表紙（本文と同じ様式＝外枠・資料番号つき）           |
 | `bare-page(body)`               | 外枠・資料番号を出さない独立ページ。表紙を紙面いっぱいに使うとき |
 | `front-on-new-page(front)`      | 前付けがあれば改ページして置く（無ければ空ページも作らない） |
+| `svg-cover(path, ..差し込み)`   | 描画ツールで作った SVG を表紙にする（@sec-cover-svg）       |
 | `pagebreak()`                   | ページを分ける（前付けを複数ページにするとき）             |
 | `JP-SANS` / `RULE` / `BORDER`   | 書体・罫線。本文と体裁をそろえるために使う                 |
 :::
 
 書き換え例は `cover.typ` 自身にコメントで入れてある（文章を載せる表紙・査印欄だけの
-表紙・`cover.typ` に直接書くまえがき の3例）。コメントを外して使う。
+表紙・`cover.typ` に直接書くまえがき・SVG の下絵を使う の4例）。コメントを外して使う。
+
+#### 描画ツールで表紙を作る（`svg-cover`） {#sec-cover-svg}
+
+罫線の多い表紙（査印欄・記入欄が並ぶもの）を Typst の記法で組むのは骨が折れる。
+**表紙の絵は描画ツールで作り、差し込む値だけをテンプレートから入れる**方法が使える。
+
+1. Inkscape / Illustrator / PowerPoint などで **A4 実寸（210×297mm）** の表紙を描く。
+2. 表題・資料番号など**あとから差し込みたい箇所には `{{title}}` のように文字で書いておく**。
+3. `cover.svg` として執筆フォルダに置く（`cover.typ` と同じくコミットする）。
+4. `cover.typ` を次のようにする。
+
+```typst
+#let front-matter(meta, front) = {
+  bare-page(margin: 0mm)[
+    #place(top + left, svg-cover("cover.svg",
+      title: meta.title,
+      docid: meta.doc-id,
+      company: meta.company-ja))
+  ]
+}
+```
+
+`{{title}}` `{{docid}}` `{{company}}` が `_quarto.yml` の値に置き換わる。差し込み口の
+名前は引数名がそのまま対応するので、好きに増やしてよい。座標の計算は要らない。
+
+::: {.callout-important}
+**SVG 内の文字は、ビルドする環境のフォントで描かれる。** 発行者の環境に無い書体は
+別の書体に置き換わる。「承認」「審査」のような**固定文言は描画ツール側でパスに変換**
+しておくと確実である（Inkscape なら「パス」→「オブジェクトをパスへ」）。差し込む値
+（`{{title}}` など）は文字のまま残す必要がある。
+:::
+
+::: {.callout-note}
+影・グラデーション・ブレンドなどは、PDF 側の SVG 描画が再現しないことがある。
+罫線・文字・単色塗りで作ること。差し込み口を使わず、`#place(top + left, dx: 120mm,
+dy: 30mm, …)` のように mm 指定で上に重ねてもよい。
+:::
 
 ::: {.callout-important}
 前付けで見出しを使うときは `#heading(level: 1, numbering: none, outlined: false)[まえがき]`

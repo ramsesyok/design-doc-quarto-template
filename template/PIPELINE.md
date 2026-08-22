@@ -189,6 +189,11 @@ title / subtitle / author / doc-number / company / toc …
   - `bare-page(body, margin:)` … 外枠・資料番号を出さない独立ページ。
     `set page` ではなく `page()` を**関数として**呼ぶので、後続の本文は自動で
     元の様式に戻る（戻し忘れが起きない）。
+  - `svg-cover(path, ..subs)` … 描画ツールで作った SVG を表紙にする。
+    `read()` で SVG を文字列として読み、`{{key}}` を値に `replace` してから
+    `image(bytes(…), format: "svg")` に渡す。ビルド手順を増やさずに済み、
+    typst 0.14.2 / 0.15.1 のどちらでも動く（実測）。SVG は typst の
+    プロジェクトルート（執筆フォルダ）に置くこと。
   - 寸法・色は【1】の `COVER-*`
 - `front-matter()` の後ろは `pagebreak(weak: true)`。`front-matter()` が
   `bare-page()` や `pagebreak()` で自分の最後のページを閉じていても空ページが増えない。

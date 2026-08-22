@@ -471,6 +471,33 @@
   }
 }
 
+// ---- SVG の下絵から表紙を作る ----
+// Inkscape / Illustrator / PowerPoint などで A4 の表紙を描き、差し込みたい箇所に
+// {{title}} のような「差し込み口」を**文字として**書いておく。ここでその文字列を
+// _quarto.yml の値に置き換えてから画像として読み込む。
+// 罫線の多い表紙（査印欄つきなど）を、座標計算も Typst の記法もほぼ書かずに作れる。
+//
+//   #bare-page(margin: 0mm)[
+//     #place(top + left, svg-cover("cover.svg",
+//       title: meta.title, docid: meta.doc-id, company: meta.company-ja))
+//   ]
+//
+// 注意:
+//  - SVG は執筆フォルダ（typst のプロジェクトルート）に置く。typst はプロジェクト外を
+//    読めないため。doc リポジトリではコミット対象にする（cover.typ と同じ扱い）。
+//  - SVG は A4 実寸（width="210mm" height="297mm"）で作ると位置がそのまま合う。
+//  - **SVG 内の文字はビルドする環境のフォントで描かれる。** 無い書体は置換されるので、
+//    固定文言は描画ツール側で「パスに変換」しておくと確実（Inkscape: パス → オブジェクトをパスへ）。
+//    差し込む値（表題・資料番号）は文字のままにしておく必要がある。
+//  - 影・グラデーション・ブレンドなど、typst の SVG 描画が再現しない効果がある。
+//    罫線・文字・単色塗りに寄せること。
+#let _svg-escape(s) = s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+#let svg-cover(path, width: 210mm, ..subs) = {
+  let s = read(path)
+  for (k, v) in subs.named() { s = s.replace("{{" + k + "}}", _svg-escape(str(v))) }
+  image(bytes(s), format: "svg", width: width)
+}
+
 // 既定の表紙。表題・副題・作成者をページ中央に置くだけの最小構成で、
 // 様式は本文と同じ（外枠・資料番号が出る）。
 // cover.typ から部品として呼べる（既定のまま使う／一部だけ足す、のどちらも可）。
